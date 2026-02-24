@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#DEEFE4"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="MeuTreino"
+        android:textStyle="bold"
+        android:textSize="32sp"
+        android:textColor="#2F6F73"
+        android:fontFamily="sans-serif-medium"/>
+
+    <TextView
+        android:id="@+id/tvLoadingStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Sincronizando seus dados…"
+        android:textSize="14sp"
+        android:textColor="#3F4B4E"/>
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        app:indicatorColor="#5AAB8A"
+        app:trackColor="#BFE7D5"
+        app:indicatorSize="46dp"
+        app:trackThickness="6dp"
+        android:indeterminate="true"/>
+
+</LinearLayout>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvTrainerNome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Treinador"
+        android:textStyle="bold"
+        android:textSize="20sp"/>
+
+    <TextView
+        android:id="@+id/tvTrainerEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="email"
+        android:paddingTop="4dp"/>
+
+    <TextView
+        android:id="@+id/tvTrainerStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status"
+        android:paddingTop="8dp"
+        android:textStyle="bold"/>
+
+    <Button
+        android:id="@+id/btnToggleAtivo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Desativar treinador"
+        android:layout_marginTop="12dp"/>
+    <Button
+        android:id="@+id/btnGerarCodigoAluno"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Gerar código de ALUNO (para este treinador)"
+        android:layout_marginTop="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Alunos vinculados"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:paddingTop="18dp"
+        android:paddingBottom="8dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvAlunosDoTreinador"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+</LinearLayout>

@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardExercicio"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="2dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- Header clicável -->
+        <LinearLayout
+            android:id="@+id/headerExercicio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvNomeExercicio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Remada alta"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#2F6F73"
+                    android:fontFamily="sans-serif-medium" />
+
+                <TextView
+                    android:id="@+id/tvRealizacoes"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Treinos realizados: 0"
+                    android:textSize="13sp"
+                    android:textColor="#6B6B6B"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvSetaExercicio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⌄"
+                android:textSize="18sp"
+                android:textColor="#6B6B6B"
+                android:paddingStart="10dp" />
+        </LinearLayout>
+
+        <!-- Mini-infos -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:weightSum="5">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Método"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#4A4A4A" />
+                <TextView
+                    android:id="@+id/tvMetodo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="12sp"
+                    android:textColor="#6B6B6B"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Séries"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#4A4A4A" />
+                <TextView
+                    android:id="@+id/tvSeries"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="12sp"
+                    android:textColor="#6B6B6B"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Rep"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#4A4A4A" />
+                <TextView
+                    android:id="@+id/tvReps"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="12sp"
+                    android:textColor="#6B6B6B"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="RIR"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#4A4A4A" />
+                <TextView
+                    android:id="@+id/tvRir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="12sp"
+                    android:textColor="#6B6B6B"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Desc"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#4A4A4A" />
+                <TextView
+                    android:id="@+id/tvDescanso"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="12sp"
+                    android:textColor="#6B6B6B"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="#E9E9E9" />
+
+        <!-- Header tabela -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingVertical="6dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Série"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:textColor="#4A4A4A" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:text="Anterior"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:textColor="#4A4A4A" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:gravity="end"
+                android:text="KG/REP"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:textColor="#4A4A4A" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/containerSeries"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <!-- ⚠️ Mantém esse ID pra compatibilidade com código antigo -->
+        <TextView
+            android:id="@+id/tvMetasExercicio"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

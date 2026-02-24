@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Criar conta"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:paddingBottom="16dp"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:boxBackgroundMode="outline"
+            app:hintEnabled="true"
+            android:hint="Nome">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtNome"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:boxBackgroundMode="outline"
+            android:hint="Email">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:boxBackgroundMode="outline"
+            android:hint="Senha"
+            app:endIconMode="password_toggle">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtSenha"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tipo de conta"
+            android:textStyle="bold"
+            android:paddingTop="16dp"
+            android:paddingBottom="6dp"/>
+
+        <RadioGroup
+            android:id="@+id/rgRole"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rbAluno"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Aluno"/>
+
+            <RadioButton
+                android:id="@+id/rbTreinador"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Treinador"/>
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/btnCriarConta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Criar conta"
+            android:layout_marginTop="18dp"/>
+
+        <Button
+            android:id="@+id/btnVoltarLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Voltar para login"
+            android:layout_marginTop="10dp"/>
+
+    </LinearLayout>
+</ScrollView>

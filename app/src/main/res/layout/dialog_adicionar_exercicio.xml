@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dialogRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="18dp"
+    android:background="@drawable/bg_dialog_dark_round">
+
+    <!-- Topo: Título + X -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tvTituloDialog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Adicionar exercício"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="sans-serif-medium"/>
+
+        <ImageView
+            android:id="@+id/btnFecharDialog"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_alignParentEnd="true"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="#BFC7C9"/>
+    </RelativeLayout>
+
+    <!-- 🔥 FUNÇÃO: padrão de cores para inputs -->
+    <!-- DICA: o que manda no hint é o TextInputLayout (app:hintTextColor) -->
+
+    <!-- Nome (autocomplete) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilNome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="#121A1D"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="#5AAB8A"
+        app:boxStrokeWidth="1dp"
+        app:boxCornerRadiusTopStart="14dp"
+        app:boxCornerRadiusTopEnd="14dp"
+        app:boxCornerRadiusBottomStart="14dp"
+        app:boxCornerRadiusBottomEnd="14dp"
+        app:hintTextColor="#CFE8E0"
+        android:layout_marginBottom="10dp">
+
+        <AutoCompleteTextView
+            android:id="@+id/etNomeExercicio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nome do exercício (clique para ver a lista)"
+            android:textColor="#F4FFFB"
+            android:textColorHint="#CFE8E0"
+            android:textSize="14sp"
+            android:inputType="text"
+            android:padding="14dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Linha: Séries / Reps mín -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilSeries"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:boxBackgroundColor="#121A1D"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="#2A3A3E"
+            app:boxStrokeWidth="1dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:hintTextColor="#CFE8E0">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etSeries"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Séries"
+                android:textColor="#F4FFFB"
+                android:textColorHint="#CFE8E0"
+                android:inputType="number"
+                android:padding="14dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilRepsMin"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:boxBackgroundColor="#121A1D"
+            app:boxBackgroundMode="outline"
+            app:boxStrokeColor="#2A3A3E"
+            app:boxStrokeWidth="1dp"
+            app:boxCornerRadiusTopStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:hintTextColor="#CFE8E0">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etRepsMin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Reps mín"
+                android:textColor="#F4FFFB"
+                android:textColorHint="#CFE8E0"
+                android:inputType="number"
+                android:padding="14dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+    </LinearLayout>
+
+    <!-- Reps máx -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilRepsMax"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="#121A1D"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="#2A3A3E"
+        app:boxStrokeWidth="1dp"
+        app:boxCornerRadiusTopStart="14dp"
+        app:boxCornerRadiusTopEnd="14dp"
+        app:boxCornerRadiusBottomStart="14dp"
+        app:boxCornerRadiusBottomEnd="14dp"
+        app:hintTextColor="#CFE8E0">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etRepsMax"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Reps máx"
+            android:textColor="#F4FFFB"
+            android:textColorHint="#CFE8E0"
+            android:inputType="number"
+            android:padding="14dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Descanso -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilDescanso"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="#121A1D"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="#2A3A3E"
+        app:boxStrokeWidth="1dp"
+        app:boxCornerRadiusTopStart="14dp"
+        app:boxCornerRadiusTopEnd="14dp"
+        app:boxCornerRadiusBottomStart="14dp"
+        app:boxCornerRadiusBottomEnd="14dp"
+        app:hintTextColor="#CFE8E0">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etDescanso"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Descanso (ex: 90s)"
+            android:textColor="#F4FFFB"
+            android:textColorHint="#CFE8E0"
+            android:inputType="text"
+            android:padding="14dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Técnica -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilTecnica"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="#121A1D"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="#2A3A3E"
+        app:boxStrokeWidth="1dp"
+        app:boxCornerRadiusTopStart="14dp"
+        app:boxCornerRadiusTopEnd="14dp"
+        app:boxCornerRadiusBottomStart="14dp"
+        app:boxCornerRadiusBottomEnd="14dp"
+        app:hintTextColor="#CFE8E0">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etTecnica"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Técnica (opcional)"
+            android:textColor="#F4FFFB"
+            android:textColorHint="#CFE8E0"
+            android:inputType="text"
+            android:padding="14dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- RIR -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilRir"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        app:boxBackgroundColor="#121A1D"
+        app:boxBackgroundMode="outline"
+        app:boxStrokeColor="#2A3A3E"
+        app:boxStrokeWidth="1dp"
+        app:boxCornerRadiusTopStart="14dp"
+        app:boxCornerRadiusTopEnd="14dp"
+        app:boxCornerRadiusBottomStart="14dp"
+        app:boxCornerRadiusBottomEnd="14dp"
+        app:hintTextColor="#CFE8E0">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etRir"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="RIR (ex: 1-2)"
+            android:textColor="#F4FFFB"
+            android:textColorHint="#CFE8E0"
+            android:inputType="text"
+            android:padding="14dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Botão Salvar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSalvarExercicioDialog"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_marginTop="14dp"
+        android:text="Salvar"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        app:cornerRadius="16dp"
+        android:background="@drawable/bg_button_green"
+        app:backgroundTint="@null"/>
+</LinearLayout>

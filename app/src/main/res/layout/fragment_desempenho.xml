@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="#DEEFE4">
+
+    <!-- TÍTULO NO TOPO -->
+    <TextView
+        android:id="@+id/tvTituloDesempenho"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Desempenho"
+        android:textSize="32sp"
+        android:textColor="#5AAB8A"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="14dp"/>
+
+    <!-- BARRA DE BUSCA (CAIXINHA) -->
+    <EditText
+        android:id="@+id/etBuscarExercicio"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="12dp"
+        android:hint="Buscar exercício (ex: remada, supino...)"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="@drawable/bg_input_rounded"
+        android:textColor="#000000"
+        android:textColorHint="#99000000"
+        android:fontFamily="sans-serif"
+        android:singleLine="true"/>
+
+    <!-- BOTÃO -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnGrafico"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:text="Ver gráfico do exercício"
+        android:layout_marginBottom="14dp"
+        android:textColor="#FFFFFF"
+        android:textAllCaps="false"
+        android:fontFamily="sans-serif-medium"
+        android:background="@drawable/bg_button_green"
+        app:backgroundTint="@null"
+        app:cornerRadius="18dp"/>
+
+    <!-- CONTEÚDO (lista + loading + vazio) -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvTreinosSalvos"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Loading central -->
+        <ProgressBar
+            android:id="@+id/progressDesempenho"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <!-- Card vazio (clean) -->
+        <LinearLayout
+            android:id="@+id/boxVazioDesempenho"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_margin="12dp"
+            android:visibility="gone"
+            android:background="@drawable/bg_card_light">
+
+            <TextView
+                android:id="@+id/tvVazioDesempenho"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nenhum treino registrado ainda."
+                android:textColor="#2B2B2B"
+                android:textSize="15sp"
+                android:gravity="center"
+                android:fontFamily="sans-serif" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

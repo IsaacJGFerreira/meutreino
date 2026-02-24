@@ -1,0 +1,8 @@
+<resources>
+    <color name="progresso_card_bg">#F8FBF9</color>
+    <color name="progresso_card_stroke">#D6E4DD</color>
+
+    <color name="progresso_text_primary">#1E2A27</color>
+
+    <color name="progresso_badge_text">#0E1417</color>
+</resources>

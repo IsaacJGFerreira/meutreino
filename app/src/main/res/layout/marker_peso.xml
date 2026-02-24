@@ -1,0 +1,24 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_marker_peso_clean"
+    android:padding="10dp"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/tvMarkerPeso"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="80 kg"
+        android:textStyle="bold"
+        android:textColor="#2F6F73"
+        android:textSize="14sp"/>
+
+    <TextView
+        android:id="@+id/tvMarkerData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="12/02/2026"
+        android:textColor="#6B8A83"
+        android:textSize="12sp"/>
+</LinearLayout>

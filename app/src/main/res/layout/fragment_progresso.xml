@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#DEEFE4"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- ✅ TÍTULO -->
+    <TextView
+        android:id="@+id/tvTituloProgresso"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:text="Progresso"
+        android:textColor="#5AAB8A"
+        android:textSize="34sp"
+        android:textStyle="bold" />
+
+    <!-- ✅ GRÁFICO NO TOPO -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="14dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="#F8FBF9">
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/chartPeso"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:padding="12dp"/>
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+    <!-- ✅ BOTÃO REGISTRAR (centralizado abaixo do gráfico) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAbrirRegistroProgresso"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:text="Registrar"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginBottom="12dp"
+        app:backgroundTint="#5AAB8A"
+        app:cornerRadius="18dp" />
+
+    <!-- ✅ HISTÓRICO (rola só a lista) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Histórico semanal"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:layout_marginBottom="6dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvProgresso"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

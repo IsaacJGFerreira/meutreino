@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Título / Info -->
+        <TextView
+            android:id="@+id/tvPerfilTitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Perfil"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:paddingBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvPerfilInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Carregando..."
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/btnInserirCodigo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Inserir código do treinador"
+            android:layout_marginTop="12dp" />
+
+        <Button
+            android:id="@+id/btnSolicitarCodigos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Solicitar códigos para alunos"
+            android:layout_marginTop="10dp" />
+
+        <!-- Banner acompanhando -->
+        <LinearLayout
+            android:id="@+id/boxAcompanhando"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:layout_marginTop="14dp"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvAcompanhando"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Você está acompanhando: (nome)"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnTrocarAluno"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Trocar" />
+        </LinearLayout>
+
+        <!-- Códigos -->
+        <TextView
+            android:id="@+id/tvTituloCodigos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Códigos disponíveis"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvCodigosDisponiveis"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone" />
+
+        <!-- Alunos -->
+        <TextView
+            android:id="@+id/tvTituloAlunos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Meus alunos"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMeusAlunos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

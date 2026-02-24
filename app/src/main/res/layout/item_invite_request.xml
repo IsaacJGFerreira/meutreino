@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_marginBottom="10dp"
+    android:background="@android:drawable/dialog_holo_light_frame">
+
+    <TextView
+        android:id="@+id/tvReqTrainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Treinador: Fulano"
+        android:textStyle="bold"
+        android:textSize="15sp"/>
+
+    <TextView
+        android:id="@+id/tvReqQty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Qtd: 5"
+        android:paddingTop="4dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="10dp">
+
+        <Button
+            android:id="@+id/btnAprovarReq"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Aprovar" />
+
+        <LinearLayout
+            android:layout_width="10dp"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btnRejeitarReq"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Rejeitar" />
+    </LinearLayout>
+
+</LinearLayout>

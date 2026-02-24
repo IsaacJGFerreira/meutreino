@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Menu"
+        android:textSize="18sp"
+        android:paddingBottom="12dp"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/btnMenuTreino"
+        style="@style/AppGreenButton"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="10dp"
+        android:text="Treino" />
+
+    <Button
+        android:id="@+id/btnMenuDesempenho"
+        style="@style/AppGreenButton"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="10dp"
+        android:text="Desempenho" />
+
+    <Button
+        android:id="@+id/btnMenuMontar"
+        style="@style/AppGreenButton"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="10dp"
+        android:text="Montar Treino" />
+
+    <Button
+        android:id="@+id/btnMenuCardio"
+        style="@style/AppGreenButton"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="10dp"
+        android:text="Cardio" />
+
+    <Button
+        android:id="@+id/btnMenuProgresso"
+        style="@style/AppGreenButton"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="10dp"
+        android:text="Progresso" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="12dp" />
+
+    <Button
+        android:id="@+id/btnMenuSair"
+        style="@style/AppGreenButton"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="10dp"
+        android:text="Sair da conta" />
+
+</LinearLayout>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="green_primary">#66BB6A</color>
+    <color name="green_secondary">#A5D6A7</color>
+    <color name="green_light">#C8E6C9</color>
+
+    <color name="background">#F2F7F3</color>
+    <color name="surface">#FFFFFF</color>
+
+    <color name="muted_text">#5B6B62</color>
+    <!-- Exercício: borda quando falta completar -->
+    <color name="ex_border_pending">#B0B7B5</color>  <!-- cinza moderno -->
+
+    <!-- Exercício: borda quando completou -->
+    <color name="ex_border_done">#5AAB8A</color>     <!-- verde bonito e consistente -->
+
+    <!-- Texto do exercício: mais escuro -->
+    <color name="ex_title">#2F3E3F</color>
+    <color name="ex_subtitle">#5E6F70</color>
+
+
+
+</resources>

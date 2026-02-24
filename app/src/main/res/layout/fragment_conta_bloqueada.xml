@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/tvBloqueadaTitulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Conta bloqueada"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:paddingBottom="10dp"/>
+
+    <TextView
+        android:id="@+id/tvBloqueadaTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Para liberar seu acesso, insira o código recebido."
+        android:textSize="16sp"
+        android:paddingBottom="18dp"/>
+
+    <Button
+        android:id="@+id/btnInserirCodigoBloqueio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Inserir código" />
+
+    <Button
+        android:id="@+id/btnSairBloqueio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sair"
+        android:layout_marginTop="10dp" />
+</LinearLayout>

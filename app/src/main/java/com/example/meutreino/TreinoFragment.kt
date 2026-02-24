@@ -1,0 +1,227 @@
+package com.example.meutreino
+
+import android.content.Context
+import android.os.Bundle
+import android.util.Log
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.activityViewModels
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+
+class TreinoFragment : Fragment() {
+
+    private val draftVM: TreinoDraftViewModel by activityViewModels()
+
+    private lateinit var rvTreinosDia: RecyclerView
+    private lateinit var adapter: TreinoDiaAdapter
+    private val treinos = mutableListOf<TreinoPlan>()
+
+    private var meuRole: String = "ALUNO"
+
+    private val PREFS = "meutreino_prefs"
+    private val KEY_SELECTED_STUDENT = "selected_student_uid"
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+
+        val view = inflater.inflate(R.layout.fragment_treino, container, false)
+
+        rvTreinosDia = view.findViewById(R.id.rvTreinosDia)
+        rvTreinosDia.layoutManager = LinearLayoutManager(requireContext())
+
+        // ✅ Adapter primeiro (usa a lista "treinos" como referência)
+        adapter = TreinoDiaAdapter(
+            treinos = treinos,
+            contarRealizacoes = { nomeEx ->
+                RegistroTreinoRepository.contarRealizacoesExercicio(requireContext(), nomeEx)
+            },
+            getAnterior = { _, _ -> "—" },
+            draftVM = draftVM
+        ) { treino, preenchimentoDoTreino, completo ->
+
+            if (!isAdded) return@TreinoDiaAdapter
+
+            // ✅ Treinador NÃO registra nada
+            if (meuRole == "TREINADOR") {
+                Toast.makeText(requireContext(), "Treinador não registra treino.", Toast.LENGTH_SHORT).show()
+                return@TreinoDiaAdapter
+            }
+
+            val dataHora = java.text.SimpleDateFormat(
+                "dd/MM/yyyy HH:mm",
+                java.util.Locale.getDefault()
+            ).format(java.util.Date())
+
+            val registro = TreinoRegistro(
+                id = "${dataHora}_${treino.nome}",
+                dataHora = dataHora,
+                nomeTreino = treino.nome,
+                completo = completo,
+                exercicios = emptyList() // simplificado por enquanto
+            )
+
+            // ✅ aluno salva local + nuvem
+            RegistroTreinoRepository.salvarTreino(requireContext(), registro)
+            RegistroTreinoFirestoreRepository.salvarRegistro(registro)
+
+            Toast.makeText(
+                requireContext(),
+                if (completo) "Treino salvo completo!" else "Treino salvo incompleto!",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        rvTreinosDia.adapter = adapter
+
+        // ✅ 1) Carrega cache local (rápido/offline) — só para ALUNO faz sentido
+        carregarCacheLocal()
+
+        // ✅ 2) Descobre role e carrega da nuvem (aluno: próprio uid / treinador: aluno selecionado)
+        carregarTreinosDaNuvemComRole()
+
+        return view
+    }
+
+    private fun carregarCacheLocal() {
+        try {
+            val local = PlanoTreinoRepository.carregarTreinos(requireContext())
+            treinos.clear()
+            treinos.addAll(local)
+            adapter.notifyDataSetChanged()
+        } catch (e: Exception) {
+            Log.e("TREINO_FRAGMENT", "Erro ao carregar cache local", e)
+        }
+    }
+
+    private fun carregarTreinosDaNuvemComRole() {
+        val user = Firebase.auth.currentUser
+        if (user == null) {
+            Toast.makeText(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Firebase.firestore.collection("users").document(user.uid).get()
+            .addOnSuccessListener { doc ->
+                meuRole = (doc.getString("role") ?: "ALUNO").trim().uppercase()
+
+                val uidAlvo = if (meuRole == "TREINADOR") {
+                    val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    prefs.getString(KEY_SELECTED_STUDENT, null)
+                } else {
+                    user.uid
+                }
+
+                if (uidAlvo.isNullOrBlank()) {
+                    // treinador sem aluno selecionado
+                    if (meuRole == "TREINADOR") {
+                        treinos.clear()
+                        adapter.notifyDataSetChanged()
+                        Toast.makeText(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT).show()
+                    }
+                    return@addOnSuccessListener
+                }
+
+                // ✅ Carrega treinos do UID alvo na nuvem
+                PlanoTreinoFirestoreRepository.carregarTreinos(
+                    uidAlvo = uidAlvo,
+                    onOk = { lista ->
+                        if (!isAdded) return@carregarTreinos
+
+                        treinos.clear()
+                        treinos.addAll(lista)
+                        adapter.notifyDataSetChanged()
+
+                        // ✅ se for ALUNO (e uidAlvo==meu uid), salva cache local pro offline
+                        if (meuRole != "TREINADOR" && uidAlvo == user.uid) {
+                            try {
+                                PlanoTreinoRepository.salvarTreinos(requireContext(), treinos)
+                            } catch (e: Exception) {
+                                Log.e("TREINO_FRAGMENT", "Erro ao salvar cache local", e)
+                            }
+                        }
+
+                        // ✅ sincroniza registros só pro ALUNO (evita poluir cache do treinador)
+                        if (meuRole != "TREINADOR" && uidAlvo == user.uid) {
+                            carregarRegistrosNuvem(uidAlvo)
+                        }
+
+                        // feedback
+                        if (treinos.isEmpty()) {
+                            Toast.makeText(requireContext(), "Nenhum treino recebido ainda.", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onErro = { e ->
+                        if (!isAdded) return@carregarTreinos
+                        Log.e("TREINO_FRAGMENT", "Erro ao carregar treinos da nuvem", e)
+
+                        // fallback (cache local já carregado)
+                        Toast.makeText(requireContext(), "Sem internet: usando cache local.", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+            .addOnFailureListener { e ->
+                Log.e("TREINO_FRAGMENT", "Erro ao ler role", e)
+                // fallback: assume ALUNO e tenta nuvem do próprio uid
+                meuRole = "ALUNO"
+                PlanoTreinoFirestoreRepository.carregarTreinos(
+                    uidAlvo = user.uid,
+                    onOk = { lista ->
+                        if (!isAdded) return@carregarTreinos
+                        treinos.clear()
+                        treinos.addAll(lista)
+                        adapter.notifyDataSetChanged()
+                        try {
+                            PlanoTreinoRepository.salvarTreinos(requireContext(), treinos)
+                        } catch (_: Exception) {}
+                        carregarRegistrosNuvem(user.uid)
+                    },
+                    onErro = { /* fica no cache local */ }
+                )
+            }
+    }
+
+    // ✅ Agora recebe uidAlvo para não ficar “travado” no usuário logado
+    private fun carregarRegistrosNuvem(uidAlvo: String) {
+        RegistroTreinoFirestoreRepository.carregarRegistros(
+            uidAlvo = uidAlvo,
+            onOk = { docs ->
+                if (!isAdded) return@carregarRegistros
+
+                // só salva cache local se for o próprio aluno logado
+                val meuUid = Firebase.auth.currentUser?.uid
+                if (meuUid == uidAlvo) {
+                    docs.forEach { d ->
+                        val dataHora = d["dataHora"] as? String ?: return@forEach
+                        val nomeTreino = d["nomeTreino"] as? String ?: return@forEach
+                        val completo = d["completo"] as? Boolean ?: false
+
+                        val registro = TreinoRegistro(
+                            id = "${dataHora}_${nomeTreino}",
+                            dataHora = dataHora,
+                            nomeTreino = nomeTreino,
+                            completo = completo,
+                            exercicios = emptyList()
+                        )
+
+                        RegistroTreinoRepository.salvarOuAtualizar(requireContext(), registro)
+                    }
+                }
+
+                adapter.notifyDataSetChanged()
+            },
+            onErro = { e ->
+                Log.e("TREINO_FRAGMENT", "Erro ao carregar registros nuvem", e)
+            }
+        )
+    }
+}

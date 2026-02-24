@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#DEEFE4">
+
+    <!-- Card central (bonito e "profissional") -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardLoading"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="3dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="22dp">
+
+            <!-- "Marca" -->
+            <TextView
+                android:id="@+id/tvApp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MeuTreino"
+                android:textStyle="bold"
+                android:textSize="22sp"
+                android:textColor="#2F6F73"
+                android:fontFamily="sans-serif-medium"/>
+
+            <TextView
+                android:id="@+id/tvSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Sincronizando os seus dados"
+                android:textSize="13sp"
+                android:textColor="#5B5B5B"/>
+
+            <!-- Barra (indeterminada, suave) -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressBar"
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:layout_marginTop="16dp"
+                app:trackCornerRadius="10dp"
+                app:indicatorColor="#5AAB8A"
+                app:trackColor="#D7EEE4"
+                android:indeterminate="true"/>
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Preparando…"
+                android:textSize="13sp"
+                android:textColor="#2F6F73"/>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

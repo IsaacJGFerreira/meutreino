@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_treino"
+        android:title="Treino"
+        android:icon="@android:drawable/ic_media_play"/>
+
+    <item
+        android:id="@+id/menu_desempenho"
+        android:title="Desempenho"
+        android:icon="@android:drawable/ic_menu_agenda"/>
+
+    <item
+        android:id="@+id/menu_montar_treino"
+        android:title="Montar treino"
+        android:icon="@android:drawable/ic_input_add" />
+
+    <item
+        android:id="@+id/menu_cardio"
+        android:title="Cardio"
+        android:icon="@android:drawable/ic_menu_compass" />
+
+    <item
+        android:id="@+id/menu_progresso"
+        android:title="Progresso"
+        android:icon="@android:drawable/ic_menu_camera" />
+
+    <item
+        android:id="@+id/menu_perfil"
+        android:title="Perfil"
+        android:icon="@android:drawable/ic_menu_myplaces" />
+    <item
+        android:id="@+id/menu_sair"
+        android:title="Sair"
+        android:icon="@android:drawable/ic_lock_power_off" />
+
+
+
+
+</menu>

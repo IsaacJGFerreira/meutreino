@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="Menu"
+        android:layout_margin="16dp"
+        app:layout_anchorGravity="bottom|end"
+        app:srcCompat="@android:drawable/ic_dialog_dialer" />
+    <!-- ✅ Badge fixo do aluno selecionado (só aparece pro treinador) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardAlunoSelecionado"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="12dp"
+        android:visibility="gone"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="6dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="#D6E4DD">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:tint="#5AAB8A" />
+
+            <TextView
+                android:id="@+id/tvAlunoSelecionado"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Aluno: (nome)"
+                android:textColor="#1B1B1B"
+                android:textStyle="bold"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btnTrocarAlunoBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="trocar"
+                android:textColor="#5AAB8A"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
