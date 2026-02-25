@@ -22,4 +22,11 @@
     <color name="chart_grid">#24322D</color>
     <color name="chart_axis">#31443C</color>
     <color name="chart_label">#9AB2A7</color>
+    <color name="ex_card_bg_neutral">#18221F</color>
+    <color name="ex_card_bg_done">#1D3A2E</color>
+    <color name="ex_card_bg_warning">#3B331A</color>
+    <color name="ex_border_warning">#D1B158</color>
+    <color name="ex_input_neutral">#4E5F58</color>
+    <color name="ex_input_good">#4AAE80</color>
+    <color name="ex_input_bad">#B96D6D</color>
 </resources>
