@@ -58,14 +58,14 @@ class AdminDashboardFragment : Fragment() {
             inviteRepo.criarConviteTreinador(
                 adminUid = admin.uid,
                 onOk = { code ->
-                    AlertDialog.Builder(requireContext())
+                    AppUiFeedback.dialogBuilder(requireContext())
                         .setTitle("Código de Treinador")
                         .setMessage("Código: $code\n\n(Use 1 vez. Depois expira.)")
                         .setPositiveButton("OK", null)
                         .show()
                 },
                 onErr = {
-                    AlertDialog.Builder(requireContext())
+                    AppUiFeedback.dialogBuilder(requireContext())
                         .setTitle("Erro")
                         .setMessage("Não foi possível gerar o código.")
                         .setPositiveButton("OK", null)
@@ -141,13 +141,13 @@ class AdminDashboardFragment : Fragment() {
             onOk = { list -> reqAdapter.update(list) },
             onErr = { msg ->
                 // Se quiser, pode mostrar dialog. Por enquanto fica silencioso.
-                // AlertDialog.Builder(requireContext()).setTitle("Erro").setMessage(msg).setPositiveButton("OK", null).show()
+                // AppUiFeedback.dialogBuilder(requireContext()).setTitle("Erro").setMessage(msg).setPositiveButton("OK", null).show()
             }
         )
     }
 
     private fun confirmarAprovar(req: InviteRequestItem) {
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Aprovar pedido")
             .setMessage("Gerar ${req.qty} códigos para ${req.trainerName}?")
             .setPositiveButton("Aprovar") { _, _ -> aprovar(req) }
@@ -166,7 +166,7 @@ class AdminDashboardFragment : Fragment() {
             onOk = { codes ->
                 val texto = codes.joinToString("\n")
 
-                AlertDialog.Builder(requireContext())
+                AppUiFeedback.dialogBuilder(requireContext())
                     .setTitle("Códigos gerados")
                     .setMessage(texto)
                     .setPositiveButton("OK", null)
@@ -175,7 +175,7 @@ class AdminDashboardFragment : Fragment() {
                 carregarPedidosPendentes()
             },
             onErr = { msg ->
-                AlertDialog.Builder(requireContext())
+                AppUiFeedback.dialogBuilder(requireContext())
                     .setTitle("Erro")
                     .setMessage(msg)
                     .setPositiveButton("OK", null)
@@ -185,7 +185,7 @@ class AdminDashboardFragment : Fragment() {
     }
 
     private fun confirmarRejeitar(req: InviteRequestItem) {
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Rejeitar pedido")
             .setMessage("Rejeitar pedido de ${req.trainerName}?")
             .setPositiveButton("Rejeitar") { _, _ -> rejeitar(req) }
@@ -201,7 +201,7 @@ class AdminDashboardFragment : Fragment() {
             adminUid = admin.uid,
             onOk = { carregarPedidosPendentes() },
             onErr = { msg ->
-                AlertDialog.Builder(requireContext())
+                AppUiFeedback.dialogBuilder(requireContext())
                     .setTitle("Erro")
                     .setMessage(msg)
                     .setPositiveButton("OK", null)

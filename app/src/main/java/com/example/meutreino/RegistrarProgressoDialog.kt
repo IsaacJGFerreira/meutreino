@@ -39,7 +39,7 @@ class RegistrarProgressoDialog(
             TipoFoto.LADO -> uriLado = uri.toString()
         }
 
-        Toast.makeText(requireContext(), "Foto selecionada!", Toast.LENGTH_SHORT).show()
+        AppUiFeedback.showToast(requireContext(), "Foto selecionada!", Toast.LENGTH_SHORT)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -64,7 +64,7 @@ class RegistrarProgressoDialog(
             pickImage.launch(arrayOf("image/*"))
         }
 
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialog = AppUiFeedback.dialogBuilder(requireContext())
             .setView(v)
             .create()
 
@@ -74,7 +74,7 @@ class RegistrarProgressoDialog(
             btnSalvar.setOnClickListener {
                 val peso = etPeso.text.toString().trim().toDoubleOrNull()
                 if (peso == null || peso <= 0) {
-                    Toast.makeText(requireContext(), "Peso inválido.", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Peso inválido.", Toast.LENGTH_SHORT)
                     return@setOnClickListener
                 }
 
@@ -93,7 +93,7 @@ class RegistrarProgressoDialog(
                         dismiss()
                     },
                     onErro = { e ->
-                        Toast.makeText(requireContext(), "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                        AppUiFeedback.showToast(requireContext(), "Erro: ${e.message}", Toast.LENGTH_LONG)
                     }
                 )
             }

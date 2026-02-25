@@ -37,7 +37,7 @@ class RegisterActivity : AppCompatActivity() {
             }
 
             if (nome.isBlank() || email.isBlank() || senha.isBlank() || role.isBlank()) {
-                Toast.makeText(this, "Preencha tudo e selecione Aluno/Treinador.", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(this, "Preencha tudo e selecione Aluno/Treinador.", Toast.LENGTH_SHORT)
                 return@setOnClickListener
             }
 
@@ -63,16 +63,16 @@ class RegisterActivity : AppCompatActivity() {
                 Firebase.firestore.collection("users").document(uid)
                     .set(data)
                     .addOnSuccessListener {
-                        Toast.makeText(this, "Conta criada! Agora insira o código para liberar.", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(this, "Conta criada! Agora insira o código para liberar.", Toast.LENGTH_SHORT)
                         startActivity(Intent(this, MainActivity::class.java))
                         finish()
                     }
                     .addOnFailureListener { e ->
-                        Toast.makeText(this, "Erro ao salvar perfil: ${e.message}", Toast.LENGTH_LONG).show()
+                        AppUiFeedback.showToast(this, "Erro ao salvar perfil: ${e.message}", Toast.LENGTH_LONG)
                     }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Erro ao criar conta: ${e.message}", Toast.LENGTH_LONG).show()
+                AppUiFeedback.showToast(this, "Erro ao criar conta: ${e.message}", Toast.LENGTH_LONG)
             }
     }
 }

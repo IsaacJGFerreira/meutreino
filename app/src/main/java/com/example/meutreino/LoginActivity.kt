@@ -33,7 +33,7 @@ class LoginActivity : AppCompatActivity() {
             val senha = etSenha.text.toString().trim()
 
             if (email.isBlank() || senha.isBlank()) {
-                Toast.makeText(this, "Preencha email e senha.", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(this, "Preencha email e senha.", Toast.LENGTH_SHORT)
                 return@setOnClickListener
             }
 
@@ -46,7 +46,7 @@ class LoginActivity : AppCompatActivity() {
                     finish()
                 }
                 .addOnFailureListener {
-                    Toast.makeText(this, "Login inválido.", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(this, "Login inválido.", Toast.LENGTH_SHORT)
                 }
         }
 
