@@ -86,11 +86,11 @@ class TreinoDiaAdapter(
                 onSalvarTreino(treino, doTreino, completoFlag)
                 draftVM.limparTreino(treino.nome)
                 notifyItemChanged(position)
-                Toast.makeText(
+                AppUiFeedback.showToast(
                     holder.itemView.context,
                     if (completoFlag) "Treino salvo!" else "Treino salvo (incompleto).",
                     Toast.LENGTH_SHORT
-                ).show()
+                )
             }
 
             fun mostrarAvisosEContinuar(completoFlag: Boolean) {
@@ -99,7 +99,7 @@ class TreinoDiaAdapter(
                     return
                 }
 
-                android.app.AlertDialog.Builder(holder.itemView.context)
+                AppUiFeedback.dialogBuilder(holder.itemView.context)
                     .setTitle("Avisos do treino")
                     .setMessage(avisosMsg)
                     .setPositiveButton("OK, entendi") { _, _ ->
@@ -109,7 +109,7 @@ class TreinoDiaAdapter(
             }
 
             if (!completo) {
-                android.app.AlertDialog.Builder(holder.itemView.context)
+                AppUiFeedback.dialogBuilder(holder.itemView.context)
                     .setTitle("Treino incompleto")
                     .setMessage("Ainda faltam séries para preencher.\n\nDeseja salvar mesmo assim?")
                     .setPositiveButton("Salvar mesmo assim") { _, _ ->

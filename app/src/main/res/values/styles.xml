@@ -14,4 +14,19 @@
         <item name="backgroundTint">@null</item>
     </style>
 
+
+
+    <style name="ThemeOverlay.MeuTreino.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="backgroundTint">@color/surface</item>
+        <item name="titleTextColor">@color/text_primary</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.MeuTreino.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.MeuTreino.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.MeuTreino.DialogButton</item>
+    </style>
+
+    <style name="Widget.MeuTreino.DialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/green_primary</item>
+    </style>
+
 </resources>

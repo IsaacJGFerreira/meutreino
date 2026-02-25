@@ -74,7 +74,7 @@ class DesempenhoFragment : Fragment() {
         // ----------------------------
         val user = Firebase.auth.currentUser
         if (user == null) {
-            Toast.makeText(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT)
             return view
         }
 
@@ -90,7 +90,7 @@ class DesempenhoFragment : Fragment() {
                     val alunoUid = prefs.getString(KEY_SELECTED_STUDENT, null)
 
                     if (alunoUid.isNullOrBlank()) {
-                        Toast.makeText(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
                         setLista(emptyList())
                         return@addOnSuccessListener
                     }
@@ -149,7 +149,7 @@ class DesempenhoFragment : Fragment() {
                 // (vamos fazer no refinamento, quando você me mandar o RegistroTreinoRepository completo)
             },
             onErro = { e ->
-                Toast.makeText(requireContext(), "Sem acesso/erro nuvem: ${e.message}", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Sem acesso/erro nuvem: ${e.message}", Toast.LENGTH_SHORT)
             }
         )
     }
@@ -192,7 +192,7 @@ class DesempenhoFragment : Fragment() {
             detalhes.append("\n")
         }
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Detalhes do treino")
             .setMessage(detalhes.toString())
             .setPositiveButton("OK", null)
@@ -209,7 +209,7 @@ class DesempenhoFragment : Fragment() {
             .sorted()
 
         if (nomes.isEmpty()) {
-            Toast.makeText(requireContext(), "Nenhum treino ainda.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Nenhum treino ainda.", Toast.LENGTH_SHORT)
             return
         }
 
@@ -221,13 +221,13 @@ class DesempenhoFragment : Fragment() {
         input.setOnClickListener { input.showDropDown() }
         input.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) input.showDropDown() }
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Escolha o exercício")
             .setView(input)
             .setPositiveButton("Ver gráfico") { _, _ ->
                 val nome = input.text.toString().trim()
                 if (nome.isBlank()) {
-                    Toast.makeText(requireContext(), "Escolha um exercício.", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Escolha um exercício.", Toast.LENGTH_SHORT)
                     return@setPositiveButton
                 }
                 mostrarGraficoExercicio(nome)
@@ -273,7 +273,7 @@ class DesempenhoFragment : Fragment() {
         val pontos = montarSerieMaiorPesoPorTreino(nomeExercicio)
 
         if (pontos.entries.isEmpty()) {
-            Toast.makeText(requireContext(), "Sem dados para \"$nomeExercicio\".", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Sem dados para \"$nomeExercicio\".", Toast.LENGTH_SHORT)
             return
         }
 
@@ -344,7 +344,7 @@ Melhor: ${String.format("%.1f", melhorPeso)} kg
         chart.animateX(400)
         chart.invalidate()
 
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialog = AppUiFeedback.dialogBuilder(requireContext())
             .setView(graficoView)
             .setPositiveButton("OK", null)
             .create()

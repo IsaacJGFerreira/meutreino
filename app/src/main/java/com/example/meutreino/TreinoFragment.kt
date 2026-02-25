@@ -55,7 +55,7 @@ class TreinoFragment : Fragment() {
 
             // ✅ Treinador NÃO registra nada
             if (meuRole == "TREINADOR") {
-                Toast.makeText(requireContext(), "Treinador não registra treino.", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Treinador não registra treino.", Toast.LENGTH_SHORT)
                 return@TreinoDiaAdapter
             }
 
@@ -76,11 +76,11 @@ class TreinoFragment : Fragment() {
             RegistroTreinoRepository.salvarTreino(requireContext(), registro)
             RegistroTreinoFirestoreRepository.salvarRegistro(registro)
 
-            Toast.makeText(
+            AppUiFeedback.showToast(
                 requireContext(),
                 if (completo) "Treino salvo completo!" else "Treino salvo incompleto!",
                 Toast.LENGTH_SHORT
-            ).show()
+            )
         }
 
         rvTreinosDia.adapter = adapter
@@ -153,7 +153,7 @@ class TreinoFragment : Fragment() {
     private fun carregarTreinosDaNuvemComRole() {
         val user = Firebase.auth.currentUser
         if (user == null) {
-            Toast.makeText(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT)
             return
         }
 
@@ -173,7 +173,7 @@ class TreinoFragment : Fragment() {
                     if (meuRole == "TREINADOR") {
                         treinos.clear()
                         adapter.notifyDataSetChanged()
-                        Toast.makeText(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
                     }
                     return@addOnSuccessListener
                 }
@@ -204,7 +204,7 @@ class TreinoFragment : Fragment() {
 
                         // feedback
                         if (treinos.isEmpty()) {
-                            Toast.makeText(requireContext(), "Nenhum treino recebido ainda.", Toast.LENGTH_SHORT).show()
+                            AppUiFeedback.showToast(requireContext(), "Nenhum treino recebido ainda.", Toast.LENGTH_SHORT)
                         }
                     },
                     onErro = { e ->
@@ -212,7 +212,7 @@ class TreinoFragment : Fragment() {
                         Log.e("TREINO_FRAGMENT", "Erro ao carregar treinos da nuvem", e)
 
                         // fallback (cache local já carregado)
-                        Toast.makeText(requireContext(), "Sem internet: usando cache local.", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Sem internet: usando cache local.", Toast.LENGTH_SHORT)
                     }
                 )
             }

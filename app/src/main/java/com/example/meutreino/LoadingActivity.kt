@@ -64,7 +64,7 @@ class LoadingActivity : AppCompatActivity() {
                         finish()
                     },
                     onErro = { msg ->
-                        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                        AppUiFeedback.showToast(this, msg, Toast.LENGTH_LONG)
 
                         // Mesmo com erro, entra offline
                         val i = Intent(this, MainActivity::class.java)
@@ -76,7 +76,7 @@ class LoadingActivity : AppCompatActivity() {
             },
             onErro = { msg ->
                 // Se falhar ao ler role, entra do mesmo jeito (evita travar)
-                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                AppUiFeedback.showToast(this, msg, Toast.LENGTH_LONG)
                 val i = Intent(this, MainActivity::class.java)
                 i.putExtra(MainActivity.EXTRA_SYNC_OK, true)
                 startActivity(i)

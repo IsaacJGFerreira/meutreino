@@ -8,5 +8,7 @@
         <item name="android:windowBackground">@color/background</item>
         <item name="android:statusBarColor">@color/background</item>
         <item name="android:navigationBarColor">@color/surface</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MeuTreino.AlertDialog</item>
+        <item name="android:alertDialogTheme">@style/ThemeOverlay.MeuTreino.AlertDialog</item>
     </style>
 </resources>
