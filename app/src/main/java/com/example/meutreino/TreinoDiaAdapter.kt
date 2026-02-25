@@ -100,24 +100,24 @@ class TreinoDiaAdapter(
                     return
                 }
 
-                AppUiFeedback.dialogBuilder(holder.itemView.context)
-                    .setTitle("Avisos do treino")
-                    .setMessage(avisosMsg)
-                    .setPositiveButton("OK, entendi") { _: DialogInterface, _: Int ->
-                        salvarAgora(completoFlag)
-                    }
-                    .show()
+                val avisosDialog = AppUiFeedback.dialogBuilder(holder.itemView.context)
+                avisosDialog.setTitle("Avisos do treino")
+                avisosDialog.setMessage(avisosMsg)
+                avisosDialog.setPositiveButton("OK, entendi") { _: DialogInterface, _: Int ->
+                    salvarAgora(completoFlag)
+                }
+                avisosDialog.show()
             }
 
             if (!completo) {
-                AppUiFeedback.dialogBuilder(holder.itemView.context)
-                    .setTitle("Treino incompleto")
-                    .setMessage("Ainda faltam séries para preencher.\n\nDeseja salvar mesmo assim?")
-                    .setPositiveButton("Salvar mesmo assim") { _: DialogInterface, _: Int ->
-                        mostrarAvisosEContinuar(false)
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
+                val incompletoDialog = AppUiFeedback.dialogBuilder(holder.itemView.context)
+                incompletoDialog.setTitle("Treino incompleto")
+                incompletoDialog.setMessage("Ainda faltam séries para preencher.\n\nDeseja salvar mesmo assim?")
+                incompletoDialog.setPositiveButton("Salvar mesmo assim") { _: DialogInterface, _: Int ->
+                    mostrarAvisosEContinuar(false)
+                }
+                incompletoDialog.setNegativeButton("Cancelar", null)
+                incompletoDialog.show()
             } else {
                 mostrarAvisosEContinuar(true)
             }
