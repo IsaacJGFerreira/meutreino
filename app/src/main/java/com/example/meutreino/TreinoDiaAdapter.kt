@@ -3,6 +3,7 @@ package com.example.meutreino
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.content.DialogInterface
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
@@ -102,7 +103,7 @@ class TreinoDiaAdapter(
                 AppUiFeedback.dialogBuilder(holder.itemView.context)
                     .setTitle("Avisos do treino")
                     .setMessage(avisosMsg)
-                    .setPositiveButton("OK, entendi") { _, _ ->
+                    .setPositiveButton("OK, entendi") { _: DialogInterface, _: Int ->
                         salvarAgora(completoFlag)
                     }
                     .show()
@@ -112,7 +113,7 @@ class TreinoDiaAdapter(
                 AppUiFeedback.dialogBuilder(holder.itemView.context)
                     .setTitle("Treino incompleto")
                     .setMessage("Ainda faltam séries para preencher.\n\nDeseja salvar mesmo assim?")
-                    .setPositiveButton("Salvar mesmo assim") { _, _ ->
+                    .setPositiveButton("Salvar mesmo assim") { _: DialogInterface, _: Int ->
                         mostrarAvisosEContinuar(false)
                     }
                     .setNegativeButton("Cancelar", null)
