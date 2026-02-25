@@ -2,6 +2,7 @@ package com.example.meutreino
 
 import android.util.Log
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -17,7 +18,6 @@ object PlanoTreinoFirestoreRepository {
             .ifBlank { "treino_sem_nome" }
     }
 
-    // ---------- NOVO: carregar treinos de um UID alvo ----------
     fun carregarTreinos(
         uidAlvo: String,
         onOk: (List<TreinoPlan>) -> Unit,
@@ -57,7 +57,6 @@ object PlanoTreinoFirestoreRepository {
             }
     }
 
-    // ---------- NOVO: salvar treino NO UID alvo (para aluno) ----------
     fun salvarTreinoParaAlunoFromPlan(
         alunoUid: String,
         treino: TreinoPlan,
@@ -87,7 +86,6 @@ object PlanoTreinoFirestoreRepository {
         val payload = hashMapOf(
             "nome" to treino.nome,
             "exercicios" to exerciciosMap,
-            // campos exigidos pelas rules do treinador:
             "assignedTo" to alunoUid,
             "createdBy" to user.uid,
             "updatedAt" to System.currentTimeMillis(),
@@ -99,11 +97,16 @@ object PlanoTreinoFirestoreRepository {
             .collection("treinos")
             .document(treinoId)
             .set(payload, SetOptions.merge())
-            .addOnSuccessListener { onOk?.invoke() }
+            .addOnSuccessListener {
+                registrarAtualizacaoTreino(
+                    alunoUid = alunoUid,
+                    mensagem = "Seu treinador atualizou o treino \"${treino.nome}\"."
+                )
+                onOk?.invoke()
+            }
             .addOnFailureListener { e -> onErro?.invoke(e) }
     }
 
-    // ---------- NOVO: apagar treino NO UID alvo ----------
     fun apagarTreinoDoAluno(
         alunoUid: String,
         nomeTreino: String,
@@ -116,15 +119,57 @@ object PlanoTreinoFirestoreRepository {
             .collection("treinos")
             .document(docId)
             .delete()
-            .addOnSuccessListener { onOk?.invoke() }
+            .addOnSuccessListener {
+                registrarAtualizacaoTreino(
+                    alunoUid = alunoUid,
+                    mensagem = "Seu treinador removeu o treino \"$nomeTreino\"."
+                )
+                onOk?.invoke()
+            }
             .addOnFailureListener { e -> onErro?.invoke(e) }
     }
+
+    private fun registrarAtualizacaoTreino(alunoUid: String, mensagem: String) {
+        val user = Firebase.auth.currentUser ?: return
+        if (user.uid == alunoUid) return
+
+        val db = Firebase.firestore
+        val now = System.currentTimeMillis()
+
+        val payload = hashMapOf(
+            "type" to "TREINO_ATUALIZADO",
+            "message" to mensagem,
+            "read" to false,
+            "createdAt" to now,
+            "fromUid" to user.uid
+        )
+
+        db.collection("users")
+            .document(alunoUid)
+            .collection("notifications")
+            .add(payload)
+
+        db.collection("users")
+            .document(alunoUid)
+            .set(
+                mapOf(
+                    "lastWorkoutUpdateAt" to now,
+                    "lastWorkoutUpdateMessage" to mensagem,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                ),
+                SetOptions.merge()
+            )
+    }
+
     fun carregarTreinos(
         onOk: (List<TreinoPlan>) -> Unit,
         onErro: ((Exception) -> Unit)? = null
     ) {
         val uid = Firebase.auth.currentUser?.uid
-        if (uid == null) { onOk(emptyList()); return }
+        if (uid == null) {
+            onOk(emptyList())
+            return
+        }
         carregarTreinos(uid, onOk, onErro)
     }
 
@@ -145,5 +190,4 @@ object PlanoTreinoFirestoreRepository {
         val uid = Firebase.auth.currentUser?.uid ?: return
         apagarTreinoDoAluno(uid, nomeTreino, onOk, onErro)
     }
-
 }
