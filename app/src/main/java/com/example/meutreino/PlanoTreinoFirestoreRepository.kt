@@ -60,6 +60,8 @@ object PlanoTreinoFirestoreRepository {
     fun salvarTreinoParaAlunoFromPlan(
         alunoUid: String,
         treino: TreinoPlan,
+        notifyStudent: Boolean = true,
+        notificationMessage: String? = null,
         onOk: (() -> Unit)? = null,
         onErro: ((Exception) -> Unit)? = null
     ) {
@@ -98,10 +100,13 @@ object PlanoTreinoFirestoreRepository {
             .document(treinoId)
             .set(payload, SetOptions.merge())
             .addOnSuccessListener {
-                registrarAtualizacaoTreino(
-                    alunoUid = alunoUid,
-                    mensagem = "Seu treinador atualizou o treino \"${treino.nome}\"."
-                )
+                if (notifyStudent) {
+                    registrarAtualizacaoTreino(
+                        alunoUid = alunoUid,
+                        mensagem = notificationMessage
+                            ?: "Seu treinador atualizou o treino \"${treino.nome}\"."
+                    )
+                }
                 onOk?.invoke()
             }
             .addOnFailureListener { e -> onErro?.invoke(e) }
@@ -179,7 +184,13 @@ object PlanoTreinoFirestoreRepository {
         onErro: ((Exception) -> Unit)? = null
     ) {
         val uid = Firebase.auth.currentUser?.uid ?: return
-        salvarTreinoParaAlunoFromPlan(uid, treino, onOk, onErro)
+        salvarTreinoParaAlunoFromPlan(
+            alunoUid = uid,
+            treino = treino,
+            notifyStudent = false,
+            onOk = onOk,
+            onErro = onErro
+        )
     }
 
     fun apagarTreino(
