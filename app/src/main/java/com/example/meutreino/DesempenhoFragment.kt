@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -296,7 +297,7 @@ Melhor: ${String.format("%.1f", melhorPeso)} kg
 """.trimIndent()
 
         val dataSet = LineDataSet(pontos.entries, null)
-        val verde = android.graphics.Color.parseColor("#5AAB8A")
+        val verde = ContextCompat.getColor(requireContext(), R.color.green_primary)
         dataSet.color = verde
         dataSet.lineWidth = 3f
         dataSet.setDrawValues(false)
@@ -310,7 +311,7 @@ Melhor: ${String.format("%.1f", melhorPeso)} kg
 
         chart.data = LineData(dataSet)
 
-        chart.setBackgroundColor(android.graphics.Color.WHITE)
+        chart.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.surface))
         chart.setDrawBorders(false)
         chart.description.isEnabled = false
         chart.legend.isEnabled = false
@@ -326,7 +327,7 @@ Melhor: ${String.format("%.1f", melhorPeso)} kg
         chart.xAxis.textSize = 10f
         chart.xAxis.setDrawAxisLine(false)
         chart.xAxis.setDrawGridLines(true)
-        chart.xAxis.gridColor = android.graphics.Color.parseColor("#E6E6E6")
+        chart.xAxis.gridColor = ContextCompat.getColor(requireContext(), R.color.chart_grid)
         chart.xAxis.labelRotationAngle = -35f
         chart.xAxis.setAvoidFirstLastClipping(true)
 
@@ -335,7 +336,7 @@ Melhor: ${String.format("%.1f", melhorPeso)} kg
         chart.axisLeft.textSize = 10f
         chart.axisLeft.setDrawAxisLine(false)
         chart.axisLeft.setDrawGridLines(true)
-        chart.axisLeft.gridColor = android.graphics.Color.parseColor("#E6E6E6")
+        chart.axisLeft.gridColor = ContextCompat.getColor(requireContext(), R.color.chart_grid)
         chart.axisLeft.valueFormatter = object : ValueFormatter() {
             override fun getFormattedValue(value: Float): String = "${String.format("%.0f", value)} kg"
         }

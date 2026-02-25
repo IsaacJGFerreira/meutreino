@@ -45,7 +45,7 @@
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         app:boxBackgroundColor="#121A1D"
         app:boxBackgroundMode="outline"
-        app:boxStrokeColor="#5AAB8A"
+        app:boxStrokeColor="@color/green_primary"
         app:boxStrokeWidth="1dp"
         app:boxCornerRadiusTopStart="14dp"
         app:boxCornerRadiusTopEnd="14dp"

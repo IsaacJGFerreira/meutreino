@@ -74,7 +74,7 @@
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         android:layout_marginTop="16dp"
-        app:backgroundTint="#5AAB8A"
+        app:backgroundTint="@color/green_primary"
         app:cornerRadius="18dp"/>
 
 
