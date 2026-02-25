@@ -86,10 +86,17 @@ class ExerciciosTreinoFragment : Fragment() {
                     return@carregarTreinos
                 }
 
+                val exerciciosDoTreino = treinoAtual?.exercicios
+                if (exerciciosDoTreino == null) {
+                    Toast.makeText(requireContext(), "Treino inválido.", Toast.LENGTH_SHORT).show()
+                    parentFragmentManager.popBackStack()
+                    return@carregarTreinos
+                }
+
                 // ✅ Adapter com callback: qualquer mudança -> salva no UID alvo
                 adapter = ExerciciosListAdapter(
                     requireContext(),
-                    treinoAtual!!.exercicios
+                    exerciciosDoTreino
                 ) {
                     salvarTreinoAtual(alvo)
                 }

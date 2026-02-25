@@ -12,6 +12,10 @@ class TreinoListAdapter(
     private var treinos: MutableList<TreinoPlan>
 ) : BaseAdapter() {
 
+    private data class ViewHolder(
+        val tvNome: TextView
+    )
+
     fun atualizar(novos: List<TreinoPlan>) {
         treinos = novos.toMutableList()
         notifyDataSetChanged()
@@ -22,13 +26,23 @@ class TreinoListAdapter(
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val view = convertView ?: LayoutInflater.from(context)
-            .inflate(R.layout.item_treino_montar, parent, false)
+        val view: View
+        val holder: ViewHolder
 
-        val tvNome = view.findViewById<TextView>(R.id.tvNomeTreinoItem)
+        if (convertView == null) {
+            view = LayoutInflater.from(context)
+                .inflate(R.layout.item_treino_montar, parent, false)
+            holder = ViewHolder(
+                tvNome = view.findViewById(R.id.tvNomeTreinoItem)
+            )
+            view.tag = holder
+        } else {
+            view = convertView
+            holder = view.tag as ViewHolder
+        }
 
         val treino = treinos[position]
-        tvNome.text = treino.nome
+        holder.tvNome.text = treino.nome
 
         return view
     }

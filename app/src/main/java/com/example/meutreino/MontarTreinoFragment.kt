@@ -64,7 +64,7 @@ class MontarTreinoFragment : Fragment() {
                     }
 
                     // ✅ Treinador carrega treinos DO ALUNO (nuvem manda)
-                    carregarTreinosDoAluno(alunoUidSelecionado!!)
+                    alunoUidSelecionado?.let(::carregarTreinosDoAluno)
                 } else {
                     // (se você quiser manter aluno aqui, pode carregar local/nuvem do próprio uid)
                     carregarTreinosDoAluno(user.uid)
