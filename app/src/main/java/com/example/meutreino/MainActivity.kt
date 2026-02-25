@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (!granted) {
-            Toast.makeText(this, "Permita notificações para receber atualizações de treino.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(this, "Permita notificações para receber atualizações de treino.", Toast.LENGTH_SHORT)
         }
     }
 

@@ -63,7 +63,7 @@ class ExerciciosTreinoFragment : Fragment() {
 
         val alvo = resolverUidAlvo()
         if (alvo.isNullOrBlank()) {
-            Toast.makeText(requireContext(), "Erro: UID alvo inválido.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Erro: UID alvo inválido.", Toast.LENGTH_SHORT)
             parentFragmentManager.popBackStack()
             return view
         }
@@ -81,14 +81,14 @@ class ExerciciosTreinoFragment : Fragment() {
                 }
 
                 if (treinoAtual == null) {
-                    Toast.makeText(requireContext(), "Treino não encontrado.", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Treino não encontrado.", Toast.LENGTH_SHORT)
                     parentFragmentManager.popBackStack()
                     return@carregarTreinos
                 }
 
                 val exerciciosDoTreino = treinoAtual?.exercicios
                 if (exerciciosDoTreino == null) {
-                    Toast.makeText(requireContext(), "Treino inválido.", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Treino inválido.", Toast.LENGTH_SHORT)
                     parentFragmentManager.popBackStack()
                     return@carregarTreinos
                 }
@@ -115,7 +115,7 @@ class ExerciciosTreinoFragment : Fragment() {
             onErro = { e ->
                 if (!isAdded) return@carregarTreinos
                 Log.e("EX_TREINO", "Erro ao carregar", e)
-                Toast.makeText(requireContext(), "Sem acesso/erro: ${e.message}", Toast.LENGTH_LONG).show()
+                AppUiFeedback.showToast(requireContext(), "Sem acesso/erro: ${e.message}", Toast.LENGTH_LONG)
             }
         )
 
@@ -141,7 +141,7 @@ class ExerciciosTreinoFragment : Fragment() {
             onOk = { /* ok */ },
             onErro = { e ->
                 if (!isAdded) return@salvarTreinoParaAlunoFromPlan
-                Toast.makeText(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT)
             }
         )
     }
@@ -180,7 +180,7 @@ class ExerciciosTreinoFragment : Fragment() {
         val btnSalvar = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSalvarExercicioDialog)
         val btnFechar = dialogView.findViewById<View>(R.id.btnFecharDialog)
 
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialog = AppUiFeedback.dialogBuilder(requireContext())
             .setView(dialogView)
             .create()
 
@@ -211,7 +211,7 @@ class ExerciciosTreinoFragment : Fragment() {
         if (etNome == null || etSeries == null || etRepsMin == null || etRepsMax == null ||
             etDesc == null || etTecnica == null || etRir == null || btnSalvar == null || btnFechar == null
         ) {
-            Toast.makeText(requireContext(), "Erro: IDs do dialog não batem com o XML.", Toast.LENGTH_LONG).show()
+            AppUiFeedback.showToast(requireContext(), "Erro: IDs do dialog não batem com o XML.", Toast.LENGTH_LONG)
             return
         }
 
@@ -248,7 +248,7 @@ class ExerciciosTreinoFragment : Fragment() {
             if (nome.isBlank() || seriesStr.isBlank() || repsMinStr.isBlank() ||
                 repsMaxStr.isBlank() || desc.isBlank() || rir.isBlank()
             ) {
-                Toast.makeText(requireContext(), "Preencha os campos obrigatórios", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Preencha os campos obrigatórios", Toast.LENGTH_SHORT)
                 return@setOnClickListener
             }
 
@@ -259,7 +259,7 @@ class ExerciciosTreinoFragment : Fragment() {
             if (series == null || repsMin == null || repsMax == null ||
                 series <= 0 || repsMin <= 0 || repsMax <= 0
             ) {
-                Toast.makeText(requireContext(), "Valores numéricos inválidos", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Valores numéricos inválidos", Toast.LENGTH_SHORT)
                 return@setOnClickListener
             }
 
@@ -304,7 +304,7 @@ class ExerciciosTreinoFragment : Fragment() {
     private fun mostrarAcoesExercicio(position: Int, uidDestino: String) {
         val ex = treinoAtual?.exercicios?.getOrNull(position) ?: return
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle(ex.nome)
             .setItems(arrayOf("Editar exercício", "Remover exercício")) { _, which ->
                 when (which) {
@@ -319,7 +319,7 @@ class ExerciciosTreinoFragment : Fragment() {
         val t = treinoAtual ?: return
         val ex = t.exercicios.getOrNull(position) ?: return
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Remover exercício")
             .setMessage("Remover \"${ex.nome}\"?")
             .setPositiveButton("Remover") { _, _ ->
@@ -335,7 +335,7 @@ class ExerciciosTreinoFragment : Fragment() {
     // Apagar treino inteiro
     // ============================
     private fun confirmarApagarTreino(uidDestino: String) {
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Apagar treino")
             .setMessage("Deseja apagar o treino \"$nomeTreino\"?")
             .setPositiveButton("Apagar") { _, _ ->
@@ -344,12 +344,12 @@ class ExerciciosTreinoFragment : Fragment() {
                     nomeTreino = nomeTreino,
                     onOk = {
                         if (!isAdded) return@apagarTreinoDoAluno
-                        Toast.makeText(requireContext(), "Treino apagado!", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Treino apagado!", Toast.LENGTH_SHORT)
                         parentFragmentManager.popBackStack()
                     },
                     onErro = { e ->
                         if (!isAdded) return@apagarTreinoDoAluno
-                        Toast.makeText(requireContext(), "Erro ao apagar: ${e.message}", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Erro ao apagar: ${e.message}", Toast.LENGTH_SHORT)
                     }
                 )
             }

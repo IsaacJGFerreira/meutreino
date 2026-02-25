@@ -84,7 +84,7 @@ class PerfilFragment : Fragment() {
         val studentsAdapter = TrainerStudentsAdapter(mutableListOf()) { aluno ->
             salvarAlunoSelecionado(aluno.uid, aluno.name)
             atualizarBannerAlunoSelecionado(boxAcompanhando, tvAcompanhando)
-            Toast.makeText(requireContext(), "Agora acompanhando: ${aluno.name}", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Agora acompanhando: ${aluno.name}", Toast.LENGTH_SHORT)
         }
         rvAlunos.layoutManager = LinearLayoutManager(requireContext())
         rvAlunos.adapter = studentsAdapter
@@ -92,7 +92,7 @@ class PerfilFragment : Fragment() {
         btnTrocarAluno.setOnClickListener {
             limparAlunoSelecionado()
             boxAcompanhando.visibility = View.GONE
-            Toast.makeText(requireContext(), "Seleção de aluno limpa.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Seleção de aluno limpa.", Toast.LENGTH_SHORT)
         }
 
         cardStudentMetrics.visibility = View.GONE
@@ -207,11 +207,11 @@ class PerfilFragment : Fragment() {
         val altura = alturaRaw?.trim()?.replace(',', '.')?.toDoubleOrNull()
 
         if (idade == null || altura == null || idade !in 10..100 || altura !in 100.0..250.0) {
-            Toast.makeText(
+            AppUiFeedback.showToast(
                 requireContext(),
                 "Preencha idade (10-100) e altura em cm (100-250).",
                 Toast.LENGTH_SHORT
-            ).show()
+            )
             return
         }
 
@@ -219,10 +219,10 @@ class PerfilFragment : Fragment() {
             .document(uid)
             .update(mapOf("idade" to idade, "alturaCm" to altura))
             .addOnSuccessListener {
-                Toast.makeText(requireContext(), "Dados do aluno salvos.", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Dados do aluno salvos.", Toast.LENGTH_SHORT)
             }
             .addOnFailureListener { e ->
-                Toast.makeText(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT)
             }
     }
 
@@ -332,10 +332,10 @@ class PerfilFragment : Fragment() {
                 val lastSeenTs = prefs.getLong(KEY_LAST_NOTIFICATION_TS, 0L)
 
                 if (latestTs > lastSeenTs) {
-                    Toast.makeText(requireContext(), latestMsg, Toast.LENGTH_LONG).show()
+                    AppUiFeedback.showToast(requireContext(), latestMsg, Toast.LENGTH_LONG)
                     AppNotifier.showWorkoutUpdate(requireContext(), "MeuTreino", latestMsg)
 
-                    AlertDialog.Builder(requireContext())
+                    AppUiFeedback.dialogBuilder(requireContext())
                         .setTitle("Novo treino atualizado")
                         .setMessage(latestMsg)
                         .setPositiveButton("OK", null)
@@ -348,7 +348,7 @@ class PerfilFragment : Fragment() {
 
     private fun marcarNotificacoesComoLidas(uid: String, tvTitulo: TextView, tvMensagem: TextView) {
         if (unreadNotificationIds.isEmpty()) {
-            Toast.makeText(requireContext(), "Não há notificações pendentes.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Não há notificações pendentes.", Toast.LENGTH_SHORT)
             return
         }
 
@@ -367,10 +367,10 @@ class PerfilFragment : Fragment() {
             .addOnSuccessListener {
                 tvTitulo.text = "Atualizações do treinador"
                 tvMensagem.text = "Sem novas atualizações"
-                Toast.makeText(requireContext(), "Notificações marcadas como lidas.", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Notificações marcadas como lidas.", Toast.LENGTH_SHORT)
             }
             .addOnFailureListener { e ->
-                Toast.makeText(requireContext(), "Erro ao atualizar: ${e.message}", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Erro ao atualizar: ${e.message}", Toast.LENGTH_SHORT)
             }
     }
 
@@ -380,7 +380,7 @@ class PerfilFragment : Fragment() {
         val input = EditText(requireContext())
         input.hint = "Ex: AB12CD"
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Inserir código")
             .setMessage("Digite o código recebido:")
             .setView(input)
@@ -392,7 +392,7 @@ class PerfilFragment : Fragment() {
                     code = code,
                     uid = user.uid,
                     onOk = { tipo ->
-                        AlertDialog.Builder(requireContext())
+                        AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Sucesso!")
                             .setMessage("Conta liberada como $tipo.")
                             .setPositiveButton("OK") { _, _ ->
@@ -401,7 +401,7 @@ class PerfilFragment : Fragment() {
                             .show()
                     },
                     onErr = { msg ->
-                        AlertDialog.Builder(requireContext())
+                        AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Erro")
                             .setMessage(msg)
                             .setPositiveButton("OK", null)
@@ -420,7 +420,7 @@ class PerfilFragment : Fragment() {
         input.hint = "Quantidade (ex: 5)"
         input.inputType = InputType.TYPE_CLASS_NUMBER
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Solicitar códigos")
             .setMessage("Quantos códigos você precisa?")
             .setView(input)
@@ -428,7 +428,7 @@ class PerfilFragment : Fragment() {
                 val qty = input.text.toString().trim().toIntOrNull() ?: 0
 
                 if (qty <= 0) {
-                    AlertDialog.Builder(requireContext())
+                    AppUiFeedback.dialogBuilder(requireContext())
                         .setTitle("Erro")
                         .setMessage("Quantidade inválida.")
                         .setPositiveButton("OK", null)
@@ -440,14 +440,14 @@ class PerfilFragment : Fragment() {
                     trainerUid = user.uid,
                     qty = qty,
                     onOk = {
-                        AlertDialog.Builder(requireContext())
+                        AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Pedido enviado")
                             .setMessage("Seu pedido foi enviado para aprovação do admin.")
                             .setPositiveButton("OK", null)
                             .show()
                     },
                     onErr = { msg ->
-                        AlertDialog.Builder(requireContext())
+                        AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Erro")
                             .setMessage(msg)
                             .setPositiveButton("OK", null)
@@ -462,7 +462,7 @@ class PerfilFragment : Fragment() {
     private fun copiarParaClipboard(texto: String) {
         val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText("codigo", texto))
-        Toast.makeText(requireContext(), "Código copiado: $texto", Toast.LENGTH_SHORT).show()
+        AppUiFeedback.showToast(requireContext(), "Código copiado: $texto", Toast.LENGTH_SHORT)
     }
 
     private fun salvarAlunoSelecionado(uid: String, name: String) {
@@ -531,11 +531,11 @@ class PerfilFragment : Fragment() {
                         adapter.update(codes2)
                     }
                     .addOnFailureListener { e ->
-                        Toast.makeText(requireContext(), "Erro ao buscar códigos: ${e.message}", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Erro ao buscar códigos: ${e.message}", Toast.LENGTH_SHORT)
                     }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(requireContext(), "Erro ao buscar códigos: ${e.message}", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Erro ao buscar códigos: ${e.message}", Toast.LENGTH_SHORT)
             }
     }
 
@@ -557,11 +557,11 @@ class PerfilFragment : Fragment() {
                 adapter.update(alunos)
             }
             .addOnFailureListener { e ->
-                Toast.makeText(
+                AppUiFeedback.showToast(
                     requireContext(),
                     "Erro ao buscar alunos: ${e.message}",
                     Toast.LENGTH_SHORT
-                ).show()
+                )
             }
     }
 }

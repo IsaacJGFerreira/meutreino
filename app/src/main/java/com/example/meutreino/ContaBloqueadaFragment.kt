@@ -36,7 +36,7 @@ class ContaBloqueadaFragment : Fragment() {
         val input = EditText(requireContext())
         input.hint = "Ex: AB12CD"
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Inserir código")
             .setMessage("Digite o código recebido:")
             .setView(input)
@@ -48,7 +48,7 @@ class ContaBloqueadaFragment : Fragment() {
                     code = code,
                     uid = user.uid,
                     onOk = {
-                        AlertDialog.Builder(requireContext())
+                        AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Liberado!")
                             .setMessage("Conta liberada com sucesso.")
                             .setPositiveButton("OK") { _, _ ->
@@ -59,7 +59,7 @@ class ContaBloqueadaFragment : Fragment() {
                             .show()
                     },
                     onErr = { msg ->
-                        AlertDialog.Builder(requireContext())
+                        AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Erro")
                             .setMessage(msg)
                             .setPositiveButton("OK", null)

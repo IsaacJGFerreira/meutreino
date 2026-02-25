@@ -61,14 +61,14 @@ class AdminTrainerDetailFragment : Fragment() {
                 trainerUid = trainerUid,
                 adminUid = admin.uid,
                 onOk = { code ->
-                    AlertDialog.Builder(requireContext())
+                    AppUiFeedback.dialogBuilder(requireContext())
                         .setTitle("Código de Aluno")
                         .setMessage("Código: $code\n\n(Use 1 vez. Depois expira.)")
                         .setPositiveButton("OK", null)
                         .show()
                 },
                 onErr = {
-                    AlertDialog.Builder(requireContext())
+                    AppUiFeedback.dialogBuilder(requireContext())
                         .setTitle("Erro")
                         .setMessage("Não foi possível gerar código.")
                         .setPositiveButton("OK", null)

@@ -69,7 +69,7 @@ class ProgressoFragment : Fragment() {
             onClick = { pos -> abrirComparacao(pos) },
             onLongClick = { pos ->
                 if (isTreinador()) {
-                    Toast.makeText(requireContext(), "Treinador só pode visualizar.", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Treinador só pode visualizar.", Toast.LENGTH_SHORT)
                 } else {
                     confirmarApagar(pos)
                 }
@@ -79,7 +79,7 @@ class ProgressoFragment : Fragment() {
 
         val user = Firebase.auth.currentUser
         if (user == null) {
-            Toast.makeText(requireContext(), "Faça login novamente.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Faça login novamente.", Toast.LENGTH_SHORT)
             return view
         }
 
@@ -98,13 +98,13 @@ class ProgressoFragment : Fragment() {
                         lista.clear()
                         progressoAdapter.notifyDataSetChanged()
                         atualizarGrafico(lista)
-                        Toast.makeText(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
                         return@addOnSuccessListener
                     }
 
                     val nome = nomeSelecionado()
                     val msg = if (nome != null) "Carregando progresso de $nome..." else "Carregando progresso..."
-                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), msg, Toast.LENGTH_SHORT)
 
                     carregarNuvem(uidAlvo = alvo, salvarCacheLocal = false)
                     return@addOnSuccessListener
@@ -128,7 +128,7 @@ class ProgressoFragment : Fragment() {
 
                         salvarLocalAluno()
 
-                        Toast.makeText(requireContext(), "✅ Progresso salvo!", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "✅ Progresso salvo!", Toast.LENGTH_SHORT)
                     }.show(parentFragmentManager, "RegistrarProgressoDialog")
                 }
             }
@@ -173,7 +173,7 @@ class ProgressoFragment : Fragment() {
                 if (salvarCacheLocal) salvarLocalAluno()
             },
             onErro = { e ->
-                Toast.makeText(requireContext(), "Erro ao carregar progresso: ${e.message}", Toast.LENGTH_LONG).show()
+                AppUiFeedback.showToast(requireContext(), "Erro ao carregar progresso: ${e.message}", Toast.LENGTH_LONG)
             }
         )
     }
@@ -251,7 +251,7 @@ class ProgressoFragment : Fragment() {
     }
 
     private fun confirmarApagar(pos: Int) {
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Apagar progresso")
             .setMessage("Apagar registro de ${lista[pos].data}?")
             .setPositiveButton("Apagar") { _, _ ->
@@ -267,7 +267,7 @@ class ProgressoFragment : Fragment() {
                     registroId = id,
                     onOk = {},
                     onErro = { e ->
-                        Toast.makeText(requireContext(), "Erro ao apagar: ${e.message}", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Erro ao apagar: ${e.message}", Toast.LENGTH_SHORT)
                     }
                 )
             }
@@ -292,7 +292,7 @@ Diferença: $sinal${String.format(Locale.getDefault(), "%.1f", dif)} kg
 """.trimIndent()
         }
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Comparação semanal")
             .setMessage(msg)
             .setPositiveButton("OK", null)

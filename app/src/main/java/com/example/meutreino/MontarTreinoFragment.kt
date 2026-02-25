@@ -43,7 +43,7 @@ class MontarTreinoFragment : Fragment() {
 
         val user = Firebase.auth.currentUser
         if (user == null) {
-            Toast.makeText(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT).show()
+            AppUiFeedback.showToast(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT)
             return view
         }
 
@@ -57,7 +57,7 @@ class MontarTreinoFragment : Fragment() {
                     alunoUidSelecionado = prefs.getString(KEY_SELECTED_STUDENT, null)
 
                     if (alunoUidSelecionado.isNullOrBlank()) {
-                        Toast.makeText(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
                         treinos.clear()
                         adapter.atualizar(treinos)
                         return@addOnSuccessListener
@@ -110,7 +110,7 @@ class MontarTreinoFragment : Fragment() {
             onErro = { e ->
                 if (!isAdded) return@carregarTreinos
                 Log.e("MONTAR_TREINO", "Erro ao carregar treinos uid=$uidAlvo", e)
-                Toast.makeText(requireContext(), "Sem acesso/erro: ${e.message}", Toast.LENGTH_SHORT).show()
+                AppUiFeedback.showToast(requireContext(), "Sem acesso/erro: ${e.message}", Toast.LENGTH_SHORT)
             }
         )
     }
@@ -119,18 +119,18 @@ class MontarTreinoFragment : Fragment() {
         val input = EditText(requireContext())
         input.hint = "Nome do treino (ex: Treino A...)"
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Adicionar treino")
             .setView(input)
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Salvar") { _, _ ->
                 val nome = input.text.toString().trim()
                 if (nome.isEmpty()) {
-                    Toast.makeText(requireContext(), "Digite um nome", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Digite um nome", Toast.LENGTH_SHORT)
                     return@setPositiveButton
                 }
                 if (treinos.any { it.nome.equals(nome, ignoreCase = true) }) {
-                    Toast.makeText(requireContext(), "Esse treino já existe", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Esse treino já existe", Toast.LENGTH_SHORT)
                     return@setPositiveButton
                 }
 
@@ -140,7 +140,7 @@ class MontarTreinoFragment : Fragment() {
 
                 val alvo = if (meuRole == "TREINADOR") alunoUidSelecionado else Firebase.auth.currentUser?.uid
                 if (alvo.isNullOrBlank()) {
-                    Toast.makeText(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT).show()
+                    AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
                     return@setPositiveButton
                 }
 
@@ -150,7 +150,7 @@ class MontarTreinoFragment : Fragment() {
                     treino = novo,
                     onOk = { },
                     onErro = { e ->
-                        Toast.makeText(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT).show()
+                        AppUiFeedback.showToast(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT)
                     }
                 )
             }
@@ -161,7 +161,7 @@ class MontarTreinoFragment : Fragment() {
         val treino = treinos.getOrNull(position) ?: return
         val nome = treino.nome
 
-        AlertDialog.Builder(requireContext())
+        AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Remover treino")
             .setMessage("Deseja remover \"$nome\"?")
             .setNegativeButton("Cancelar", null)
