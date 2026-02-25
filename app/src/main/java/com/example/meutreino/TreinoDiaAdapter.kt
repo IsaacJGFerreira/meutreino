@@ -99,7 +99,7 @@ class TreinoDiaAdapter(
                     return
                 }
 
-                android.app.AppUiFeedback.dialogBuilder(holder.itemView.context)
+                AppUiFeedback.dialogBuilder(holder.itemView.context)
                     .setTitle("Avisos do treino")
                     .setMessage(avisosMsg)
                     .setPositiveButton("OK, entendi") { _, _ ->
@@ -109,7 +109,7 @@ class TreinoDiaAdapter(
             }
 
             if (!completo) {
-                android.app.AppUiFeedback.dialogBuilder(holder.itemView.context)
+                AppUiFeedback.dialogBuilder(holder.itemView.context)
                     .setTitle("Treino incompleto")
                     .setMessage("Ainda faltam séries para preencher.\n\nDeseja salvar mesmo assim?")
                     .setPositiveButton("Salvar mesmo assim") { _, _ ->
