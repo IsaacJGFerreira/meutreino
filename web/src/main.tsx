@@ -10,7 +10,7 @@ import { LoginPage } from './pages/LoginPage';
 import { PendingPage } from './pages/PendingPage';
 import { SignupPage } from './pages/SignupPage';
 import { TreinadorPage } from './pages/TreinadorPage';
-import { ApprovedGuard, AuthGuard, RoleGuard } from './routes/guards';
+import { AppEntryRedirect, RequireApproved, RequireAuth, RequireRole } from './routes/guards';
 import './styles.css';
 
 function FirebaseConfigBanner() {
@@ -37,44 +37,44 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route
             path="/pending"
             element={
-              <AuthGuard>
+              <RequireAuth>
                 <PendingPage />
-              </AuthGuard>
+              </RequireAuth>
             }
           />
           <Route
             path="/app"
             element={
-              <AuthGuard>
-                <ApprovedGuard>
+              <RequireAuth>
+                <RequireApproved>
                   <AppShell />
-                </ApprovedGuard>
-              </AuthGuard>
+                </RequireApproved>
+              </RequireAuth>
             }
           >
-            <Route index element={<Navigate to="admin" replace />} />
+            <Route index element={<AppEntryRedirect />} />
             <Route
               path="admin"
               element={
-                <RoleGuard role="admin">
+                <RequireRole role="admin">
                   <AdminPage />
-                </RoleGuard>
+                </RequireRole>
               }
             />
             <Route
               path="aluno"
               element={
-                <RoleGuard role="aluno">
+                <RequireRole role="aluno">
                   <AlunoPage />
-                </RoleGuard>
+                </RequireRole>
               }
             />
             <Route
               path="treinador"
               element={
-                <RoleGuard role="treinador">
+                <RequireRole role="treinador">
                   <TreinadorPage />
-                </RoleGuard>
+                </RequireRole>
               }
             />
           </Route>
