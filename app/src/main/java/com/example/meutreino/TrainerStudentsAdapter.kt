@@ -20,6 +20,7 @@ class TrainerStudentsAdapter(
     inner class VH(v: View) : RecyclerView.ViewHolder(v) {
         val tvNome: TextView = v.findViewById(R.id.tvNome)
         val tvEmail: TextView = v.findViewById(R.id.tvEmail)
+        val tvStatus: TextView = v.findViewById(R.id.tvStatus)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -34,6 +35,7 @@ class TrainerStudentsAdapter(
         val item = items[position]
         holder.tvNome.text = item.name
         holder.tvEmail.text = item.email
+        holder.tvStatus.text = "Toque para acompanhar este aluno"
         holder.itemView.setOnClickListener { onClick(item) }
     }
 
