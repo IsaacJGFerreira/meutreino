@@ -45,7 +45,9 @@ class TreinoFragment : Fragment() {
             contarRealizacoes = { nomeEx ->
                 RegistroTreinoRepository.contarRealizacoesExercicio(requireContext(), nomeEx)
             },
-            getAnterior = { _, _ -> "—" },
+            getAnterior = { treinoNome, exercicioNome, serieNumero ->
+                buscarSerieAnterior(treinoNome, exercicioNome, serieNumero)
+            },
             draftVM = draftVM
         ) { treino, preenchimentoDoTreino, completo ->
 
@@ -67,7 +69,7 @@ class TreinoFragment : Fragment() {
                 dataHora = dataHora,
                 nomeTreino = treino.nome,
                 completo = completo,
-                exercicios = emptyList() // simplificado por enquanto
+                exercicios = montarExerciciosRegistro(treino, preenchimentoDoTreino)
             )
 
             // ✅ aluno salva local + nuvem
@@ -90,6 +92,51 @@ class TreinoFragment : Fragment() {
         carregarTreinosDaNuvemComRole()
 
         return view
+    }
+
+    private fun montarExerciciosRegistro(
+        treino: TreinoPlan,
+        preenchimentoDoTreino: Map<String, Pair<String, String>>
+    ): List<ExercicioRegistro> {
+        return treino.exercicios.map { ex ->
+            val series = (1..ex.series).mapNotNull { serieNumero ->
+                val key = "${treino.nome}|${ex.nome}|$serieNumero"
+                val (kgRaw, repsRaw) = preenchimentoDoTreino[key] ?: return@mapNotNull null
+                val kg = kgRaw.trim().toDoubleOrNull() ?: return@mapNotNull null
+                val reps = repsRaw.trim().toIntOrNull() ?: return@mapNotNull null
+
+                SerieRegistro(
+                    serieNumero = serieNumero,
+                    kg = kg,
+                    reps = reps
+                )
+            }
+
+            ExercicioRegistro(
+                nomeExercicio = ex.nome,
+                series = series
+            )
+        }
+    }
+
+    private fun buscarSerieAnterior(
+        treinoNome: String,
+        exercicioNome: String,
+        serieNumero: Int
+    ): String {
+        val registros = RegistroTreinoRepository.carregarTreinos(requireContext())
+        val registroAnterior = registros
+            .asReversed()
+            .firstOrNull { it.nomeTreino.equals(treinoNome, ignoreCase = true) }
+            ?: return "—"
+
+        val serie = registroAnterior.exercicios
+            .firstOrNull { it.nomeExercicio.equals(exercicioNome, ignoreCase = true) }
+            ?.series
+            ?.firstOrNull { it.serieNumero == serieNumero }
+            ?: return "—"
+
+        return "${serie.kg}kg x ${serie.reps}"
     }
 
     private fun carregarCacheLocal() {

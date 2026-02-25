@@ -3,6 +3,7 @@ package com.example.meutreino
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,16 +16,21 @@ import kotlin.math.abs
 class TreinoDiaAdapter(
     private val treinos: List<TreinoPlan>,
     private val contarRealizacoes: (String) -> Int,
-    private val getAnterior: (String, Int) -> String, // (exercicioNome, serieNumero) -> "30kg x 11"
+    private val getAnterior: (String, String, Int) -> String, // (treinoNome, exercicioNome, serieNumero) -> "30kg x 11"
     private val draftVM: TreinoDraftViewModel,        // ✅ salva rascunho para não perder ao trocar de aba
     private val onSalvarTreino: (TreinoPlan, Map<String, Pair<String, String>>, Boolean) -> Unit
 ) : RecyclerView.Adapter<TreinoDiaAdapter.TreinoVH>() {
+
+    private enum class ExercicioStatusCard { NEUTRO, CONCLUIDO, INCOMPLETO }
 
     // 🔹 Guarda quais treinos estão expandidos
     private val treinosExpandidos = mutableSetOf<String>()
 
     // 🔹 Guarda quais exercícios estão expandidos (chave = treino|exercicio)
     private val exerciciosExpandidos = mutableSetOf<String>()
+
+    // 🔹 Feedback visual por card, aplicado após o usuário salvar
+    private val statusCards = mutableMapOf<String, ExercicioStatusCard>()
 
     inner class TreinoVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val headerTreino: LinearLayout = itemView.findViewById(R.id.headerTreino)
@@ -76,7 +82,10 @@ class TreinoDiaAdapter(
             val avisosMsg = montarAvisosDoTreino(treino, doTreino)
 
             fun salvarAgora(completoFlag: Boolean) {
+                atualizarStatusCardsDepoisSalvar(treino, completoFlag)
                 onSalvarTreino(treino, doTreino, completoFlag)
+                draftVM.limparTreino(treino.nome)
+                notifyItemChanged(position)
                 Toast.makeText(
                     holder.itemView.context,
                     if (completoFlag) "Treino salvo!" else "Treino salvo (incompleto).",
@@ -156,9 +165,17 @@ class TreinoDiaAdapter(
         tvSeta.text = if (aberto) "⌃" else "⌄"
 
         fun atualizarBorda() {
-            val concluido = exercicioCompleto(treino.nome, ex)
-            val cor = if (concluido) R.color.ex_border_done else R.color.ex_border_pending
-            cardExercicio.strokeColor = ContextCompat.getColor(ctx, cor)
+            val key = "${treino.nome}|${ex.nome}"
+            val status = statusCards[key] ?: ExercicioStatusCard.NEUTRO
+
+            val (bgColor, strokeColor) = when (status) {
+                ExercicioStatusCard.CONCLUIDO -> Pair(R.color.ex_card_bg_done, R.color.ex_border_done)
+                ExercicioStatusCard.INCOMPLETO -> Pair(R.color.ex_card_bg_warning, R.color.ex_border_warning)
+                ExercicioStatusCard.NEUTRO -> Pair(R.color.ex_card_bg_neutral, R.color.ex_border_pending)
+            }
+
+            cardExercicio.setCardBackgroundColor(ContextCompat.getColor(ctx, bgColor))
+            cardExercicio.strokeColor = ContextCompat.getColor(ctx, strokeColor)
         }
 
         atualizarBorda()
@@ -176,8 +193,13 @@ class TreinoDiaAdapter(
                         ctx = ctx,
                         treinoNome = treino.nome,
                         exercicioNome = ex.nome,
+                        repsMin = ex.repsMin,
+                        repsMax = ex.repsMax,
                         serieNumero = i,
-                        onMudou = { atualizarBorda() }
+                        onMudou = {
+                            statusCards[chaveEx] = ExercicioStatusCard.NEUTRO
+                            atualizarBorda()
+                        }
                     )
                 )
             }
@@ -199,6 +221,8 @@ class TreinoDiaAdapter(
         ctx: android.content.Context,
         treinoNome: String,
         exercicioNome: String,
+        repsMin: Int,
+        repsMax: Int,
         serieNumero: Int,
         onMudou: () -> Unit
     ): View {
@@ -220,7 +244,7 @@ class TreinoDiaAdapter(
 
         // Anterior
         val tvAnterior = TextView(ctx)
-        tvAnterior.text = getAnterior(exercicioNome, serieNumero)
+        tvAnterior.text = getAnterior(treinoNome, exercicioNome, serieNumero)
         tvAnterior.setTextColor(android.graphics.Color.parseColor("#6B6B6B"))
         tvAnterior.maxLines = 1
         tvAnterior.ellipsize = android.text.TextUtils.TruncateAt.END
@@ -270,6 +294,7 @@ class TreinoDiaAdapter(
         val draft = draftVM.get(treinoNome, exercicioNome, serieNumero)
         etKg.setText(draft.kg)
         etRep.setText(draft.reps)
+        aplicarFeedbackReps(etRep, repsMin, repsMax)
 
         fun salvarEstado() {
             val kg = etKg.text.toString().trim()
@@ -288,7 +313,10 @@ class TreinoDiaAdapter(
         etRep.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) { salvarEstado() }
+            override fun afterTextChanged(s: Editable?) {
+                aplicarFeedbackReps(etRep, repsMin, repsMax)
+                salvarEstado()
+            }
         })
 
         return linha
@@ -375,5 +403,29 @@ class TreinoDiaAdapter(
 
     private fun dp(ctx: android.content.Context, value: Int): Int {
         return (value * ctx.resources.displayMetrics.density).toInt()
+    }
+
+    private fun atualizarStatusCardsDepoisSalvar(treino: TreinoPlan, completoFlag: Boolean) {
+        treino.exercicios.forEach { ex ->
+            val key = "${treino.nome}|${ex.nome}"
+            statusCards[key] = when {
+                completoFlag -> ExercicioStatusCard.CONCLUIDO
+                exercicioCompleto(treino.nome, ex) -> ExercicioStatusCard.CONCLUIDO
+                else -> ExercicioStatusCard.INCOMPLETO
+            }
+        }
+    }
+
+    private fun aplicarFeedbackReps(etRep: EditText, repsMin: Int, repsMax: Int) {
+        val reps = etRep.text.toString().trim().toIntOrNull()
+        val colorRes = when {
+            reps == null -> R.color.ex_input_neutral
+            reps > repsMax -> R.color.ex_input_good
+            reps < repsMin -> R.color.ex_input_bad
+            else -> R.color.ex_input_neutral
+        }
+
+        val color = ContextCompat.getColor(etRep.context, colorRes)
+        etRep.backgroundTintList = ColorStateList.valueOf(color)
     }
 }
