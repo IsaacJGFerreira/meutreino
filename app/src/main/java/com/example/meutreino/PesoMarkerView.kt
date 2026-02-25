@@ -19,9 +19,8 @@ class PesoMarkerView(
     override fun refreshContent(e: Entry?, highlight: Highlight?) {
         if (e != null) {
             val peso = e.y
-            val idx = e.x.toInt().coerceIn(0, labelsX.size - 1)
             tvPeso.text = "${formatPeso(peso)} kg"
-            tvData.text = labelsX[idx]
+            tvData.text = labelsX.safeLabelAt(e.x.toInt())
         }
         super.refreshContent(e, highlight)
     }
@@ -33,5 +32,10 @@ class PesoMarkerView(
 
     private fun formatPeso(p: Float): String {
         return if (p % 1f == 0f) p.toInt().toString() else String.format("%.1f", p)
+    }
+
+    private fun List<String>.safeLabelAt(index: Int): String {
+        if (isEmpty()) return "Sem data"
+        return this[index.coerceIn(0, lastIndex)]
     }
 }
