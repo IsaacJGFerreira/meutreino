@@ -16,43 +16,59 @@ class ExerciciosListAdapter(
     private val onOrdemMudou: () -> Unit // ✅ NOVO: avisa o Fragment pra salvar
 ) : BaseAdapter() {
 
+    private data class ViewHolder(
+        val tvNome: TextView,
+        val tvMetas: TextView,
+        val btnCima: ImageButton,
+        val btnBaixo: ImageButton,
+        val btnMenu: ImageButton
+    )
+
     override fun getCount(): Int = itens.size
     override fun getItem(position: Int): ExercicioPlan = itens[position]
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val view = convertView ?: LayoutInflater.from(context)
-            .inflate(R.layout.item_exercicio_treino, parent, false)
+        val view: View
+        val holder: ViewHolder
+
+        if (convertView == null) {
+            view = LayoutInflater.from(context)
+                .inflate(R.layout.item_exercicio_treino, parent, false)
+            holder = ViewHolder(
+                tvNome = view.findViewById(R.id.tvNomeExercicioItem),
+                tvMetas = view.findViewById(R.id.tvMetasExercicioItem),
+                btnCima = view.findViewById(R.id.btnMoverCima),
+                btnBaixo = view.findViewById(R.id.btnMoverBaixo),
+                btnMenu = view.findViewById(R.id.btnMenuOrdem)
+            )
+            view.tag = holder
+        } else {
+            view = convertView
+            holder = view.tag as ViewHolder
+        }
 
         val ex = getItem(position)
 
-        val tvNome = view.findViewById<TextView>(R.id.tvNomeExercicioItem)
-        val tvMetas = view.findViewById<TextView>(R.id.tvMetasExercicioItem)
-
-        // ✅ botões novos do XML
-        val btnCima = view.findViewById<ImageButton>(R.id.btnMoverCima)
-        val btnBaixo = view.findViewById<ImageButton>(R.id.btnMoverBaixo)
-        val btnMenu = view.findViewById<ImageButton>(R.id.btnMenuOrdem)
-
-        tvNome.text = ex.nome
-        tvMetas.text =
+        holder.tvNome.text = ex.nome
+        holder.tvMetas.text =
             "Séries: ${ex.series} | Reps: ${ex.repsMin}-${ex.repsMax} | Desc: ${ex.descanso} | RIR: ${ex.rir} | Técnica: ${ex.tecnica}"
 
         // ✅ desabilita quando não dá pra mover
-        btnCima.isEnabled = position != 0
-        btnBaixo.isEnabled = position != itens.lastIndex
+        holder.btnCima.isEnabled = position != 0
+        holder.btnBaixo.isEnabled = position != itens.lastIndex
 
-        btnCima.alpha = if (btnCima.isEnabled) 1f else 0.3f
-        btnBaixo.alpha = if (btnBaixo.isEnabled) 1f else 0.3f
+        holder.btnCima.alpha = if (holder.btnCima.isEnabled) 1f else 0.3f
+        holder.btnBaixo.alpha = if (holder.btnBaixo.isEnabled) 1f else 0.3f
 
-        btnCima.setOnClickListener {
+        holder.btnCima.setOnClickListener {
             if (position <= 0) return@setOnClickListener
             Collections.swap(itens, position, position - 1)
             notifyDataSetChanged()
             onOrdemMudou()
         }
 
-        btnBaixo.setOnClickListener {
+        holder.btnBaixo.setOnClickListener {
             if (position >= itens.lastIndex) return@setOnClickListener
             Collections.swap(itens, position, position + 1)
             notifyDataSetChanged()
@@ -60,8 +76,8 @@ class ExerciciosListAdapter(
         }
 
         // Menu (Topo / Final)
-        btnMenu.setOnClickListener {
-            val popup = PopupMenu(context, btnMenu)
+        holder.btnMenu.setOnClickListener {
+            val popup = PopupMenu(context, holder.btnMenu)
             popup.menu.add("Mover para o topo")
             popup.menu.add("Mover para o final")
 
