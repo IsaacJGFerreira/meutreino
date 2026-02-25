@@ -41,3 +41,53 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+## PWA
+
+A aplicação está preparada como PWA usando `vite-plugin-pwa`, com:
+
+- Manifest Web App gerado no build.
+- Service Worker com atualização automática (`registerType: autoUpdate`).
+- Ícones placeholder em `public/icons/`.
+
+Após rodar `npm run build`, os artefatos de PWA são gerados em `dist/`.
+
+## Deploy no Firebase Hosting (passo a passo)
+
+> Os passos abaixo **não executam login por você**; servem apenas de documentação/configuração local.
+
+1. Instale dependências e gere o build:
+
+```bash
+npm install
+npm run build
+```
+
+2. Inicialize o Firebase Hosting (na pasta `web/`):
+
+```bash
+firebase init hosting
+```
+
+Escolha/garanta as opções:
+
+- `public directory`: `dist`
+- `single-page app (rewrite all urls to /index.html)`: `Yes`
+- `set up automatic builds and deploys with GitHub`: `No` (opcional)
+
+3. (Opcional) Use os arquivos já preparados neste projeto:
+
+- `firebase.json` (hosting com rewrite para SPA)
+- `.firebaserc.example` (modelo; copie para `.firebaserc` e ajuste seu `projectId`)
+
+4. Faça deploy:
+
+```bash
+firebase deploy --only hosting
+```
+
+Se preferir definir projeto via CLI antes do deploy:
+
+```bash
+firebase use --add
+```

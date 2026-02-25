@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="MeuTreino maskable">
+  <rect width="512" height="512" fill="#0f172a"/>
+  <circle cx="256" cy="256" r="156" fill="#10b981"/>
+  <path d="M168 286h176v40H168zM202 186h108v40H202z" fill="#ffffff"/>
+</svg>
