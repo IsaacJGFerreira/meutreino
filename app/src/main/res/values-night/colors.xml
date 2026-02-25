@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="green_primary">#6AC69E</color>
+    <color name="green_secondary">#2E6A53</color>
+    <color name="green_light">#275845</color>
+
+    <color name="background">#101715</color>
+    <color name="surface">#18221F</color>
+
+    <color name="text_primary">#E4EFE9</color>
+    <color name="text_secondary">#B3C6BD</color>
+
+    <color name="ex_border_pending">#4E5F58</color>
+    <color name="ex_border_done">#6AC69E</color>
+
+    <color name="ex_title">#E4EFE9</color>
+    <color name="ex_subtitle">#B3C6BD</color>
+
+    <color name="chart_grid">#24322D</color>
+    <color name="chart_axis">#31443C</color>
+    <color name="chart_label">#9AB2A7</color>
+</resources>
