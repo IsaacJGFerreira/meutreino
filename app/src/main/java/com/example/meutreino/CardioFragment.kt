@@ -10,7 +10,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -60,7 +60,7 @@ class CardioFragment : Fragment() {
         btnAdicionarCardio = view.findViewById(R.id.btnAdicionarCardio)
         rvSemana = view.findViewById(R.id.rvSemana)
 
-        rvSemana.layoutManager = GridLayoutManager(requireContext(), 2)
+        rvSemana.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
 
         adapter = DiaCardioAdapter(emptyList()) { dia ->
             abrirDetalhesDoDia(dia.dataChave)

@@ -1,49 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/cardDia"
-    android:layout_width="match_parent"
-    android:layout_height="130dp"
+    android:layout_width="132dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="10dp"
     android:orientation="vertical"
-    android:padding="14dp"
-    android:layout_margin="8dp"
+    android:padding="10dp"
     android:background="@drawable/bg_card_cardio">
 
     <TextView
         android:id="@+id/tvDiaTitulo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SEG 04/02"
+        android:text="SEG"
         android:textStyle="bold"
-        android:textSize="15sp"
+        android:textSize="14sp"
         android:textColor="#2F4F4F"
         android:fontFamily="sans-serif-medium"/>
 
     <TextView
-        android:id="@+id/tvDiaResumo"
+        android:id="@+id/tvDiaMinutos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0 cardio • 0 min"
+        android:layout_marginTop="6dp"
+        android:text="30 min"
         android:textSize="13sp"
-        android:textColor="#3E3E3E"
-        android:paddingTop="6dp"/>
+        android:textColor="#3E3E3E"/>
 
-    <TextView
-        android:id="@+id/tvDiaTipos"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="—"
-        android:textSize="13sp"
-        android:textColor="#555555"
-        android:paddingTop="4dp"/>
+    <LinearLayout
+        android:id="@+id/viewBarTrack"
+        android:layout_width="match_parent"
+        android:layout_height="14dp"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        android:background="#DDE5DD"
+        android:padding="2dp">
 
-    <TextView
-        android:id="@+id/tvDiaRitmo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Ritmo: —"
-        android:textSize="12sp"
-        android:textColor="#6A6A6A"
-        android:paddingTop="4dp"/>
+        <View
+            android:id="@+id/viewBarFill"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0"
+            android:background="@color/green_primary"/>
+
+        <View
+            android:id="@+id/viewBarRemainder"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
 
 </LinearLayout>

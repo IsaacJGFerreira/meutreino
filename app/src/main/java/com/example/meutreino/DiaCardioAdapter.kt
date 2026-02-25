@@ -1,19 +1,19 @@
 package com.example.meutreino
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 data class DiaCardioUI(
-    val dataLabel: String,        // "SEG 04/02"
-    val dataChave: String,        // "04/02/2026"
+    val dataLabel: String,
+    val dataChave: String,
     val totalMin: Int,
     val qtd: Int,
-    val tiposResumo: String,      // "Corrida + Bike"
-    val ritmoMedio: String        // "5:30/km" ou "—"
+    val tiposResumo: String,
+    val ritmoMedio: String
 )
 
 class DiaCardioAdapter(
@@ -21,14 +21,13 @@ class DiaCardioAdapter(
     private val onClick: (DiaCardioUI) -> Unit
 ) : RecyclerView.Adapter<DiaCardioAdapter.VH>() {
 
-    inner class VH(v: View) : RecyclerView.ViewHolder(v) {
-        // ✅ não trava mais o tipo (pode ser LinearLayout, MaterialCardView, ConstraintLayout...)
-        val card: View = v.findViewById(R.id.cardDia)
+    private var maxMinSemana: Int = 0
 
+    inner class VH(v: View) : RecyclerView.ViewHolder(v) {
         val tvTitulo: TextView = v.findViewById(R.id.tvDiaTitulo)
-        val tvResumo: TextView = v.findViewById(R.id.tvDiaResumo)
-        val tvTipos: TextView = v.findViewById(R.id.tvDiaTipos)
-        val tvRitmo: TextView = v.findViewById(R.id.tvDiaRitmo)
+        val tvMinutos: TextView = v.findViewById(R.id.tvDiaMinutos)
+        val barFill: View = v.findViewById(R.id.viewBarFill)
+        val barRemainder: View = v.findViewById(R.id.viewBarRemainder)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -42,19 +41,37 @@ class DiaCardioAdapter(
         val d = dias[position]
 
         h.tvTitulo.text = d.dataLabel
-        h.tvResumo.text = "${d.qtd} cardio(s) • ${d.totalMin} min"
-        h.tvTipos.text = d.tiposResumo
-        h.tvRitmo.text = "Ritmo: ${d.ritmoMedio}"
+        h.tvMinutos.text = if (d.totalMin > 0) "${d.totalMin} min" else "Sem cardio"
 
-        // ✅ Verde se teve cardio, cinza se não teve
-        val cor = if (d.qtd > 0) "#C8E6C9" else "#E0E0E0"
-        h.card.setBackgroundColor(Color.parseColor(cor))
+        val proporcao = if (maxMinSemana <= 0 || d.totalMin <= 0) {
+            0f
+        } else {
+            d.totalMin.toFloat() / maxMinSemana.toFloat()
+        }
+
+        val fill = h.barFill.layoutParams as LinearLayout.LayoutParams
+        val rest = h.barRemainder.layoutParams as LinearLayout.LayoutParams
+
+        if (d.totalMin > 0) {
+            val pesoFill = proporcao.coerceAtLeast(0.08f)
+            fill.weight = pesoFill
+            rest.weight = (1f - pesoFill).coerceAtLeast(0f)
+            h.barFill.visibility = View.VISIBLE
+        } else {
+            fill.weight = 0f
+            rest.weight = 1f
+            h.barFill.visibility = View.INVISIBLE
+        }
+
+        h.barFill.layoutParams = fill
+        h.barRemainder.layoutParams = rest
 
         h.itemView.setOnClickListener { onClick(d) }
     }
 
     fun atualizar(novos: List<DiaCardioUI>) {
         dias = novos
+        maxMinSemana = dias.maxOfOrNull { it.totalMin } ?: 0
         notifyDataSetChanged()
     }
 }
