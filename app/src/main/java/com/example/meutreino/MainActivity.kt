@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     private var userRole: String = ""   // fica vazio até carregar
     private lateinit var fabMenu: FloatingActionButton
+    private lateinit var topControlsBar: LinearLayout
 
     // badge aluno selecionado
     private lateinit var prefs: SharedPreferences
@@ -61,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
 
+        topControlsBar = findViewById(R.id.topControlsBar)
         fabMenu = findViewById(R.id.fabMenu)
         fabMenu.setOnClickListener { abrirMenuBottomSheet() }
 
@@ -133,6 +136,7 @@ class MainActivity : AppCompatActivity() {
                     userRole = "ALUNO"
                     fabMenu.visibility = View.GONE
                     esconderBadgeAluno()
+                    atualizarVisibilidadeBarraTopo()
                     trocarTela(ContaBloqueadaFragment(), limparBackStack = true)
                     return@addOnSuccessListener
                 }
@@ -155,6 +159,7 @@ class MainActivity : AppCompatActivity() {
                 if (!approved && userRole != "ADMIN") {
                     fabMenu.visibility = View.GONE
                     esconderBadgeAluno()
+                    atualizarVisibilidadeBarraTopo()
                     pararListenerNotificacoesTreino()
                     trocarTela(ContaBloqueadaFragment(), limparBackStack = true)
                     return@addOnSuccessListener
@@ -170,6 +175,7 @@ class MainActivity : AppCompatActivity() {
 
                 // Admin não tem menu do app
                 fabMenu.visibility = if (userRole == "ADMIN") View.GONE else View.VISIBLE
+                atualizarVisibilidadeBarraTopo()
 
                 if (userRole == "ALUNO") {
                     solicitarPermissaoNotificacoesSeNecessario()
@@ -325,6 +331,7 @@ class MainActivity : AppCompatActivity() {
     private fun esconderBadgeAluno() {
         val card = findViewById<MaterialCardView?>(R.id.cardAlunoSelecionado)
         card?.visibility = View.GONE
+        atualizarVisibilidadeBarraTopo()
     }
 
     private fun atualizarBadgeAluno() {
@@ -334,6 +341,7 @@ class MainActivity : AppCompatActivity() {
         // Só treinador vê
         if (userRole != "TREINADOR") {
             card.visibility = View.GONE
+            atualizarVisibilidadeBarraTopo()
             return
         }
 
@@ -346,6 +354,14 @@ class MainActivity : AppCompatActivity() {
             card.visibility = View.VISIBLE
             tv.text = "Aluno: $selectedName"
         }
+
+        atualizarVisibilidadeBarraTopo()
+    }
+
+    private fun atualizarVisibilidadeBarraTopo() {
+        val card = findViewById<MaterialCardView?>(R.id.cardAlunoSelecionado)
+        val deveExibirBarra = fabMenu.visibility == View.VISIBLE || card?.visibility == View.VISIBLE
+        topControlsBar.visibility = if (deveExibirBarra) View.VISIBLE else View.GONE
     }
 
     private fun configurarCliqueBadge() {
