@@ -106,7 +106,7 @@ class ExerciciosTreinoFragment : Fragment() {
                 btnAdicionar.setOnClickListener { abrirDialogAdicionarExercicio(alvo) }
 
                 listExercicios.setOnItemLongClickListener { _, _, position, _ ->
-                    confirmarRemocaoExercicio(position, alvo)
+                    mostrarAcoesExercicio(position, alvo)
                     true
                 }
 
@@ -150,6 +150,23 @@ class ExerciciosTreinoFragment : Fragment() {
     // UI: Adicionar exercício
     // ============================
     private fun abrirDialogAdicionarExercicio(uidDestino: String) {
+        abrirDialogExercicio(uidDestino = uidDestino)
+    }
+
+    private fun abrirDialogEditarExercicio(position: Int, uidDestino: String) {
+        val ex = treinoAtual?.exercicios?.getOrNull(position) ?: return
+        abrirDialogExercicio(
+            uidDestino = uidDestino,
+            exercicioEdicao = ex,
+            positionEdicao = position
+        )
+    }
+
+    private fun abrirDialogExercicio(
+        uidDestino: String,
+        exercicioEdicao: ExercicioPlan? = null,
+        positionEdicao: Int? = null
+    ) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_adicionar_exercicio, null)
 
         val etNome = dialogView.findViewById<AutoCompleteTextView>(R.id.etNomeExercicio)
@@ -174,6 +191,17 @@ class ExerciciosTreinoFragment : Fragment() {
         }
 
         btnFechar?.setOnClickListener { dialog.dismiss() }
+
+        if (exercicioEdicao != null) {
+            etNome?.setText(exercicioEdicao.nome)
+            etSeries?.setText(exercicioEdicao.series.toString())
+            etRepsMin?.setText(exercicioEdicao.repsMin.toString())
+            etRepsMax?.setText(exercicioEdicao.repsMax.toString())
+            etDesc?.setText(exercicioEdicao.descanso)
+            etTecnica?.setText(exercicioEdicao.tecnica)
+            etRir?.setText(exercicioEdicao.rir)
+            btnSalvar?.text = "Salvar edição"
+        }
 
         // ✅ Sugestões local
         val sugestoesLocal = BancoExerciciosRepository.obterNomes(requireContext())
@@ -253,7 +281,12 @@ class ExerciciosTreinoFragment : Fragment() {
                 rir = rir
             )
 
-            treinoAtual?.exercicios?.add(ex)
+            val lista = treinoAtual?.exercicios ?: return@setOnClickListener
+            if (positionEdicao != null && positionEdicao in lista.indices) {
+                lista[positionEdicao] = ex
+            } else {
+                lista.add(ex)
+            }
             adapter.atualizar()
 
             // ✅ salva no UID alvo (aluno)
@@ -266,8 +299,22 @@ class ExerciciosTreinoFragment : Fragment() {
     }
 
     // ============================
-    // Remover exercício
+    // Ações do exercício
     // ============================
+    private fun mostrarAcoesExercicio(position: Int, uidDestino: String) {
+        val ex = treinoAtual?.exercicios?.getOrNull(position) ?: return
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(ex.nome)
+            .setItems(arrayOf("Editar exercício", "Remover exercício")) { _, which ->
+                when (which) {
+                    0 -> abrirDialogEditarExercicio(position, uidDestino)
+                    1 -> confirmarRemocaoExercicio(position, uidDestino)
+                }
+            }
+            .show()
+    }
+
     private fun confirmarRemocaoExercicio(position: Int, uidDestino: String) {
         val t = treinoAtual ?: return
         val ex = t.exercicios.getOrNull(position) ?: return

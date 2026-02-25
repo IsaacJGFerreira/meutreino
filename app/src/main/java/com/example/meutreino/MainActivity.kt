@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -46,6 +47,12 @@ class MainActivity : AppCompatActivity() {
 
         fabMenu = findViewById(R.id.fabMenu)
         fabMenu.setOnClickListener { abrirMenuBottomSheet() }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                tratarBotaoVoltar()
+            }
+        })
 
         // ✅ Bloqueia acesso sem login
         val user = Firebase.auth.currentUser
@@ -212,6 +219,32 @@ class MainActivity : AppCompatActivity() {
 
     fun navegarPara(fragment: Fragment) {
         trocarTela(fragment, limparBackStack = true)
+    }
+
+    private fun tratarBotaoVoltar() {
+        if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack()
+            return
+        }
+
+        val atual = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
+        val inicial = fragmentoInicialPorRole()
+
+        if (atual == null || atual::class != inicial::class) {
+            trocarTela(inicial, limparBackStack = true)
+            return
+        }
+
+        // Não fecha o app; só manda para background.
+        moveTaskToBack(true)
+    }
+
+    private fun fragmentoInicialPorRole(): Fragment {
+        return when (userRole) {
+            "ADMIN" -> AdminDashboardFragment()
+            "TREINADOR" -> DesempenhoFragment()
+            else -> TreinoFragment()
+        }
     }
 
     // ==========================
