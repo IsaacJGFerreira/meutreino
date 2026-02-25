@@ -20,7 +20,7 @@ export type UserRole = 'admin' | 'aluno' | 'treinador' | null;
 export type UserDoc = {
   name: string;
   email: string;
-  status: 'pending' | 'approved';
+  status: 'pending' | 'approved' | 'blocked';
   role: UserRole;
   createdAt?: Timestamp | null;
 };
@@ -74,7 +74,8 @@ export function AuthUserProvider({ children }: { children: ReactNode }) {
         setUserDoc({
           name: typeof data.name === 'string' ? data.name : '',
           email: typeof data.email === 'string' ? data.email : '',
-          status: data.status === 'approved' ? 'approved' : 'pending',
+          status:
+            data.status === 'approved' || data.status === 'blocked' ? data.status : 'pending',
           role:
             data.role === 'admin' || data.role === 'aluno' || data.role === 'treinador'
               ? data.role

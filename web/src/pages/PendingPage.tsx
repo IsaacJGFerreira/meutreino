@@ -4,6 +4,7 @@ import { useAuthUser } from '../hooks/useAuthUser';
 
 export function PendingPage() {
   const { userDoc } = useAuthUser();
+  const isBlocked = userDoc?.status === 'blocked';
 
   async function handleSignOut() {
     if (!auth) {
@@ -15,11 +16,15 @@ export function PendingPage() {
 
   return (
     <main>
-      <h2>Aguardando aprovação</h2>
+      <h2>{isBlocked ? 'Conta bloqueada' : 'Aguardando aprovação'}</h2>
       <p>
         Usuário: <strong>{userDoc?.name || userDoc?.email || 'Conta cadastrada'}</strong>
       </p>
-      <p>Sua conta foi criada e está pendente de aprovação por um administrador.</p>
+      <p>
+        {isBlocked
+          ? 'Sua conta foi bloqueada por um administrador.'
+          : 'Sua conta foi criada e está pendente de aprovação por um administrador.'}
+      </p>
       <button type="button" onClick={handleSignOut}>
         Sair
       </button>
