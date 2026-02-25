@@ -8,13 +8,12 @@
     android:background="@color/background"
     android:padding="16dp">
 
-    <!-- Topo: semana + setas -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="10dp">
+        android:layout_marginBottom="12dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSemanaAnterior"
@@ -55,16 +54,23 @@
             android:insetBottom="0dp"/>
     </LinearLayout>
 
-    <!-- Lista (grid) dos dias -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Calendário semanal"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#3E3E3E"
+        android:layout_marginBottom="8dp"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvSemana"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:clipToPadding="false"
-        android:paddingBottom="10dp"/>
+        android:paddingEnd="6dp"
+        android:layout_marginBottom="14dp"/>
 
-    <!-- Total da semana -->
     <TextView
         android:id="@+id/tvTotalSemana"
         android:layout_width="match_parent"
@@ -76,7 +82,11 @@
         android:layout_marginBottom="10dp"
         android:fontFamily="sans-serif-medium"/>
 
-    <!-- Botão registrar -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAdicionarCardio"
         android:layout_width="match_parent"
