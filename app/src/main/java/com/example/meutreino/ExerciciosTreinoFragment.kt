@@ -1,6 +1,5 @@
 package com.example.meutreino
 
-import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -16,12 +15,14 @@ class ExerciciosTreinoFragment : Fragment() {
     companion object {
         private const val ARG_NOME_TREINO = "nome_treino"
         private const val ARG_UID_ALVO = "uid_alvo"
+        private const val ARG_IS_NEW_TREINO = "is_new_treino"
 
-        fun newInstance(nomeTreino: String, uidAlvo: String?): ExerciciosTreinoFragment {
+        fun newInstance(nomeTreino: String, uidAlvo: String?, isNewTreino: Boolean = false): ExerciciosTreinoFragment {
             val f = ExerciciosTreinoFragment()
             val b = Bundle()
             b.putString(ARG_NOME_TREINO, nomeTreino)
             b.putString(ARG_UID_ALVO, uidAlvo)
+            b.putBoolean(ARG_IS_NEW_TREINO, isNewTreino)
             f.arguments = b
             return f
         }
@@ -29,14 +30,17 @@ class ExerciciosTreinoFragment : Fragment() {
 
     private var nomeTreino: String = ""
     private var uidAlvo: String? = null
+    private var isNewTreinoFlow: Boolean = false
 
     private lateinit var tvTitulo: TextView
     private lateinit var listExercicios: ListView
     private lateinit var btnAdicionar: Button
     private lateinit var btnApagarTreino: Button
+    private lateinit var btnSalvarTreino: Button
 
     private var treinos = mutableListOf<TreinoPlan>()
     private var treinoAtual: TreinoPlan? = null
+    private var treinoAlterado: Boolean = false
 
     private lateinit var adapter: ExerciciosListAdapter
 
@@ -44,6 +48,7 @@ class ExerciciosTreinoFragment : Fragment() {
         super.onCreate(savedInstanceState)
         nomeTreino = arguments?.getString(ARG_NOME_TREINO) ?: ""
         uidAlvo = arguments?.getString(ARG_UID_ALVO)
+        isNewTreinoFlow = arguments?.getBoolean(ARG_IS_NEW_TREINO, false) ?: false
     }
 
     override fun onCreateView(
@@ -58,6 +63,7 @@ class ExerciciosTreinoFragment : Fragment() {
         listExercicios = view.findViewById(R.id.listExercicios)
         btnAdicionar = view.findViewById(R.id.btnAdicionarExercicio)
         btnApagarTreino = view.findViewById(R.id.btnApagarTreino)
+        btnSalvarTreino = view.findViewById(R.id.btnSalvarTreino)
 
         tvTitulo.text = "Treino: $nomeTreino"
 
@@ -98,19 +104,20 @@ class ExerciciosTreinoFragment : Fragment() {
                     requireContext(),
                     exerciciosDoTreino
                 ) {
-                    salvarTreinoAtual(alvo)
+                    treinoAlterado = true
                 }
 
                 listExercicios.adapter = adapter
 
-                btnAdicionar.setOnClickListener { abrirDialogAdicionarExercicio(alvo) }
+                btnAdicionar.setOnClickListener { abrirDialogAdicionarExercicio() }
 
                 listExercicios.setOnItemLongClickListener { _, _, position, _ ->
-                    mostrarAcoesExercicio(position, alvo)
+                    mostrarAcoesExercicio(position)
                     true
                 }
 
                 btnApagarTreino.setOnClickListener { confirmarApagarTreino(alvo) }
+                btnSalvarTreino.setOnClickListener { validarESalvarTreino(alvo) }
             },
             onErro = { e ->
                 if (!isAdded) return@carregarTreinos
@@ -132,13 +139,22 @@ class ExerciciosTreinoFragment : Fragment() {
         return if (!passed.isNullOrBlank()) passed else Firebase.auth.currentUser?.uid
     }
 
-    private fun salvarTreinoAtual(uidDestino: String) {
+    private fun salvarTreinoAtual(
+        uidDestino: String,
+        mensagemNotificacao: String,
+        onOk: (() -> Unit)? = null
+    ) {
         val t = treinoAtual ?: return
 
         PlanoTreinoFirestoreRepository.salvarTreinoParaAlunoFromPlan(
             alunoUid = uidDestino,
             treino = t,
-            onOk = { /* ok */ },
+            notifyStudent = true,
+            notificationMessage = mensagemNotificacao,
+            onOk = {
+                treinoAlterado = false
+                onOk?.invoke()
+            },
             onErro = { e ->
                 if (!isAdded) return@salvarTreinoParaAlunoFromPlan
                 AppUiFeedback.showToast(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT)
@@ -146,24 +162,75 @@ class ExerciciosTreinoFragment : Fragment() {
         )
     }
 
+
+    private fun validarESalvarTreino(uidDestino: String) {
+        val treino = treinoAtual ?: return
+        val totalExercicios = treino.exercicios.size
+
+        if (totalExercicios == 0) {
+            AppUiFeedback.dialogBuilder(requireContext())
+                .setTitle("Adicionar exercício obrigatório")
+                .setMessage("Há a necessidade de adicionar pelo menos 1 exercício. Caso contrário, este treino será apagado.")
+                .setPositiveButton("Continuar") { _, _ ->
+                    PlanoTreinoFirestoreRepository.apagarTreinoDoAluno(
+                        alunoUid = uidDestino,
+                        nomeTreino = nomeTreino,
+                        onOk = {
+                            if (!isAdded) return@apagarTreinoDoAluno
+                            AppUiFeedback.showToast(requireContext(), "Treino apagado por falta de exercícios.", Toast.LENGTH_SHORT)
+                            parentFragmentManager.popBackStack()
+                        },
+                        onErro = { e ->
+                            if (!isAdded) return@apagarTreinoDoAluno
+                            AppUiFeedback.showToast(requireContext(), "Erro ao apagar treino: ${e.message}", Toast.LENGTH_SHORT)
+                        }
+                    )
+                }
+                .setNegativeButton("Voltar", null)
+                .show()
+            return
+        }
+
+        val mensagem = if (isNewTreinoFlow) {
+            "Novo treino \"${treino.nome}\" com $totalExercicios exercício(s) foi adicionado pelo seu professor."
+        } else {
+            "Seu treinador atualizou o treino \"${treino.nome}\". Confira as mudanças."
+        }
+
+        val tinhaAlteracao = treinoAlterado || isNewTreinoFlow
+        if (!tinhaAlteracao) {
+            AppUiFeedback.showToast(requireContext(), "Nenhuma alteração para salvar.", Toast.LENGTH_SHORT)
+            return
+        }
+
+        salvarTreinoAtual(
+            uidDestino = uidDestino,
+            mensagemNotificacao = mensagem,
+            onOk = {
+                if (!isAdded) return@salvarTreinoAtual
+                val textoSucesso = if (tinhaAlteracao) "Treino salvo com sucesso!" else "Treino confirmado e salvo!"
+                AppUiFeedback.showToast(requireContext(), textoSucesso, Toast.LENGTH_SHORT)
+                isNewTreinoFlow = false
+            }
+        )
+    }
+
     // ============================
     // UI: Adicionar exercício
     // ============================
-    private fun abrirDialogAdicionarExercicio(uidDestino: String) {
-        abrirDialogExercicio(uidDestino = uidDestino)
+    private fun abrirDialogAdicionarExercicio() {
+        abrirDialogExercicio()
     }
 
-    private fun abrirDialogEditarExercicio(position: Int, uidDestino: String) {
+    private fun abrirDialogEditarExercicio(position: Int) {
         val ex = treinoAtual?.exercicios?.getOrNull(position) ?: return
         abrirDialogExercicio(
-            uidDestino = uidDestino,
             exercicioEdicao = ex,
             positionEdicao = position
         )
     }
 
     private fun abrirDialogExercicio(
-        uidDestino: String,
         exercicioEdicao: ExercicioPlan? = null,
         positionEdicao: Int? = null
     ) {
@@ -289,9 +356,7 @@ class ExerciciosTreinoFragment : Fragment() {
             }
             adapter.atualizar()
 
-            // ✅ salva no UID alvo (aluno)
-            salvarTreinoAtual(uidDestino = uidDestino)
-
+            treinoAlterado = true
             dialog.dismiss()
         }
 
@@ -301,21 +366,21 @@ class ExerciciosTreinoFragment : Fragment() {
     // ============================
     // Ações do exercício
     // ============================
-    private fun mostrarAcoesExercicio(position: Int, uidDestino: String) {
+    private fun mostrarAcoesExercicio(position: Int) {
         val ex = treinoAtual?.exercicios?.getOrNull(position) ?: return
 
         AppUiFeedback.dialogBuilder(requireContext())
             .setTitle(ex.nome)
             .setItems(arrayOf("Editar exercício", "Remover exercício")) { _, which ->
                 when (which) {
-                    0 -> abrirDialogEditarExercicio(position, uidDestino)
-                    1 -> confirmarRemocaoExercicio(position, uidDestino)
+                    0 -> abrirDialogEditarExercicio(position)
+                    1 -> confirmarRemocaoExercicio(position)
                 }
             }
             .show()
     }
 
-    private fun confirmarRemocaoExercicio(position: Int, uidDestino: String) {
+    private fun confirmarRemocaoExercicio(position: Int) {
         val t = treinoAtual ?: return
         val ex = t.exercicios.getOrNull(position) ?: return
 
@@ -325,7 +390,7 @@ class ExerciciosTreinoFragment : Fragment() {
             .setPositiveButton("Remover") { _, _ ->
                 t.exercicios.removeAt(position)
                 adapter.atualizar()
-                salvarTreinoAtual(uidDestino)
+                treinoAlterado = true
             }
             .setNegativeButton("Cancelar", null)
             .show()

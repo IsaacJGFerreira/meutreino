@@ -148,7 +148,18 @@ class MontarTreinoFragment : Fragment() {
                 PlanoTreinoFirestoreRepository.salvarTreinoParaAlunoFromPlan(
                     alunoUid = alvo,
                     treino = novo,
-                    onOk = { },
+                    notifyStudent = false,
+                    onOk = {
+                        if (!isAdded) return@salvarTreinoParaAlunoFromPlan
+
+                        parentFragmentManager.beginTransaction()
+                            .replace(
+                                R.id.fragmentContainer,
+                                ExerciciosTreinoFragment.newInstance(novo.nome, alvo, true)
+                            )
+                            .addToBackStack("montar_treino")
+                            .commitAllowingStateLoss()
+                    },
                     onErro = { e ->
                         AppUiFeedback.showToast(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT)
                     }

@@ -13,7 +13,7 @@ import java.util.Collections
 class ExerciciosListAdapter(
     private val context: Context,
     private val itens: MutableList<ExercicioPlan>,
-    private val onOrdemMudou: () -> Unit // ✅ NOVO: avisa o Fragment pra salvar
+    private val onOrdemMudou: () -> Unit // avisa o Fragment que houve alteração
 ) : BaseAdapter() {
 
     private data class ViewHolder(
