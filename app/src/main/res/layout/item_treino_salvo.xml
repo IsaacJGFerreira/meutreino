@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:text="✅ Completo"
         android:textSize="14sp"
-        android:textColor="#5AAB8A"
+        android:textColor="@color/green_primary"
         android:fontFamily="sans-serif-medium"/>
 
     <TextView

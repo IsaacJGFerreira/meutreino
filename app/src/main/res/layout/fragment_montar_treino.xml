@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#DEEFE4">
+    android:background="@color/background">
 
     <TextView
         android:id="@+id/tvTituloMontarTreino"
@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:text="Montar treino"
         android:textSize="34sp"
-        android:textColor="#5AAB8A"
+        android:textColor="@color/green_primary"
         android:fontFamily="sans-serif-medium"
         android:gravity="center"
         android:layout_marginTop="12dp"
@@ -28,7 +28,7 @@
         android:textAllCaps="false"
         android:fontFamily="sans-serif-medium"
         android:layout_marginBottom="12dp"
-        app:backgroundTint="#5AAB8A"
+        app:backgroundTint="@color/green_primary"
         app:cornerRadius="18dp"
         app:elevation="0dp"/>
 
