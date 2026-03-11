@@ -33,11 +33,15 @@ class TreinoDiaAdapter(
     // 🔹 Feedback visual por card, aplicado após o usuário salvar
     private val statusCards = mutableMapOf<String, ExercicioStatusCard>()
 
+    // 🔹 Garante apenas um treino em andamento por vez
+    private var treinoAtivoNome: String? = null
+
     inner class TreinoVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val headerTreino: LinearLayout = itemView.findViewById(R.id.headerTreino)
         val tvNomeTreino: TextView = itemView.findViewById(R.id.tvNomeTreino)
         val tvSetaTreino: TextView = itemView.findViewById(R.id.tvSetaTreino)
         val containerExercicios: LinearLayout = itemView.findViewById(R.id.containerExercicios)
+        val btnIniciarTreino: Button = itemView.findViewById(R.id.btnIniciarTreino)
         val btnSalvarTreino: Button = itemView.findViewById(R.id.btnSalvarTreino)
     }
 
@@ -48,13 +52,30 @@ class TreinoDiaAdapter(
 
     override fun getItemCount(): Int = treinos.size
 
-    override fun onBindViewHolder(holder: TreinoVH, position: Int) {
+        override fun onBindViewHolder(holder: TreinoVH, position: Int) {
         val treino = treinos[position]
         holder.tvNomeTreino.text = treino.nome
 
         val treinoAberto = treinosExpandidos.contains(treino.nome)
+        val treinoAtivo = treinoAtivoNome == treino.nome
+        val outroTreinoAtivo = treinoAtivoNome != null && !treinoAtivo
+
         holder.containerExercicios.visibility = if (treinoAberto) View.VISIBLE else View.GONE
         holder.tvSetaTreino.text = if (treinoAberto) "⌃" else "⌄"
+
+        holder.btnIniciarTreino.text = if (treinoAtivo) "Treino em andamento" else "Iniciar treino"
+        holder.btnIniciarTreino.isEnabled = !outroTreinoAtivo
+        holder.btnIniciarTreino.setOnClickListener {
+            if (treinoAtivoNome != null && treinoAtivoNome != treino.nome) {
+                AppUiFeedback.showToast(holder.itemView.context, "Finalize o treino atual para iniciar outro.", Toast.LENGTH_SHORT)
+                return@setOnClickListener
+            }
+
+            treinoAtivoNome = treino.nome
+            treinosExpandidos.add(treino.nome)
+            AppUiFeedback.showToast(holder.itemView.context, "Treino iniciado!", Toast.LENGTH_SHORT)
+            notifyDataSetChanged()
+        }
 
         // Clique no header do treino: expandir/recolher
         holder.headerTreino.setOnClickListener {
@@ -66,15 +87,21 @@ class TreinoDiaAdapter(
         holder.containerExercicios.removeAllViews()
         if (treinoAberto) {
             treino.exercicios.forEach { ex ->
-                val exView = criarViewExercicio(holder.itemView, treino, ex)
+                val exView = criarViewExercicio(holder.itemView, treino, ex, treinoAtivo)
                 holder.containerExercicios.addView(exView)
             }
         }
 
-        // Botão salvar treino aparece quando o treino está aberto
+        // Botão salvar treino aparece quando o treino está aberto e só habilita se treino foi iniciado
         holder.btnSalvarTreino.visibility = if (treinoAberto) View.VISIBLE else View.GONE
+        holder.btnSalvarTreino.isEnabled = treinoAtivo
 
         holder.btnSalvarTreino.setOnClickListener {
+            if (!treinoAtivo) {
+                AppUiFeedback.showToast(holder.itemView.context, "Inicie este treino antes de salvar.", Toast.LENGTH_SHORT)
+                return@setOnClickListener
+            }
+
             val completo = treinoCompleto(treino)
 
             // pega os dados do treino direto do draftVM (rascunho)
@@ -86,7 +113,8 @@ class TreinoDiaAdapter(
                 atualizarStatusCardsDepoisSalvar(treino, completoFlag)
                 onSalvarTreino(treino, doTreino, completoFlag)
                 draftVM.limparTreino(treino.nome)
-                notifyItemChanged(position)
+                treinoAtivoNome = null
+                notifyDataSetChanged()
                 AppUiFeedback.showToast(
                     holder.itemView.context,
                     if (completoFlag) "Treino salvo!" else "Treino salvo (incompleto).",
@@ -112,7 +140,9 @@ class TreinoDiaAdapter(
             if (!completo) {
                 val incompletoDialog = AppUiFeedback.dialogBuilder(holder.itemView.context)
                 incompletoDialog.setTitle("Treino incompleto")
-                incompletoDialog.setMessage("Ainda faltam séries para preencher.\n\nDeseja salvar mesmo assim?")
+                incompletoDialog.setMessage("Ainda faltam séries para preencher.
+
+Deseja salvar mesmo assim?")
                 incompletoDialog.setPositiveButton("Salvar mesmo assim") { _: DialogInterface, _: Int ->
                     mostrarAvisosEContinuar(false)
                 }
@@ -124,7 +154,7 @@ class TreinoDiaAdapter(
         }
     }
 
-    private fun criarViewExercicio(root: View, treino: TreinoPlan, ex: ExercicioPlan): View {
+    private fun criarViewExercicio(root: View, treino: TreinoPlan, ex: ExercicioPlan, treinoAtivo: Boolean): View {
         val ctx = root.context
         val v = LayoutInflater.from(ctx).inflate(R.layout.item_exercicio_expand, null, false)
 
@@ -182,6 +212,11 @@ class TreinoDiaAdapter(
         atualizarBorda()
 
         header.setOnClickListener {
+            if (!treinoAtivo) {
+                AppUiFeedback.showToast(ctx, "Inicie o treino para registrar os exercícios.", Toast.LENGTH_SHORT)
+                return@setOnClickListener
+            }
+
             if (aberto) exerciciosExpandidos.remove(chaveEx) else exerciciosExpandidos.add(chaveEx)
             notifyDataSetChanged()
         }
@@ -200,7 +235,8 @@ class TreinoDiaAdapter(
                         onMudou = {
                             statusCards[chaveEx] = ExercicioStatusCard.NEUTRO
                             atualizarBorda()
-                        }
+                        },
+                        habilitado = treinoAtivo
                     )
                 )
             }
@@ -225,7 +261,8 @@ class TreinoDiaAdapter(
         repsMin: Int,
         repsMax: Int,
         serieNumero: Int,
-        onMudou: () -> Unit
+        onMudou: () -> Unit,
+        habilitado: Boolean
     ): View {
 
         val linha = LinearLayout(ctx)
@@ -285,6 +322,8 @@ class TreinoDiaAdapter(
         etRep.setBackgroundResource(R.drawable.bg_input_rounded)
         etKg.gravity = android.view.Gravity.CENTER
         etRep.gravity = android.view.Gravity.CENTER
+        etKg.isEnabled = habilitado
+        etRep.isEnabled = habilitado
 
         linha.addView(tvSerie)
         linha.addView(tvAnterior)
