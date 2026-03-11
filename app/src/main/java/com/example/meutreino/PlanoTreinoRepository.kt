@@ -15,6 +15,7 @@ object PlanoTreinoRepository {
         for (t in treinos) {
             val objTreino = JSONObject()
             objTreino.put("nome", t.nome)
+            objTreino.put("ordem", t.ordem ?: arrTreinos.length())
 
             val arrExercicios = JSONArray()
             for (ex in t.exercicios) {
@@ -50,7 +51,8 @@ object PlanoTreinoRepository {
             val objTreino = arrTreinos.getJSONObject(i)
             val nomeTreino = objTreino.getString("nome")
 
-            val treino = TreinoPlan(nome = nomeTreino)
+            val ordem = if (objTreino.has("ordem")) objTreino.optInt("ordem", i) else i
+            val treino = TreinoPlan(nome = nomeTreino, ordem = ordem)
 
             val arrExercicios = objTreino.optJSONArray("exercicios") ?: JSONArray()
             for (j in 0 until arrExercicios.length()) {
@@ -72,6 +74,6 @@ object PlanoTreinoRepository {
             lista.add(treino)
         }
 
-        return lista
+        return lista.sortedWith(compareBy<TreinoPlan> { it.ordem ?: Int.MAX_VALUE }.thenBy { it.nome.lowercase() }).toMutableList()
     }
 }

@@ -31,7 +31,8 @@ object PlanoTreinoFirestoreRepository {
             .addOnSuccessListener { snap ->
                 val lista = snap.documents.mapNotNull { doc ->
                     val nome = doc.getString("nome") ?: return@mapNotNull null
-                    val treino = TreinoPlan(nome = nome)
+                    val ordem = (doc.getLong("ordem") ?: doc.getDouble("ordem")?.toLong())?.toInt()
+                    val treino = TreinoPlan(nome = nome, ordem = ordem)
 
                     val exList = doc.get("exercicios") as? List<*>
                     exList?.forEach { item ->
@@ -49,7 +50,15 @@ object PlanoTreinoFirestoreRepository {
                     }
                     treino
                 }
-                onOk(lista)
+                val listaOrdenada = lista
+                    .sortedWith(compareBy<TreinoPlan> { it.ordem ?: Int.MAX_VALUE }.thenBy { it.nome.lowercase() })
+                    .toMutableList()
+
+                listaOrdenada.forEachIndexed { index, treino ->
+                    if (treino.ordem == null) treino.ordem = index
+                }
+
+                onOk(listaOrdenada)
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "❌ Erro ao carregar treinos uid=$uidAlvo", e)
@@ -87,6 +96,7 @@ object PlanoTreinoFirestoreRepository {
 
         val payload = hashMapOf(
             "nome" to treino.nome,
+            "ordem" to (treino.ordem ?: 0),
             "exercicios" to exerciciosMap,
             "assignedTo" to alunoUid,
             "createdBy" to user.uid,
@@ -131,6 +141,29 @@ object PlanoTreinoFirestoreRepository {
                 )
                 onOk?.invoke()
             }
+            .addOnFailureListener { e -> onErro?.invoke(e) }
+    }
+
+
+    fun atualizarOrdemTreinos(
+        alunoUid: String,
+        treinos: List<TreinoPlan>,
+        onOk: (() -> Unit)? = null,
+        onErro: ((Exception) -> Unit)? = null
+    ) {
+        val batch = Firebase.firestore.batch()
+        val base = Firebase.firestore.collection("users")
+            .document(alunoUid)
+            .collection("treinos")
+
+        treinos.forEachIndexed { index, treino ->
+            treino.ordem = index
+            val ref = base.document(docIdSeguro(treino.nome))
+            batch.set(ref, mapOf("ordem" to index, "updatedAt" to System.currentTimeMillis()), SetOptions.merge())
+        }
+
+        batch.commit()
+            .addOnSuccessListener { onOk?.invoke() }
             .addOnFailureListener { e -> onErro?.invoke(e) }
     }
 

@@ -88,7 +88,7 @@ class MontarTreinoFragment : Fragment() {
         }
 
         listTreinos.setOnItemLongClickListener { _, _, position, _ ->
-            confirmarRemocaoTreino(position)
+            abrirAcoesTreino(position)
             true
         }
 
@@ -102,6 +102,7 @@ class MontarTreinoFragment : Fragment() {
                 if (!isAdded) return@carregarTreinos
                 treinos.clear()
                 treinos.addAll(lista)
+                treinos.forEachIndexed { index, treino -> if (treino.ordem == null) treino.ordem = index }
                 adapter.atualizar(treinos)
 
                 // opcional: cache local
@@ -135,7 +136,7 @@ class MontarTreinoFragment : Fragment() {
                     return@setPositiveButton
                 }
 
-                val novo = TreinoPlan(nome)
+                val novo = TreinoPlan(nome = nome, ordem = treinos.size)
                 treinos.add(novo)
                 adapter.atualizar(treinos)
 
@@ -169,6 +170,52 @@ class MontarTreinoFragment : Fragment() {
             .show()
     }
 
+
+    private fun abrirAcoesTreino(position: Int) {
+        val treino = treinos.getOrNull(position) ?: return
+        val opcoes = mutableListOf<String>()
+
+        if (position > 0) opcoes.add("Mover para cima")
+        if (position < treinos.lastIndex) opcoes.add("Mover para baixo")
+        opcoes.add("Remover treino")
+
+        AppUiFeedback.dialogBuilder(requireContext())
+            .setTitle(treino.nome)
+            .setItems(opcoes.toTypedArray()) { _, which ->
+                when (opcoes[which]) {
+                    "Mover para cima" -> moverTreino(position, position - 1)
+                    "Mover para baixo" -> moverTreino(position, position + 1)
+                    "Remover treino" -> confirmarRemocaoTreino(position)
+                }
+            }
+            .show()
+    }
+
+    private fun moverTreino(origem: Int, destino: Int) {
+        if (origem !in treinos.indices || destino !in treinos.indices || origem == destino) return
+
+        val item = treinos.removeAt(origem)
+        treinos.add(destino, item)
+        treinos.forEachIndexed { index, treino -> treino.ordem = index }
+        adapter.atualizar(treinos)
+
+        val alvo = if (meuRole == "TREINADOR") alunoUidSelecionado else Firebase.auth.currentUser?.uid
+        if (alvo.isNullOrBlank()) return
+
+        PlanoTreinoFirestoreRepository.atualizarOrdemTreinos(
+            alunoUid = alvo,
+            treinos = treinos,
+            onOk = {
+                if (!isAdded) return@atualizarOrdemTreinos
+                AppUiFeedback.showToast(requireContext(), "Ordem dos treinos atualizada.", Toast.LENGTH_SHORT)
+            },
+            onErro = { e ->
+                if (!isAdded) return@atualizarOrdemTreinos
+                AppUiFeedback.showToast(requireContext(), "Erro ao atualizar ordem: ${e.message}", Toast.LENGTH_SHORT)
+            }
+        )
+    }
+
     private fun confirmarRemocaoTreino(position: Int) {
         val treino = treinos.getOrNull(position) ?: return
         val nome = treino.nome
@@ -179,6 +226,7 @@ class MontarTreinoFragment : Fragment() {
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Remover") { _, _ ->
                 treinos.removeAt(position)
+                treinos.forEachIndexed { index, item -> item.ordem = index }
                 adapter.atualizar(treinos)
 
                 val alvo = if (meuRole == "TREINADOR") alunoUidSelecionado else Firebase.auth.currentUser?.uid
@@ -186,7 +234,10 @@ class MontarTreinoFragment : Fragment() {
 
                 PlanoTreinoFirestoreRepository.apagarTreinoDoAluno(
                     alunoUid = alvo,
-                    nomeTreino = nome
+                    nomeTreino = nome,
+                    onOk = {
+                        PlanoTreinoFirestoreRepository.atualizarOrdemTreinos(alvo, treinos)
+                    }
                 )
             }
             .show()
