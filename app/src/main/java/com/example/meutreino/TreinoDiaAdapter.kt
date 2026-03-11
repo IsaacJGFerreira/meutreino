@@ -33,11 +33,15 @@ class TreinoDiaAdapter(
     // 🔹 Feedback visual por card, aplicado após o usuário salvar
     private val statusCards = mutableMapOf<String, ExercicioStatusCard>()
 
+    // 🔹 Apenas um treino pode estar ativo por vez
+    private var treinoAtivo: String? = null
+
     inner class TreinoVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val headerTreino: LinearLayout = itemView.findViewById(R.id.headerTreino)
         val tvNomeTreino: TextView = itemView.findViewById(R.id.tvNomeTreino)
         val tvSetaTreino: TextView = itemView.findViewById(R.id.tvSetaTreino)
         val containerExercicios: LinearLayout = itemView.findViewById(R.id.containerExercicios)
+        val btnIniciarTreino: Button = itemView.findViewById(R.id.btnIniciarTreino)
         val btnSalvarTreino: Button = itemView.findViewById(R.id.btnSalvarTreino)
     }
 
@@ -71,10 +75,41 @@ class TreinoDiaAdapter(
             }
         }
 
-        // Botão salvar treino aparece quando o treino está aberto
-        holder.btnSalvarTreino.visibility = if (treinoAberto) View.VISIBLE else View.GONE
+        val esteTreinoAtivo = treinoAtivo == treino.nome
+        val outroTreinoAtivo = treinoAtivo != null && !esteTreinoAtivo
+
+        // Só permite começar quando não existe outro treino ativo
+        holder.btnIniciarTreino.visibility = if (treinoAberto && !esteTreinoAtivo) View.VISIBLE else View.GONE
+        holder.btnIniciarTreino.isEnabled = treinoAberto && !outroTreinoAtivo
+        holder.btnIniciarTreino.alpha = if (holder.btnIniciarTreino.isEnabled) 1f else 0.5f
+
+        holder.btnIniciarTreino.setOnClickListener {
+            if (treinoAtivo == null || treinoAtivo == treino.nome) {
+                treinoAtivo = treino.nome
+                notifyDataSetChanged()
+                AppUiFeedback.showToast(
+                    holder.itemView.context,
+                    "Treino ${treino.nome} iniciado.",
+                    Toast.LENGTH_SHORT
+                )
+            } else {
+                AppUiFeedback.showToast(
+                    holder.itemView.context,
+                    "Finalize o treino ${treinoAtivo} para iniciar outro.",
+                    Toast.LENGTH_SHORT
+                )
+            }
+        }
+
+        // Botão salvar só aparece quando este treino estiver iniciado
+        holder.btnSalvarTreino.visibility = if (treinoAberto && esteTreinoAtivo) View.VISIBLE else View.GONE
 
         holder.btnSalvarTreino.setOnClickListener {
+            if (treinoAtivo != treino.nome) {
+                AppUiFeedback.showToast(holder.itemView.context, "Inicie o treino para registrar séries.", Toast.LENGTH_SHORT)
+                return@setOnClickListener
+            }
+
             val completo = treinoCompleto(treino)
 
             // pega os dados do treino direto do draftVM (rascunho)
@@ -86,7 +121,8 @@ class TreinoDiaAdapter(
                 atualizarStatusCardsDepoisSalvar(treino, completoFlag)
                 onSalvarTreino(treino, doTreino, completoFlag)
                 draftVM.limparTreino(treino.nome)
-                notifyItemChanged(position)
+                treinoAtivo = null
+                notifyDataSetChanged()
                 AppUiFeedback.showToast(
                     holder.itemView.context,
                     if (completoFlag) "Treino salvo!" else "Treino salvo (incompleto).",
@@ -197,6 +233,7 @@ class TreinoDiaAdapter(
                         repsMin = ex.repsMin,
                         repsMax = ex.repsMax,
                         serieNumero = i,
+                        podeEditar = treinoAtivo == treino.nome,
                         onMudou = {
                             statusCards[chaveEx] = ExercicioStatusCard.NEUTRO
                             atualizarBorda()
@@ -225,6 +262,7 @@ class TreinoDiaAdapter(
         repsMin: Int,
         repsMax: Int,
         serieNumero: Int,
+        podeEditar: Boolean,
         onMudou: () -> Unit
     ): View {
 
@@ -285,6 +323,10 @@ class TreinoDiaAdapter(
         etRep.setBackgroundResource(R.drawable.bg_input_rounded)
         etKg.gravity = android.view.Gravity.CENTER
         etRep.gravity = android.view.Gravity.CENTER
+        etKg.isEnabled = podeEditar
+        etRep.isEnabled = podeEditar
+        etKg.alpha = if (podeEditar) 1f else 0.6f
+        etRep.alpha = if (podeEditar) 1f else 0.6f
 
         linha.addView(tvSerie)
         linha.addView(tvAnterior)

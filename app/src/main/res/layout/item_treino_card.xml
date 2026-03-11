@@ -57,6 +57,17 @@
             android:visibility="gone"
             android:paddingTop="8dp"/>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnIniciarTreino"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Iniciar treino"
+            android:visibility="gone"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="@color/green_primary"
+            android:textColor="@android:color/white"
+            app:cornerRadius="12dp"/>
+
         <!-- Botão salvar -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSalvarTreino"
