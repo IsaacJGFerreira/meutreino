@@ -159,6 +159,23 @@ class PerfilFragment : Fragment() {
                     cardStudentStatus.visibility = View.VISIBLE
                     cardNotification.visibility = View.VISIBLE
 
+                    StudentDataCleanupScheduler.executarSeNecessario(requireContext(), user.uid) { limpou ->
+                        if (limpou && isAdded) {
+                            AppUiFeedback.showToast(
+                                requireContext(),
+                                "Limpeza anual automática concluída.",
+                                Toast.LENGTH_SHORT
+                            )
+                            carregarResumoAluno(
+                                user.uid,
+                                tvUltimoTreino,
+                                tvUltimoPeso,
+                                tvUltimoProgresso,
+                                tvUltimoCardio
+                            )
+                        }
+                    }
+
                     carregarDadosAluno(user.uid, etIdade, etAltura)
                     carregarResumoAluno(user.uid, tvUltimoTreino, tvUltimoPeso, tvUltimoProgresso, tvUltimoCardio)
                     iniciarListenerNotificacoesAluno(user.uid, tvNotificacaoTitulo, tvNotificacaoMensagem)
