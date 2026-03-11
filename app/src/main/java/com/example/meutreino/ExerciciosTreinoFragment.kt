@@ -247,6 +247,11 @@ class ExerciciosTreinoFragment : Fragment() {
         val btnSalvar = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSalvarExercicioDialog)
         val btnFechar = dialogView.findViewById<View>(R.id.btnFecharDialog)
 
+        etNome?.hintPortugueseIme()
+        etDesc?.hintPortugueseIme()
+        etTecnica?.hintPortugueseIme()
+        etRir?.hintPortugueseIme()
+
         val dialog = AppUiFeedback.dialogBuilder(requireContext())
             .setView(dialogView)
             .create()
