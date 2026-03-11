@@ -22,7 +22,13 @@ class TreinoDiaAdapter(
     private val onSalvarTreino: (TreinoPlan, Map<String, Pair<String, String>>, Boolean) -> Unit
 ) : RecyclerView.Adapter<TreinoDiaAdapter.TreinoVH>() {
 
-    private enum class ExercicioStatusCard { NEUTRO, CONCLUIDO, INCOMPLETO }
+    private enum class ExercicioStatusCard {
+        NEUTRO,
+        INICIADO,
+        EM_ANDAMENTO,
+        CONCLUIDO,
+        PENDENTE_SALVAR
+    }
 
     // 🔹 Guarda quais treinos estão expandidos
     private val treinosExpandidos = mutableSetOf<String>()
@@ -152,7 +158,10 @@ class TreinoDiaAdapter(
                 incompletoDialog.setPositiveButton("Salvar mesmo assim") { _: DialogInterface, _: Int ->
                     mostrarAvisosEContinuar(false)
                 }
-                incompletoDialog.setNegativeButton("Cancelar", null)
+                incompletoDialog.setNegativeButton("Voltar") { _: DialogInterface, _: Int ->
+                    marcarIncompletosComoPendentes(treino)
+                    notifyDataSetChanged()
+                }
                 incompletoDialog.show()
             } else {
                 mostrarAvisosEContinuar(true)
@@ -203,11 +212,13 @@ class TreinoDiaAdapter(
 
         fun atualizarBorda() {
             val key = "${treino.nome}|${ex.nome}"
-            val status = statusCards[key] ?: ExercicioStatusCard.NEUTRO
+            val status = statusCards[key] ?: statusExercicioAtual(treino, ex)
 
             val (bgColor, strokeColor) = when (status) {
+                ExercicioStatusCard.INICIADO -> Pair(R.color.ex_card_bg_started, R.color.ex_border_started)
+                ExercicioStatusCard.EM_ANDAMENTO -> Pair(R.color.ex_card_bg_warning, R.color.ex_border_warning)
                 ExercicioStatusCard.CONCLUIDO -> Pair(R.color.ex_card_bg_done, R.color.ex_border_done)
-                ExercicioStatusCard.INCOMPLETO -> Pair(R.color.ex_card_bg_warning, R.color.ex_border_warning)
+                ExercicioStatusCard.PENDENTE_SALVAR -> Pair(R.color.ex_card_bg_error, R.color.ex_border_error)
                 ExercicioStatusCard.NEUTRO -> Pair(R.color.ex_card_bg_neutral, R.color.ex_border_pending)
             }
 
@@ -235,7 +246,7 @@ class TreinoDiaAdapter(
                         serieNumero = i,
                         podeEditar = treinoAtivo == treino.nome,
                         onMudou = {
-                            statusCards[chaveEx] = ExercicioStatusCard.NEUTRO
+                            statusCards[chaveEx] = statusExercicioAtual(treino, ex)
                             atualizarBorda()
                         }
                     )
@@ -454,7 +465,35 @@ class TreinoDiaAdapter(
             statusCards[key] = when {
                 completoFlag -> ExercicioStatusCard.CONCLUIDO
                 exercicioCompleto(treino.nome, ex) -> ExercicioStatusCard.CONCLUIDO
-                else -> ExercicioStatusCard.INCOMPLETO
+                else -> ExercicioStatusCard.PENDENTE_SALVAR
+            }
+        }
+    }
+
+    private fun statusExercicioAtual(treino: TreinoPlan, ex: ExercicioPlan): ExercicioStatusCard {
+        return when {
+            exercicioCompleto(treino.nome, ex) -> ExercicioStatusCard.CONCLUIDO
+            exercicioTemPreenchimento(treino.nome, ex) -> ExercicioStatusCard.EM_ANDAMENTO
+            treinoAtivo == treino.nome -> ExercicioStatusCard.INICIADO
+            else -> ExercicioStatusCard.NEUTRO
+        }
+    }
+
+    private fun exercicioTemPreenchimento(treinoNome: String, ex: ExercicioPlan): Boolean {
+        for (i in 1..ex.series) {
+            val d = draftVM.get(treinoNome, ex.nome, i)
+            if (d.kg.isNotBlank() || d.reps.isNotBlank()) return true
+        }
+        return false
+    }
+
+    private fun marcarIncompletosComoPendentes(treino: TreinoPlan) {
+        treino.exercicios.forEach { ex ->
+            val key = "${treino.nome}|${ex.nome}"
+            statusCards[key] = if (exercicioCompleto(treino.nome, ex)) {
+                ExercicioStatusCard.CONCLUIDO
+            } else {
+                ExercicioStatusCard.PENDENTE_SALVAR
             }
         }
     }
