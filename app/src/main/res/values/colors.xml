@@ -38,4 +38,8 @@
     <color name="ex_input_neutral">#D0D6D4</color>
     <color name="ex_input_good">#7BC79F</color>
     <color name="ex_input_bad">#E58A8A</color>
+
+    <color name="treino_card_default_bg">#FEFEFE</color>
+    <color name="treino_card_active_bg">#EEF3FF</color>
+    <color name="treino_card_active_stroke">#5A7AD6</color>
 </resources>

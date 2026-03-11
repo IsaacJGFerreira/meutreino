@@ -43,6 +43,7 @@ class TreinoDiaAdapter(
     private var treinoAtivo: String? = null
 
     inner class TreinoVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val cardTreino: MaterialCardView = itemView.findViewById(R.id.cardTreino)
         val headerTreino: LinearLayout = itemView.findViewById(R.id.headerTreino)
         val tvNomeTreino: TextView = itemView.findViewById(R.id.tvNomeTreino)
         val tvSetaTreino: TextView = itemView.findViewById(R.id.tvSetaTreino)
@@ -83,6 +84,8 @@ class TreinoDiaAdapter(
 
         val esteTreinoAtivo = treinoAtivo == treino.nome
         val outroTreinoAtivo = treinoAtivo != null && !esteTreinoAtivo
+
+        aplicarDestaqueCardTreino(holder, esteTreinoAtivo)
 
         // Só permite começar quando não existe outro treino ativo
         holder.btnIniciarTreino.visibility = if (treinoAberto && !esteTreinoAtivo) View.VISIBLE else View.GONE
@@ -167,6 +170,16 @@ class TreinoDiaAdapter(
                 mostrarAvisosEContinuar(true)
             }
         }
+    }
+
+    private fun aplicarDestaqueCardTreino(holder: TreinoVH, ativo: Boolean) {
+        val ctx = holder.itemView.context
+        val bgColor = if (ativo) R.color.treino_card_active_bg else R.color.treino_card_default_bg
+        val strokeColor = if (ativo) R.color.treino_card_active_stroke else android.R.color.transparent
+
+        holder.cardTreino.setCardBackgroundColor(ContextCompat.getColor(ctx, bgColor))
+        holder.cardTreino.strokeWidth = if (ativo) dp(ctx, 2) else 0
+        holder.cardTreino.strokeColor = ContextCompat.getColor(ctx, strokeColor)
     }
 
     private fun criarViewExercicio(root: View, treino: TreinoPlan, ex: ExercicioPlan): View {
