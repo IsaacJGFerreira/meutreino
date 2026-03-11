@@ -2,14 +2,169 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  color: #e8ecff;
+  background: radial-gradient(circle at top, #1f2b54, #0f1224 55%);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
   padding: 2rem;
+  color: inherit;
 }
 
 a {
   margin-right: 0.5rem;
+  color: #a9c0ff;
+}
+
+main {
+  margin: 0 auto;
+  max-width: 1120px;
+  background: rgba(14, 20, 44, 0.72);
+  border: 1px solid rgba(176, 196, 255, 0.22);
+  border-radius: 20px;
+  padding: 1.5rem;
+  backdrop-filter: blur(8px);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.aluno-page {
+  margin-top: 1.25rem;
+}
+
+.aluno-header h2 {
+  margin-bottom: 0.2rem;
+}
+
+.aluno-header p {
+  margin-top: 0;
+  color: #bbc8f9;
+}
+
+.treinos-grid {
+  margin-top: 1.1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.treino-card {
+  background: linear-gradient(170deg, rgba(34, 46, 92, 0.95), rgba(19, 25, 52, 0.96));
+  border: 1px solid rgba(182, 201, 255, 0.24);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 24px rgba(8, 11, 24, 0.45);
+}
+
+.treino-card.ativo {
+  border-color: #67d6b1;
+  box-shadow: 0 0 0 1px rgba(103, 214, 177, 0.35), 0 10px 24px rgba(11, 21, 29, 0.45);
+}
+
+.treino-card-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.treino-card h3 {
+  margin: 0;
+}
+
+.treino-card p {
+  margin: 0.1rem 0 0;
+  color: #b8c7ff;
+}
+
+.botao-iniciar,
+.botao-expansao,
+.botao-salvar {
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.botao-iniciar {
+  background: linear-gradient(100deg, #8f80ff, #4dd6b1);
+  color: #091127;
+  font-weight: 700;
+}
+
+.botao-expansao {
+  margin-top: 0.75rem;
+  width: 100%;
+  background: rgba(167, 188, 247, 0.13);
+  color: #dce5ff;
+}
+
+.botao-salvar {
+  margin-top: 0.75rem;
+  width: 100%;
+  background: #67d6b1;
+  color: #0e2020;
+  font-weight: 700;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lista-exercicios {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.exercicio-item {
+  background: rgba(8, 14, 37, 0.62);
+  border: 1px solid rgba(164, 183, 245, 0.2);
+  border-radius: 12px;
+  padding: 0.7rem;
+}
+
+.exercicio-item p {
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.exercicio-item label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.exercicio-item input {
+  border-radius: 10px;
+  border: 1px solid rgba(181, 199, 255, 0.3);
+  background: rgba(9, 16, 39, 0.9);
+  color: #f4f7ff;
+  padding: 0.55rem 0.65rem;
+}
+
+
+.botao-iniciar-registro {
+  width: 100%;
+  margin-top: 0.2rem;
+}
+
+.lista-exercicios form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.exercicio-item input:disabled {
+  opacity: 0.55;
 }
