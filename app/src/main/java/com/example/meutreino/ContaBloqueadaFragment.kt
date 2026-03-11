@@ -35,6 +35,7 @@ class ContaBloqueadaFragment : Fragment() {
         val user = Firebase.auth.currentUser ?: return
         val input = EditText(requireContext())
         input.hint = "Ex: AB12CD"
+        input.hintPortugueseIme()
 
         AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Inserir código")

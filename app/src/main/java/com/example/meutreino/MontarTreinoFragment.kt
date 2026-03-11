@@ -118,6 +118,7 @@ class MontarTreinoFragment : Fragment() {
     private fun abrirDialogAdicionarTreino() {
         val input = EditText(requireContext())
         input.hint = "Nome do treino (ex: Treino A...)"
+        input.hintPortugueseIme()
 
         AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Adicionar treino")

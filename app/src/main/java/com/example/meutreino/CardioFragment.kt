@@ -234,6 +234,7 @@ class CardioFragment : Fragment() {
 
         val etAtividade = android.widget.EditText(requireContext())
         etAtividade.hint = "Atividade (ex: Corrida, Bike)"
+        etAtividade.hintPortugueseIme()
         layout.addView(etAtividade)
 
         val etTempoMin = android.widget.EditText(requireContext())
@@ -243,6 +244,7 @@ class CardioFragment : Fragment() {
 
         val etRitmo = android.widget.EditText(requireContext())
         etRitmo.hint = "Ritmo (opcional: mm:ss/km)"
+        etRitmo.hintPortugueseIme()
         layout.addView(etRitmo)
 
         AppUiFeedback.dialogBuilder(requireContext())

@@ -396,6 +396,7 @@ class PerfilFragment : Fragment() {
 
         val input = EditText(requireContext())
         input.hint = "Ex: AB12CD"
+        input.hintPortugueseIme()
 
         AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Inserir código")
