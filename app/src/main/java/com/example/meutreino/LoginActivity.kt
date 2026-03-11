@@ -26,6 +26,9 @@ class LoginActivity : AppCompatActivity() {
         val etEmail = findViewById<EditText>(R.id.etEmail)
         val etSenha = findViewById<EditText>(R.id.etSenha)
         val btnEntrar = findViewById<Button>(R.id.btnEntrar)
+
+        etEmail.hintPortugueseIme()
+        etSenha.hintPortugueseIme()
         val btnCriarConta = findViewById<Button>(R.id.btnCriarConta)
 
         btnEntrar.setOnClickListener {

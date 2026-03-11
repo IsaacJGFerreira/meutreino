@@ -1,11 +1,9 @@
 package com.example.meutreino
 
-import android.os.Build
-import android.os.LocaleList
 import android.widget.TextView
+import androidx.core.os.LocaleListCompat
+import androidx.core.widget.TextViewCompat
 
 fun TextView.hintPortugueseIme() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        imeHintLocales = LocaleList.forLanguageTags("pt-BR")
-    }
+    TextViewCompat.setImeHintLocales(this, LocaleListCompat.forLanguageTags("pt-BR"))
 }

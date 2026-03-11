@@ -25,6 +25,10 @@ class RegisterActivity : AppCompatActivity() {
         val rgRole = findViewById<RadioGroup>(R.id.rgRole)
         val btnCriar = findViewById<Button>(R.id.btnCriarConta)
 
+        edtNome.hintPortugueseIme()
+        edtEmail.hintPortugueseIme()
+        edtSenha.hintPortugueseIme()
+
         btnCriar.setOnClickListener {
             val nome = edtNome.text?.toString()?.trim().orEmpty()
             val email = edtEmail.text?.toString()?.trim().orEmpty()
