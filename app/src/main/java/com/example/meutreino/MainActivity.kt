@@ -189,10 +189,26 @@ class MainActivity : AppCompatActivity() {
                 atualizarBadgeAluno()
             }
             .addOnFailureListener {
-                // Se der erro, joga pro login (melhor do que ficar travado)
-                Firebase.auth.signOut()
-                startActivity(Intent(this, LoginActivity::class.java))
-                finish()
+                // Em falha temporária (ex.: sem internet), mantém sessão atual para evitar
+                // "expulsar" o aluno e perder o que já estava preenchido na tela.
+                userRole = "ALUNO"
+
+                if (savedInstanceState == null) {
+                    trocarTela(PerfilFragment(), limparBackStack = true)
+                }
+
+                fabMenu.visibility = View.VISIBLE
+                atualizarVisibilidadeBarraTopo()
+                solicitarPermissaoNotificacoesSeNecessario()
+                Firebase.auth.currentUser?.uid?.let { iniciarListenerNotificacoesTreino(it) }
+                configurarCliqueBadge()
+                atualizarBadgeAluno()
+
+                AppUiFeedback.showToast(
+                    this,
+                    "Sem conexão no momento. Continuando com dados locais.",
+                    Toast.LENGTH_SHORT
+                )
             }
     }
 
