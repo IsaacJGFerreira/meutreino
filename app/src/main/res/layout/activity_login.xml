@@ -20,6 +20,7 @@
         android:layout_height="wrap_content"
         android:hint="Email"
         android:inputType="textEmailAddress"
+        android:imeHintLocales="pt-BR"
         android:layout_marginBottom="12dp"/>
 
     <EditText
@@ -28,6 +29,7 @@
         android:layout_height="wrap_content"
         android:hint="Senha"
         android:inputType="textPassword"
+        android:imeHintLocales="pt-BR"
         android:layout_marginBottom="16dp"/>
 
     <com.google.android.material.button.MaterialButton
