@@ -239,28 +239,25 @@ class TreinoFragment : Fragment() {
 
     // ✅ Agora recebe uidAlvo para não ficar “travado” no usuário logado
     private fun carregarRegistrosNuvem(uidAlvo: String) {
-        RegistroTreinoFirestoreRepository.carregarRegistros(
+        RegistroTreinoFirestoreRepository.listarTreinos(
             uidAlvo = uidAlvo,
-            onOk = { docs ->
-                if (!isAdded) return@carregarRegistros
+            onOk = { registros ->
+                if (!isAdded) return@listarTreinos
 
                 // só salva cache local se for o próprio aluno logado
                 val meuUid = Firebase.auth.currentUser?.uid
                 if (meuUid == uidAlvo) {
-                    docs.forEach { d ->
-                        val dataHora = d["dataHora"] as? String ?: return@forEach
-                        val nomeTreino = d["nomeTreino"] as? String ?: return@forEach
-                        val completo = d["completo"] as? Boolean ?: false
+                    registros.forEach { registro ->
+                        val idSincronizado = if (registro.id.isBlank()) {
+                            "${registro.dataHora}_${registro.nomeTreino}"
+                        } else {
+                            registro.id
+                        }
 
-                        val registro = TreinoRegistro(
-                            id = "${dataHora}_${nomeTreino}",
-                            dataHora = dataHora,
-                            nomeTreino = nomeTreino,
-                            completo = completo,
-                            exercicios = emptyList()
+                        RegistroTreinoRepository.salvarOuAtualizar(
+                            requireContext(),
+                            registro.copy(id = idSincronizado)
                         )
-
-                        RegistroTreinoRepository.salvarOuAtualizar(requireContext(), registro)
                     }
                 }
 
