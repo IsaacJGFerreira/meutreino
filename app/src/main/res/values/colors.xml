@@ -29,8 +29,12 @@
     <color name="chart_label">#7C8F88</color>
     <color name="ex_card_bg_neutral">#FFFFFFFF</color>
     <color name="ex_card_bg_done">#E8F6EE</color>
+    <color name="ex_card_bg_started">#EEF8F2</color>
     <color name="ex_card_bg_warning">#FFF8E1</color>
+    <color name="ex_card_bg_error">#FDECEC</color>
     <color name="ex_border_warning">#E0B300</color>
+    <color name="ex_border_started">#8FBFA7</color>
+    <color name="ex_border_error">#E58A8A</color>
     <color name="ex_input_neutral">#D0D6D4</color>
     <color name="ex_input_good">#7BC79F</color>
     <color name="ex_input_bad">#E58A8A</color>
