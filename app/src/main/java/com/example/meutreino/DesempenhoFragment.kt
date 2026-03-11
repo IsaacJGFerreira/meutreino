@@ -214,6 +214,7 @@ class DesempenhoFragment : Fragment() {
         }
 
         val input = AutoCompleteTextView(requireContext())
+        input.hintPortugueseIme()
         input.hint = "Digite ou escolha o exercício"
         val ad = android.widget.ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, nomes)
         input.setAdapter(ad)
