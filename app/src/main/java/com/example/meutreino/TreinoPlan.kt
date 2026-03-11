@@ -14,5 +14,6 @@ data class ExercicioPlan(
 // 🔹 Um treino (LegDay, A, B...) com sua lista de exercícios
 data class TreinoPlan(
     val nome: String,
-    val exercicios: MutableList<ExercicioPlan> = mutableListOf()
+    val exercicios: MutableList<ExercicioPlan> = mutableListOf(),
+    var ordem: Int? = null
 )
