@@ -39,6 +39,8 @@ class TreinoFragment : Fragment() {
         rvTreinosDia = view.findViewById(R.id.rvTreinosDia)
         rvTreinosDia.layoutManager = LinearLayoutManager(requireContext())
 
+        draftVM.initialize(requireContext())
+
         // ✅ Adapter primeiro (usa a lista "treinos" como referência)
         adapter = TreinoDiaAdapter(
             treinos = treinos,

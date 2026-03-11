@@ -63,6 +63,13 @@ class TreinoDiaAdapter(
         val treino = treinos[position]
         holder.tvNomeTreino.text = treino.nome
 
+        if (position == 0 && treinoAtivo == null) {
+            val ativoSalvo = draftVM.treinoAtivo()
+            if (!ativoSalvo.isNullOrBlank()) {
+                treinoAtivo = ativoSalvo
+            }
+        }
+
         val treinoAberto = treinosExpandidos.contains(treino.nome)
         holder.containerExercicios.visibility = if (treinoAberto) View.VISIBLE else View.GONE
         holder.tvSetaTreino.text = if (treinoAberto) "⌃" else "⌄"
@@ -82,6 +89,11 @@ class TreinoDiaAdapter(
             }
         }
 
+        if (position == 0 && treinoAtivo != null && treinos.none { it.nome == treinoAtivo }) {
+            treinoAtivo = null
+            draftVM.definirTreinoAtivo(null)
+        }
+
         val esteTreinoAtivo = treinoAtivo == treino.nome
         val outroTreinoAtivo = treinoAtivo != null && !esteTreinoAtivo
 
@@ -95,6 +107,7 @@ class TreinoDiaAdapter(
         holder.btnIniciarTreino.setOnClickListener {
             if (treinoAtivo == null || treinoAtivo == treino.nome) {
                 treinoAtivo = treino.nome
+                draftVM.definirTreinoAtivo(treino.nome)
                 notifyDataSetChanged()
                 AppUiFeedback.showToast(
                     holder.itemView.context,
@@ -131,6 +144,7 @@ class TreinoDiaAdapter(
                 onSalvarTreino(treino, doTreino, completoFlag)
                 draftVM.limparTreino(treino.nome)
                 treinoAtivo = null
+                draftVM.definirTreinoAtivo(null)
                 notifyDataSetChanged()
                 AppUiFeedback.showToast(
                     holder.itemView.context,
