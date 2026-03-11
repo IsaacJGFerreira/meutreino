@@ -63,7 +63,6 @@
             android:textColorHint="#CFE8E0"
             android:textSize="14sp"
             android:inputType="text"
-            android:imeHintLocales="pt-BR"
             android:padding="14dp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -183,7 +182,6 @@
             android:textColor="#F4FFFB"
             android:textColorHint="#CFE8E0"
             android:inputType="text"
-            android:imeHintLocales="pt-BR"
             android:padding="14dp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -212,7 +210,6 @@
             android:textColor="#F4FFFB"
             android:textColorHint="#CFE8E0"
             android:inputType="text"
-            android:imeHintLocales="pt-BR"
             android:padding="14dp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -241,7 +238,6 @@
             android:textColor="#F4FFFB"
             android:textColorHint="#CFE8E0"
             android:inputType="text"
-            android:imeHintLocales="pt-BR"
             android:padding="14dp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
