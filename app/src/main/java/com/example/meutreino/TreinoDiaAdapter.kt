@@ -50,6 +50,7 @@ class TreinoDiaAdapter(
         val containerExercicios: LinearLayout = itemView.findViewById(R.id.containerExercicios)
         val btnIniciarTreino: Button = itemView.findViewById(R.id.btnIniciarTreino)
         val btnSalvarTreino: Button = itemView.findViewById(R.id.btnSalvarTreino)
+        val btnCancelarTreino: Button = itemView.findViewById(R.id.btnCancelarTreino)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TreinoVH {
@@ -125,6 +126,29 @@ class TreinoDiaAdapter(
 
         // Botão salvar só aparece quando este treino estiver iniciado
         holder.btnSalvarTreino.visibility = if (treinoAberto && esteTreinoAtivo) View.VISIBLE else View.GONE
+        holder.btnCancelarTreino.visibility = if (treinoAberto && esteTreinoAtivo) View.VISIBLE else View.GONE
+
+        holder.btnCancelarTreino.setOnClickListener {
+            if (treinoAtivo != treino.nome) {
+                AppUiFeedback.showToast(holder.itemView.context, "Nenhum treino ativo para cancelar.", Toast.LENGTH_SHORT)
+                return@setOnClickListener
+            }
+
+            val cancelDialog = AppUiFeedback.dialogBuilder(holder.itemView.context)
+            cancelDialog.setTitle("Cancelar treino")
+            cancelDialog.setMessage("Deseja cancelar este treino?\n\nNada será salvo e os dados preenchidos serão descartados.")
+            cancelDialog.setPositiveButton("Cancelar treino") { _: DialogInterface, _: Int ->
+                cancelarTreinoEmAndamento(treino)
+                notifyDataSetChanged()
+                AppUiFeedback.showToast(
+                    holder.itemView.context,
+                    "Treino cancelado.",
+                    Toast.LENGTH_SHORT
+                )
+            }
+            cancelDialog.setNegativeButton("Voltar", null)
+            cancelDialog.show()
+        }
 
         holder.btnSalvarTreino.setOnClickListener {
             if (treinoAtivo != treino.nome) {
@@ -536,5 +560,14 @@ class TreinoDiaAdapter(
 
         val color = ContextCompat.getColor(etRep.context, colorRes)
         etRep.backgroundTintList = ColorStateList.valueOf(color)
+    }
+
+    private fun cancelarTreinoEmAndamento(treino: TreinoPlan) {
+        draftVM.limparTreino(treino.nome)
+        treinoAtivo = null
+        draftVM.definirTreinoAtivo(null)
+        treino.exercicios.forEach { ex ->
+            statusCards.remove("${treino.nome}|${ex.nome}")
+        }
     }
 }
