@@ -79,6 +79,17 @@
             android:backgroundTint="@color/green_primary"
             android:textColor="@android:color/white"
             app:cornerRadius="12dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelarTreino"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Cancelar treino"
+            android:visibility="gone"
+            android:layout_marginTop="8dp"
+            android:backgroundTint="#9E9E9E"
+            android:textColor="@android:color/white"
+            app:cornerRadius="12dp"/>
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>
