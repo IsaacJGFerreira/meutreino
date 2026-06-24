@@ -36,3 +36,9 @@ captures/
 # ---- Firebase / segredos ----
 google-services.json
 **/serviceAccountKey.json
+
+# ---- Web desktop ----
+web-desktop/node_modules/
+web-desktop/dist/
+web-desktop/*.log
+web-desktop/*.tsbuildinfo

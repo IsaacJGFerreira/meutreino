@@ -1,0 +1,305 @@
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  runTransaction,
+  setDoc,
+  updateDoc,
+  writeBatch
+} from "firebase/firestore";
+import type { FirebaseServices } from "./firebase";
+import type { ExercisePlan, ProgressRecord, WorkoutPlan } from "./types";
+
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+export function safeDocId(name: string) {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_-]/g, "") || "treino_sem_nome"
+  );
+}
+
+export function newId(prefix = "") {
+  const cryptoId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `${prefix}${cryptoId}`;
+}
+
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(date);
+}
+
+export function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+export function parseNumber(value: string, fallback = 0) {
+  const parsed = Number(value.replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export function mapWorkoutDoc(id: string, data: Record<string, unknown>): WorkoutPlan {
+  const exercises = Array.isArray(data.exercicios) ? data.exercicios : [];
+
+  return {
+    id,
+    nome: String(data.nome ?? "Treino"),
+    ordem: Number(data.ordem ?? 9999),
+    exercicios: exercises.map((item) => {
+      const ex = item as Record<string, unknown>;
+      return {
+        nome: String(ex.nome ?? "Exercício"),
+        series: Number(ex.series ?? 0),
+        repsMin: Number(ex.repsMin ?? 0),
+        repsMax: Number(ex.repsMax ?? 0),
+        descanso: String(ex.descanso ?? "-"),
+        tecnica: String(ex.tecnica ?? "-"),
+        rir: String(ex.rir ?? "-")
+      };
+    })
+  };
+}
+
+export function workoutPayload(plan: WorkoutPlan, targetUid: string, createdBy: string) {
+  return {
+    nome: plan.nome,
+    ordem: plan.ordem ?? 0,
+    exercicios: plan.exercicios.map((ex: ExercisePlan) => ({
+      nome: ex.nome,
+      series: Number(ex.series || 0),
+      repsMin: Number(ex.repsMin || 0),
+      repsMax: Number(ex.repsMax || 0),
+      descanso: ex.descanso || "-",
+      tecnica: ex.tecnica || "-",
+      rir: ex.rir || "-"
+    })),
+    assignedTo: targetUid,
+    createdBy,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+}
+
+export async function saveWorkoutPlan(
+  services: FirebaseServices,
+  targetUid: string,
+  currentUid: string,
+  plan: WorkoutPlan
+) {
+  const ref = doc(services.db, "users", targetUid, "treinos", safeDocId(plan.nome));
+  await setDoc(ref, workoutPayload(plan, targetUid, currentUid), { merge: true });
+
+  if (targetUid !== currentUid) {
+    await registerWorkoutNotification(
+      services,
+      targetUid,
+      currentUid,
+      `Seu treinador atualizou o treino "${plan.nome}".`
+    );
+  }
+}
+
+export async function deleteWorkoutPlan(
+  services: FirebaseServices,
+  targetUid: string,
+  currentUid: string,
+  workoutName: string
+) {
+  await deleteDoc(doc(services.db, "users", targetUid, "treinos", safeDocId(workoutName)));
+
+  if (targetUid !== currentUid) {
+    await registerWorkoutNotification(
+      services,
+      targetUid,
+      currentUid,
+      `Seu treinador removeu o treino "${workoutName}".`
+    );
+  }
+}
+
+export async function registerWorkoutNotification(
+  services: FirebaseServices,
+  targetUid: string,
+  currentUid: string,
+  message: string
+) {
+  const now = Date.now();
+  const base = doc(services.db, "users", targetUid);
+  const noteRef = doc(collection(services.db, "users", targetUid, "notifications"));
+
+  const batch = writeBatch(services.db);
+  batch.set(noteRef, {
+    type: "TREINO_ATUALIZADO",
+    message,
+    read: false,
+    createdAt: now,
+    fromUid: currentUid
+  });
+  batch.set(
+    base,
+    {
+      lastWorkoutUpdateAt: now,
+      lastWorkoutUpdateMessage: message,
+      updatedAt: now
+    },
+    { merge: true }
+  );
+  await batch.commit();
+}
+
+export async function redeemInviteCode(services: FirebaseServices, codeRaw: string, uid: string) {
+  const code = codeRaw.trim().toUpperCase();
+  const inviteRef = doc(services.db, "invites", code);
+  let trainerUidForLink: string | null = null;
+
+  const type = await runTransaction(services.db, async (tx) => {
+    const inviteSnap = await tx.get(inviteRef);
+    if (!inviteSnap.exists()) throw new Error("Código não existe.");
+
+    const invite = inviteSnap.data();
+    if (invite.usedAt) throw new Error("Código já foi usado.");
+
+    const inviteType = String(invite.type ?? "");
+    const userRef = doc(services.db, "users", uid);
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists()) throw new Error("Perfil do usuário não existe.");
+
+    const userRole = String(userSnap.data().role ?? "").trim().toUpperCase();
+
+    if (inviteType === "TREINADOR") {
+      if (userRole !== "TREINADOR") throw new Error("Este código é para TREINADOR.");
+      tx.update(userRef, { approved: true });
+    } else if (inviteType === "ALUNO") {
+      if (userRole !== "ALUNO") throw new Error("Este código é para ALUNO.");
+      const trainerUid = String(invite.trainerUid ?? "");
+      if (!trainerUid) throw new Error("Convite de aluno sem treinador.");
+      trainerUidForLink = trainerUid;
+      tx.update(userRef, {
+        approved: true,
+        trainerId: trainerUid
+      });
+    } else {
+      throw new Error("Tipo de convite desconhecido.");
+    }
+
+    tx.update(inviteRef, {
+      usedAt: Date.now(),
+      usedByUid: uid
+    });
+
+    return inviteType;
+  });
+
+  if (type === "ALUNO" && trainerUidForLink) {
+    const userSnap = await getDoc(doc(services.db, "users", uid));
+    const user = userSnap.data() ?? {};
+    await setDoc(doc(services.db, "trainers", trainerUidForLink, "students", uid), {
+      uid,
+      name: user.name ?? "Sem nome",
+      email: user.email ?? "Sem email",
+      active: user.active ?? true,
+      approved: user.approved ?? true,
+      linkedAt: Date.now()
+    });
+  }
+
+  return type;
+}
+
+function generateCode(size = 6) {
+  return Array.from({ length: size }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join("");
+}
+
+export async function createInviteCode(
+  services: FirebaseServices,
+  type: "TREINADOR" | "ALUNO",
+  adminUid: string,
+  trainerUid: string | null
+) {
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const code = generateCode();
+    const ref = doc(services.db, "invites", code);
+
+    try {
+      await runTransaction(services.db, async (tx) => {
+        const snap = await tx.get(ref);
+        if (snap.exists()) throw new Error("COLLISION");
+        tx.set(ref, {
+          type,
+          trainerUid,
+          createdBy: adminUid,
+          createdAt: Date.now(),
+          usedAt: null,
+          usedByUid: null
+        });
+      });
+      return code;
+    } catch (error) {
+      if ((error as Error).message !== "COLLISION") throw error;
+    }
+  }
+
+  throw new Error("Não foi possível gerar um código livre.");
+}
+
+export async function approveInviteRequest(
+  services: FirebaseServices,
+  requestId: string,
+  trainerUid: string,
+  qty: number,
+  adminUid: string
+) {
+  const codes: string[] = [];
+  for (let index = 0; index < qty; index += 1) {
+    codes.push(await createInviteCode(services, "ALUNO", adminUid, trainerUid));
+  }
+
+  const batch = writeBatch(services.db);
+  const reqRef = doc(services.db, "invite_requests", requestId);
+  batch.update(reqRef, {
+    status: "APPROVED",
+    reviewedAt: Date.now(),
+    reviewedBy: adminUid
+  });
+  codes.forEach((code) => {
+    batch.set(doc(services.db, "invite_requests", requestId, "codes", code), {
+      code,
+      createdAt: Date.now()
+    });
+  });
+  await batch.commit();
+  return codes;
+}
+
+export async function rejectInviteRequest(services: FirebaseServices, requestId: string, adminUid: string) {
+  await updateDoc(doc(services.db, "invite_requests", requestId), {
+    status: "REJECTED",
+    reviewedAt: Date.now(),
+    reviewedBy: adminUid
+  });
+}
+
+export function progressFromDoc(id: string, data: Record<string, unknown>): ProgressRecord {
+  return {
+    id: String(data.id ?? id),
+    data: String(data.data ?? "-"),
+    pesoKg: Number(data.pesoKg ?? 0),
+    fotoFrenteUri: typeof data.fotoFrenteUri === "string" ? data.fotoFrenteUri : null,
+    fotoLadoUri: typeof data.fotoLadoUri === "string" ? data.fotoLadoUri : null,
+    fotoCostasUri: typeof data.fotoCostasUri === "string" ? data.fotoCostasUri : null,
+    createdAt: Number(data.createdAt ?? 0)
+  };
+}
