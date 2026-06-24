@@ -25,6 +25,7 @@ type DraftValue = {
 type SavedTrainingState = {
   activeWorkoutId?: string | null;
   expandedWorkoutId?: string | null;
+  expandedWorkoutIds?: string[];
   expandedExercises?: string[];
   draft?: Record<string, DraftValue>;
 };
@@ -35,15 +36,17 @@ let workouts: WorkoutPlan[] = [];
 let records: WorkoutRecord[] = [];
 let draftValues: Record<string, DraftValue> = {};
 let activeWorkoutId: string | null = null;
-let expandedWorkoutId: string | null = null;
+let expandedWorkoutIds = new Set<string>();
 let expandedExercises = new Set<string>();
 let pendingExercises = new Set<string>();
 let savingWorkoutId: string | null = null;
 let authListenerAttached = false;
+let documentListenersAttached = false;
 let observerStarted = false;
 let renderQueued = false;
 let workoutsUnsubscribe: (() => void) | null = null;
 let recordsUnsubscribe: (() => void) | null = null;
+let lastRenderedHtml = "";
 
 function getServices() {
   if (services) return services;
@@ -74,7 +77,7 @@ function attachAuthListener() {
       startFirebaseListeners(currentUid);
     } else {
       activeWorkoutId = null;
-      expandedWorkoutId = null;
+      expandedWorkoutIds = new Set();
       expandedExercises = new Set();
       draftValues = {};
     }
@@ -97,11 +100,12 @@ function startFirebaseListeners(uid: string) {
       if (activeWorkoutId && !workouts.some((workout) => workout.id === activeWorkoutId)) {
         activeWorkoutId = null;
       }
-      if (expandedWorkoutId && !workouts.some((workout) => workout.id === expandedWorkoutId)) {
-        expandedWorkoutId = workouts[0]?.id ?? null;
-      }
-      if (!expandedWorkoutId && workouts.length > 0) {
-        expandedWorkoutId = workouts[0].id;
+
+      const validIds = new Set(workouts.map((workout) => workout.id));
+      expandedWorkoutIds = new Set(Array.from(expandedWorkoutIds).filter((id) => validIds.has(id)));
+
+      if (!expandedWorkoutIds.size && workouts.length > 0) {
+        expandedWorkoutIds.add(workouts[0].id);
       }
 
       saveTrainingState();
@@ -176,8 +180,7 @@ function injectStyles() {
     .${PANEL_CLASS} > .panel-heading,
     .${PANEL_CLASS} > .exercise-stack,
     .${PANEL_CLASS} > .action-row,
-    .${PANEL_CLASS} > .web-training-status,
-    .${PANEL_CLASS} > .${PANEL_CLASS}-hidden {
+    .${PANEL_CLASS} > .web-training-status {
       display: none !important;
     }
 
@@ -208,11 +211,7 @@ function injectStyles() {
       background: #ffffff;
       box-shadow: 0 4px 10px rgba(31, 71, 60, 0.18);
       overflow: hidden;
-      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-    }
-
-    .mobile-workout-card.is-open {
-      background: #ffffff;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease, opacity 160ms ease;
     }
 
     .mobile-workout-card.is-active {
@@ -222,7 +221,7 @@ function injectStyles() {
     }
 
     .mobile-workout-card.is-locked {
-      opacity: 0.7;
+      opacity: 0.82;
     }
 
     .mobile-workout-header,
@@ -425,11 +424,6 @@ function injectStyles() {
       background: #9d9d9d;
     }
 
-    .mobile-btn-disabled {
-      color: #6f7b7d;
-      background: #d8dedc;
-    }
-
     .mobile-lock-note {
       margin: 0;
       color: #7a5b00;
@@ -547,8 +541,7 @@ function ensureRoot(panel: HTMLElement) {
     root = document.createElement("div");
     root.id = ROOT_ID;
     panel.appendChild(root);
-    root.addEventListener("click", handleRootClick);
-    root.addEventListener("input", handleRootInput);
+    lastRenderedHtml = "";
   }
 
   return root;
@@ -559,7 +552,12 @@ function renderMobileTraining() {
   if (!panel) return;
 
   const root = ensureRoot(panel);
-  root.innerHTML = renderTrainingHtml();
+  const html = renderTrainingHtml();
+
+  if (html !== lastRenderedHtml) {
+    root.innerHTML = html;
+    lastRenderedHtml = html;
+  }
 }
 
 function renderTrainingHtml() {
@@ -577,7 +575,7 @@ function renderTrainingHtml() {
 }
 
 function renderWorkoutCard(workout: WorkoutPlan) {
-  const isOpen = expandedWorkoutId === workout.id;
+  const isOpen = expandedWorkoutIds.has(workout.id);
   const isActive = activeWorkoutId === workout.id;
   const isLocked = Boolean(activeWorkoutId && activeWorkoutId !== workout.id);
   const classes = ["mobile-workout-card", isOpen ? "is-open" : "", isActive ? "is-active" : "", isLocked ? "is-locked" : ""]
@@ -723,22 +721,25 @@ function renderRecentHistory() {
   `;
 }
 
-function handleRootClick(event: Event) {
+function handleDocumentClick(event: MouseEvent) {
   const target = event.target as Element | null;
-  const actionElement = target?.closest("[data-action]") as HTMLElement | null;
+  const actionElement = target?.closest(`#${ROOT_ID} [data-action]`) as HTMLElement | null;
   if (!actionElement) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
 
   const action = actionElement.getAttribute("data-action");
   const workoutId = actionElement.getAttribute("data-workout-id") ?? "";
   const workout = workouts.find((item) => item.id === workoutId);
 
   if (action === "toggle-workout") {
-    if (activeWorkoutId && activeWorkoutId !== workoutId) {
-      showToast("Finalize ou cancele o treino ativo antes de abrir outro treino.");
-      return;
+    if (expandedWorkoutIds.has(workoutId)) {
+      expandedWorkoutIds.delete(workoutId);
+    } else {
+      expandedWorkoutIds.add(workoutId);
     }
-
-    expandedWorkoutId = expandedWorkoutId === workoutId ? null : workoutId;
     saveTrainingState();
     scheduleRender();
     return;
@@ -774,9 +775,9 @@ function handleRootClick(event: Event) {
   }
 }
 
-function handleRootInput(event: Event) {
+function handleDocumentInput(event: Event) {
   const input = event.target as HTMLInputElement | null;
-  if (!input?.matches("input[data-action]")) return;
+  if (!input?.matches(`#${ROOT_ID} input[data-action]`)) return;
 
   const action = input.getAttribute("data-action");
   const workoutId = input.getAttribute("data-workout-id") ?? "";
@@ -797,7 +798,8 @@ function handleRootInput(event: Event) {
     const exercise = workouts.find((item) => item.id === workoutId)?.exercicios[exerciseIndex];
     if (exercise) {
       input.classList.remove("rep-low", "rep-ok", "rep-high");
-      input.classList.add(getRepFeedbackClass(input.value, exercise.repsMin, exercise.repsMax));
+      const feedbackClass = getRepFeedbackClass(input.value, exercise.repsMin, exercise.repsMax);
+      if (feedbackClass) input.classList.add(feedbackClass);
     }
   }
 
@@ -814,7 +816,7 @@ function startWorkout(workout: WorkoutPlan) {
   }
 
   activeWorkoutId = workout.id;
-  expandedWorkoutId = workout.id;
+  expandedWorkoutIds.add(workout.id);
   pendingExercises.clear();
   workout.exercicios.forEach((_, index) => expandedExercises.add(getExerciseKey(workout.id, index)));
   saveTrainingState();
@@ -1035,7 +1037,7 @@ function saveTrainingState() {
 
   const state: SavedTrainingState = {
     activeWorkoutId,
-    expandedWorkoutId,
+    expandedWorkoutIds: Array.from(expandedWorkoutIds),
     expandedExercises: Array.from(expandedExercises),
     draft: draftValues
   };
@@ -1047,7 +1049,7 @@ function loadTrainingState(uid: string) {
   const raw = localStorage.getItem(`${STORAGE_PREFIX}.${uid}`);
   if (!raw) {
     activeWorkoutId = null;
-    expandedWorkoutId = null;
+    expandedWorkoutIds = new Set();
     expandedExercises = new Set();
     draftValues = {};
     pendingExercises = new Set();
@@ -1057,13 +1059,13 @@ function loadTrainingState(uid: string) {
   try {
     const parsed = JSON.parse(raw) as SavedTrainingState;
     activeWorkoutId = parsed.activeWorkoutId ?? null;
-    expandedWorkoutId = parsed.expandedWorkoutId ?? null;
+    expandedWorkoutIds = new Set(parsed.expandedWorkoutIds ?? (parsed.expandedWorkoutId ? [parsed.expandedWorkoutId] : []));
     expandedExercises = new Set(parsed.expandedExercises ?? []);
     draftValues = parsed.draft ?? {};
     pendingExercises = new Set();
   } catch {
     activeWorkoutId = null;
-    expandedWorkoutId = null;
+    expandedWorkoutIds = new Set();
     expandedExercises = new Set();
     draftValues = {};
     pendingExercises = new Set();
@@ -1115,13 +1117,28 @@ function showToast(message: string) {
   window.setTimeout(() => toast.remove(), 3600);
 }
 
+function isMutationInsideTrainingRoot(mutation: MutationRecord) {
+  const target = mutation.target;
+  if (!(target instanceof Element)) return false;
+  return Boolean(target.closest(`#${ROOT_ID}`));
+}
+
 function bootMobileTraining() {
   injectStyles();
   attachAuthListener();
 
+  if (!documentListenersAttached) {
+    documentListenersAttached = true;
+    document.addEventListener("click", handleDocumentClick, true);
+    document.addEventListener("input", handleDocumentInput, true);
+  }
+
   if (!observerStarted && document.body) {
     observerStarted = true;
-    new MutationObserver(scheduleRender).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver((mutations) => {
+      if (mutations.length > 0 && mutations.every(isMutationInsideTrainingRoot)) return;
+      scheduleRender();
+    }).observe(document.body, { childList: true, subtree: true });
   }
 
   scheduleRender();
