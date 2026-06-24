@@ -4,6 +4,7 @@ import App from "./App";
 import "./styles.css";
 import "./trainingFlowPatch";
 import "./removeRecentTrainingHistory";
+import "./workoutBuilderDeletionConfirm";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
