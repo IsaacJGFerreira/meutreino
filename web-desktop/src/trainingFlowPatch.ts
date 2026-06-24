@@ -1,42 +1,49 @@
-import { collection, doc, limit as limitDocs, onSnapshot, orderBy, query, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  type DocumentData
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { formatDateTime, newId, parseNumber } from "./firebaseApi";
+import { formatDateTime, mapWorkoutDoc, newId, parseNumber } from "./firebaseApi";
 import { initFirebase, readInitialConfig, type FirebaseServices } from "./firebase";
+import type { ExercisePlan, ExerciseRecord, SeriesRecord, WorkoutPlan, WorkoutRecord } from "./types";
 
-const STYLE_ID = "meutreino-web-training-flow-style";
-const START_CLASS = "web-training-start";
-const CANCEL_CLASS = "web-training-cancel";
-const FINISH_CLASS = "web-training-finish";
-const STATUS_CLASS = "web-training-status";
-const HISTORY_CLASS = "training-history-panel";
+const STYLE_ID = "meutreino-mobile-training-style";
+const ROOT_ID = "meutreino-mobile-training-root";
+const PANEL_CLASS = "training-mobile-native";
+const STORAGE_PREFIX = "meutreino.webTraining.mobileState";
 
-type ActiveWorkout = {
-  id: string;
-  name: string;
+type DraftValue = {
+  kg: string;
+  reps: string;
 };
 
-type TrainingRefs = {
-  panel: HTMLElement;
-  section: HTMLElement;
-  select: HTMLSelectElement;
-  actionRow: HTMLElement;
-  startButton: HTMLButtonElement;
-  cancelButton: HTMLButtonElement;
-  finishButton: HTMLButtonElement;
-  workoutId: string;
-  workoutName: string;
+type SavedTrainingState = {
+  activeWorkoutId?: string | null;
+  expandedWorkoutId?: string | null;
+  expandedExercises?: string[];
+  draft?: Record<string, DraftValue>;
 };
 
 let services: FirebaseServices | null = null;
-let activeUserId: string | null = null;
-let activeWorkout: ActiveWorkout | null = null;
+let currentUid: string | null = null;
+let workouts: WorkoutPlan[] = [];
+let records: WorkoutRecord[] = [];
+let draftValues: Record<string, DraftValue> = {};
+let activeWorkoutId: string | null = null;
+let expandedWorkoutId: string | null = null;
+let expandedExercises = new Set<string>();
+let pendingExercises = new Set<string>();
+let savingWorkoutId: string | null = null;
 let authListenerAttached = false;
-let documentListenersAttached = false;
 let observerStarted = false;
 let renderQueued = false;
-let historyUnsubscribe: (() => void) | null = null;
-let historyUid: string | null = null;
-let historyList: HTMLElement | null = null;
+let workoutsUnsubscribe: (() => void) | null = null;
+let recordsUnsubscribe: (() => void) | null = null;
 
 function getServices() {
   if (services) return services;
@@ -57,13 +64,100 @@ function attachAuthListener() {
 
   authListenerAttached = true;
   onAuthStateChanged(currentServices.auth, (user) => {
-    activeUserId = user?.uid ?? null;
-    if (!activeUserId) {
-      activeWorkout = null;
-      stopHistoryListener();
+    currentUid = user?.uid ?? null;
+    workouts = [];
+    records = [];
+    stopFirebaseListeners();
+
+    if (currentUid) {
+      loadTrainingState(currentUid);
+      startFirebaseListeners(currentUid);
+    } else {
+      activeWorkoutId = null;
+      expandedWorkoutId = null;
+      expandedExercises = new Set();
+      draftValues = {};
     }
-    scheduleEnhancement();
+
+    scheduleRender();
   });
+}
+
+function startFirebaseListeners(uid: string) {
+  const currentServices = getServices();
+  if (!currentServices) return;
+
+  workoutsUnsubscribe = onSnapshot(
+    collection(currentServices.db, "users", uid, "treinos"),
+    (snap) => {
+      workouts = snap.docs
+        .map((item) => mapWorkoutDoc(item.id, item.data()))
+        .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome));
+
+      if (activeWorkoutId && !workouts.some((workout) => workout.id === activeWorkoutId)) {
+        activeWorkoutId = null;
+      }
+      if (expandedWorkoutId && !workouts.some((workout) => workout.id === expandedWorkoutId)) {
+        expandedWorkoutId = workouts[0]?.id ?? null;
+      }
+      if (!expandedWorkoutId && workouts.length > 0) {
+        expandedWorkoutId = workouts[0].id;
+      }
+
+      saveTrainingState();
+      scheduleRender();
+    },
+    () => {
+      showToast("Não foi possível carregar os treinos.");
+    }
+  );
+
+  recordsUnsubscribe = onSnapshot(
+    query(collection(currentServices.db, "users", uid, "treino_registros"), orderBy("createdAt", "desc")),
+    (snap) => {
+      records = snap.docs.map((item) => workoutRecordFromDoc(item.id, item.data()));
+      scheduleRender();
+    },
+    () => {
+      showToast("Não foi possível carregar o histórico anterior.");
+    }
+  );
+}
+
+function stopFirebaseListeners() {
+  workoutsUnsubscribe?.();
+  recordsUnsubscribe?.();
+  workoutsUnsubscribe = null;
+  recordsUnsubscribe = null;
+}
+
+function workoutRecordFromDoc(id: string, data: DocumentData): WorkoutRecord {
+  const rawExercises = Array.isArray(data.exercicios) ? data.exercicios : [];
+
+  return {
+    id,
+    idLocal: String(data.idLocal ?? id),
+    dataHora: String(data.dataHora ?? "-"),
+    nomeTreino: String(data.nomeTreino ?? "Treino"),
+    completo: Boolean(data.completo ?? false),
+    createdAt: Number(data.createdAt ?? 0),
+    exercicios: rawExercises.map((item: unknown): ExerciseRecord => {
+      const exercise = item as Record<string, unknown>;
+      const rawSeries = Array.isArray(exercise.series) ? exercise.series : [];
+
+      return {
+        nomeExercicio: String(exercise.nomeExercicio ?? "Exercício"),
+        series: rawSeries.map((serie: unknown): SeriesRecord => {
+          const current = serie as Record<string, unknown>;
+          return {
+            serieNumero: Number(current.serieNumero ?? 0),
+            kg: Number(current.kg ?? 0),
+            reps: Number(current.reps ?? 0)
+          };
+        })
+      };
+    })
+  };
 }
 
 function injectStyles() {
@@ -72,94 +166,326 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .screen.training-flow-screen {
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-      align-items: start;
+    .${PANEL_CLASS} {
+      border: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      padding: 0 !important;
     }
 
-    .screen.training-flow-screen > .panel:first-child {
-      grid-column: 1;
-    }
-
-    .${HISTORY_CLASS} {
-      grid-column: 2;
-      grid-row: 1;
-      position: sticky;
-      top: 24px;
-    }
-
-    .${STATUS_CLASS} {
-      margin: 0 0 14px;
-      padding: 10px 12px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--green-soft);
-      color: var(--green-dark);
-      font-weight: 800;
-    }
-
-    .${STATUS_CLASS}.blocked {
-      background: #fff8e1;
-      color: #7a5b00;
-    }
-
-    .${START_CLASS}[hidden] {
+    .${PANEL_CLASS} > .panel-heading,
+    .${PANEL_CLASS} > .exercise-stack,
+    .${PANEL_CLASS} > .action-row,
+    .${PANEL_CLASS} > .web-training-status,
+    .${PANEL_CLASS} > .${PANEL_CLASS}-hidden {
       display: none !important;
     }
 
-    .exercise-stack.training-locked input:disabled {
-      background: #eef1ef;
-      color: var(--muted);
+    .mobile-training-app {
+      width: min(100%, 430px);
+      margin: 0 auto;
+      padding: 4px 0 24px;
+      color: #246e73;
     }
 
-    .exercise-stack.training-locked .exercise-box {
-      opacity: 0.72;
+    .mobile-training-title {
+      margin: 0 0 18px;
+      text-align: center;
+      color: var(--green, #5aab8a);
+      font-size: 30px;
+      line-height: 1.1;
+      font-weight: 900;
     }
 
-    .exercise-stack.training-active .exercise-box {
-      border-color: rgba(90, 171, 138, 0.55);
-      box-shadow: 0 0 0 3px rgba(90, 171, 138, 0.1);
-    }
-
-    .training-history-list {
+    .mobile-training-list {
       display: grid;
-      gap: 10px;
-      max-height: 68vh;
-      overflow: auto;
-      padding-right: 4px;
+      gap: 12px;
     }
 
-    .training-history-item {
-      display: grid;
-      gap: 4px;
-      border: 1px solid var(--line);
+    .mobile-workout-card {
+      border: 1px solid rgba(48, 111, 115, 0.12);
       border-radius: 8px;
-      background: #fbfdfc;
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(31, 71, 60, 0.18);
+      overflow: hidden;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .mobile-workout-card.is-open {
+      background: #ffffff;
+    }
+
+    .mobile-workout-card.is-active {
+      border-color: #5a72e8;
+      box-shadow: 0 0 0 1px #5a72e8, 0 8px 18px rgba(48, 71, 160, 0.18);
+      background: #eef3ff;
+    }
+
+    .mobile-workout-card.is-locked {
+      opacity: 0.7;
+    }
+
+    .mobile-workout-header,
+    .mobile-exercise-header {
+      width: 100%;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #5d878b;
+      background: transparent;
+      padding: 16px 18px;
+      text-align: left;
+      font-weight: 900;
+    }
+
+    .mobile-workout-header span:first-child {
+      font-size: 16px;
+    }
+
+    .mobile-chevron {
+      color: #246e73;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .mobile-workout-body {
+      display: grid;
+      gap: 12px;
+      padding: 0 12px 14px;
+    }
+
+    .mobile-exercise-card {
+      border: 1px solid rgba(90, 171, 138, 0.72);
+      border-radius: 14px;
+      background: #eff9f4;
+      overflow: hidden;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .mobile-exercise-card.status-started {
+      border-color: #8ec7aa;
+      background: #eff9f4;
+    }
+
+    .mobile-exercise-card.status-progress {
+      border-color: #d9b35b;
+      background: #fff9e8;
+    }
+
+    .mobile-exercise-card.status-done {
+      border-color: #5aab8a;
+      background: #edf8f2;
+      box-shadow: inset 0 0 0 1px rgba(90, 171, 138, 0.18);
+    }
+
+    .mobile-exercise-card.status-pending {
+      border-color: #d95f5f;
+      background: #fff1f1;
+    }
+
+    .mobile-exercise-header {
+      min-height: auto;
+      align-items: flex-start;
+      color: #246e73;
+      padding: 12px 12px 6px;
+    }
+
+    .mobile-exercise-name {
+      display: block;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .mobile-exercise-count {
+      display: block;
+      margin-top: 4px;
+      color: #526c70;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .mobile-exercise-meta {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0 12px 12px;
+      border-bottom: 1px solid rgba(36, 110, 115, 0.08);
+    }
+
+    .mobile-exercise-meta dt {
+      margin: 0 0 4px;
+      color: #2d3b3c;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .mobile-exercise-meta dd {
+      margin: 0;
+      color: #54676a;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .mobile-series-table {
+      display: grid;
+      gap: 8px;
       padding: 12px;
     }
 
-    .training-history-item strong,
-    .training-history-item span,
-    .training-history-item small {
-      display: block;
+    .mobile-series-head,
+    .mobile-series-row {
+      display: grid;
+      grid-template-columns: 34px minmax(96px, 1fr) 62px 62px;
+      align-items: center;
+      gap: 8px;
     }
 
-    .training-history-item small {
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .training-history-badge {
-      width: fit-content;
-      border-radius: 8px;
-      padding: 4px 8px;
-      background: var(--green-soft);
-      color: var(--green-dark);
+    .mobile-series-head {
+      color: #2d3b3c;
       font-size: 12px;
       font-weight: 900;
     }
 
-    .training-flow-toast {
+    .mobile-series-head span:last-child {
+      grid-column: span 2;
+      text-align: right;
+    }
+
+    .mobile-series-row {
+      min-height: 44px;
+      color: #244246;
+      font-size: 14px;
+    }
+
+    .mobile-previous {
+      color: #6b7c7f;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-series-input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #ccd8d3;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #2f3e3f;
+      padding: 8px 6px;
+      text-align: center;
+      outline: none;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .mobile-series-input:disabled {
+      background: #d8dedc;
+      color: #5f6c6f;
+    }
+
+    .mobile-series-input.rep-low {
+      border-color: #d95f5f;
+      background: #fff1f1;
+    }
+
+    .mobile-series-input.rep-ok {
+      border-color: #ccd8d3;
+      background: #ffffff;
+    }
+
+    .mobile-series-input.rep-high {
+      border-color: #5aab8a;
+      background: #eef8f2;
+    }
+
+    .mobile-action-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mobile-action-stack button {
+      width: 100%;
+      min-height: 36px;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 900;
+    }
+
+    .mobile-btn-start,
+    .mobile-btn-save {
+      color: #ffffff;
+      background: var(--green, #5aab8a);
+    }
+
+    .mobile-btn-cancel {
+      color: #ffffff;
+      background: #9d9d9d;
+    }
+
+    .mobile-btn-disabled {
+      color: #6f7b7d;
+      background: #d8dedc;
+    }
+
+    .mobile-lock-note {
+      margin: 0;
+      color: #7a5b00;
+      background: #fff8e1;
+      border: 1px solid rgba(122, 91, 0, 0.16);
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mobile-history-card {
+      margin-top: 14px;
+      border: 1px solid rgba(48, 111, 115, 0.12);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(31, 71, 60, 0.12);
+      padding: 14px;
+    }
+
+    .mobile-history-card h3 {
+      margin: 0 0 10px;
+      color: #246e73;
+      font-size: 16px;
+    }
+
+    .mobile-history-list {
+      display: grid;
+      gap: 8px;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .mobile-history-item {
+      display: grid;
+      gap: 2px;
+      border: 1px solid rgba(48, 111, 115, 0.1);
+      border-radius: 8px;
+      background: #fbfdfc;
+      padding: 10px;
+      color: #244246;
+    }
+
+    .mobile-history-item strong,
+    .mobile-history-item small,
+    .mobile-history-item span {
+      display: block;
+    }
+
+    .mobile-history-item small,
+    .mobile-empty {
+      color: #6b7c7f;
+      font-size: 12px;
+    }
+
+    .mobile-training-toast {
       position: fixed;
       right: 22px;
       bottom: 22px;
@@ -167,162 +493,601 @@ function injectStyles() {
       max-width: min(360px, calc(100vw - 44px));
       border-radius: 8px;
       padding: 12px 14px;
-      background: var(--text);
+      background: #2f3e3f;
       color: white;
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow, 0 16px 34px rgba(41, 71, 61, 0.12));
       font-weight: 800;
     }
 
-    @media (max-width: 980px) {
-      .screen.training-flow-screen {
-        grid-template-columns: 1fr;
+    @media (min-width: 980px) {
+      .mobile-training-app {
+        width: min(100%, 780px);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .mobile-training-app {
+        width: 100%;
       }
 
-      .${HISTORY_CLASS} {
-        grid-column: 1;
-        grid-row: auto;
-        position: static;
+      .mobile-series-head,
+      .mobile-series-row {
+        grid-template-columns: 32px minmax(84px, 1fr) 62px 62px;
       }
     }
   `;
   document.head.appendChild(style);
 }
 
-function scheduleEnhancement() {
+function scheduleRender() {
   if (renderQueued) return;
   renderQueued = true;
   window.requestAnimationFrame(() => {
     renderQueued = false;
-    attachAuthListener();
-    enhanceTrainingScreen();
+    renderMobileTraining();
   });
-}
-
-function normalize(text: string | null | undefined) {
-  return (text ?? "").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 function findTrainingPanel() {
   const panels = Array.from(document.querySelectorAll<HTMLElement>("section.screen > article.panel"));
   return (
     panels.find((panel) => {
+      if (panel.querySelector(`#${ROOT_ID}`)) return true;
       const title = normalize(panel.querySelector(".section-title h3")?.textContent);
-      return title === "treino" && Boolean(panel.querySelector(".exercise-stack")) && Boolean(panel.querySelector("select"));
+      return title === "treino" && Boolean(panel.querySelector(".exercise-stack"));
     }) ?? null
   );
 }
 
-function findActionButton(actionRow: HTMLElement, label: string) {
-  return Array.from(actionRow.querySelectorAll<HTMLButtonElement>("button")).find((button) => normalize(button.textContent).includes(label));
+function ensureRoot(panel: HTMLElement) {
+  panel.classList.add(PANEL_CLASS);
+  let root = panel.querySelector<HTMLElement>(`#${ROOT_ID}`);
+
+  if (!root) {
+    root = document.createElement("div");
+    root.id = ROOT_ID;
+    panel.appendChild(root);
+    root.addEventListener("click", handleRootClick);
+    root.addEventListener("input", handleRootInput);
+  }
+
+  return root;
 }
 
-function getTrainingRefs(): TrainingRefs | null {
+function renderMobileTraining() {
   const panel = findTrainingPanel();
-  const section = panel?.closest<HTMLElement>("section.screen") ?? null;
-  const select = panel?.querySelector<HTMLSelectElement>("select") ?? null;
-  const actionRow = panel?.querySelector<HTMLElement>(".action-row") ?? null;
-  if (!panel || !section || !select || !actionRow) return null;
+  if (!panel) return;
 
-  const cancelButton = findActionButton(actionRow, "cancelar treino");
-  const finishButton = findActionButton(actionRow, "finalizar treino");
-  if (!cancelButton || !finishButton) return null;
-
-  let startButton = actionRow.querySelector<HTMLButtonElement>(`.${START_CLASS}`);
-  if (!startButton) {
-    startButton = document.createElement("button");
-    startButton.className = `primary-btn ${START_CLASS}`;
-    startButton.type = "button";
-    startButton.textContent = "Começar treino";
-    actionRow.prepend(startButton);
-  }
-
-  cancelButton.classList.add(CANCEL_CLASS);
-  finishButton.classList.add(FINISH_CLASS);
-
-  const workoutId = select.value;
-  const workoutName = select.selectedOptions[0]?.textContent?.trim() || "Treino";
-
-  return { panel, section, select, actionRow, startButton, cancelButton, finishButton, workoutId, workoutName };
+  const root = ensureRoot(panel);
+  root.innerHTML = renderTrainingHtml();
 }
 
-function ensureStatus(refs: TrainingRefs) {
-  let status = refs.panel.querySelector<HTMLElement>(`.${STATUS_CLASS}`);
-  if (!status) {
-    status = document.createElement("p");
-    status.className = STATUS_CLASS;
-    refs.panel.querySelector(".panel-heading")?.after(status);
-  }
+function renderTrainingHtml() {
+  const workoutCards = workouts.length
+    ? workouts.map((workout) => renderWorkoutCard(workout)).join("")
+    : `<p class="mobile-empty">Nenhum treino recebido ainda.</p>`;
 
-  const isCurrentActive = activeWorkout?.id === refs.workoutId;
-  const hasAnotherActive = Boolean(activeWorkout && !isCurrentActive);
-
-  if (isCurrentActive) {
-    status.textContent = `Treino ${activeWorkout?.name} em andamento. Preencha as séries e finalize para salvar no Firebase.`;
-    status.classList.remove("blocked");
-  } else if (hasAnotherActive) {
-    status.textContent = `Finalize ou cancele ${activeWorkout?.name} antes de iniciar outro treino.`;
-    status.classList.add("blocked");
-  } else {
-    status.textContent = "Clique em Começar treino para liberar os campos. Cancelar descarta os dados sem salvar.";
-    status.classList.remove("blocked");
-  }
+  return `
+    <div class="mobile-training-app">
+      <h1 class="mobile-training-title">Treino</h1>
+      <div class="mobile-training-list">${workoutCards}</div>
+      ${renderRecentHistory()}
+    </div>
+  `;
 }
 
-function ensureHistoryPanel(section: HTMLElement) {
-  section.classList.add("training-flow-screen");
+function renderWorkoutCard(workout: WorkoutPlan) {
+  const isOpen = expandedWorkoutId === workout.id;
+  const isActive = activeWorkoutId === workout.id;
+  const isLocked = Boolean(activeWorkoutId && activeWorkoutId !== workout.id);
+  const classes = ["mobile-workout-card", isOpen ? "is-open" : "", isActive ? "is-active" : "", isLocked ? "is-locked" : ""]
+    .filter(Boolean)
+    .join(" ");
 
-  let panel = section.querySelector<HTMLElement>(`.${HISTORY_CLASS}`);
-  if (!panel) {
-    panel = document.createElement("aside");
-    panel.className = `panel ${HISTORY_CLASS}`;
-    panel.innerHTML = `
-      <div class="section-title"><span aria-hidden="true">◷</span><h3>Histórico anterior</h3></div>
-      <div class="training-history-list"><p class="empty-state">Carregando histórico...</p></div>
+  return `
+    <article class="${classes}" data-workout-id="${escapeAttribute(workout.id)}">
+      <button class="mobile-workout-header" type="button" data-action="toggle-workout" data-workout-id="${escapeAttribute(workout.id)}">
+        <span>${escapeHtml(workout.nome)}</span>
+        <span class="mobile-chevron">${isOpen ? "˄" : "˅"}</span>
+      </button>
+      ${isOpen ? renderWorkoutBody(workout, isActive, isLocked) : ""}
+    </article>
+  `;
+}
+
+function renderWorkoutBody(workout: WorkoutPlan, isActive: boolean, isLocked: boolean) {
+  return `
+    <div class="mobile-workout-body">
+      ${workout.exercicios.map((exercise, index) => renderExerciseCard(workout, exercise, index, isActive)).join("")}
+      ${renderWorkoutActions(workout, isActive, isLocked)}
+    </div>
+  `;
+}
+
+function renderWorkoutActions(workout: WorkoutPlan, isActive: boolean, isLocked: boolean) {
+  if (isActive) {
+    return `
+      <div class="mobile-action-stack">
+        <button class="mobile-btn-save" type="button" data-action="save-workout" data-workout-id="${escapeAttribute(workout.id)}" ${savingWorkoutId === workout.id ? "disabled" : ""}>
+          ${savingWorkoutId === workout.id ? "Salvando..." : "Salvar treino"}
+        </button>
+        <button class="mobile-btn-cancel" type="button" data-action="cancel-workout" data-workout-id="${escapeAttribute(workout.id)}" ${savingWorkoutId === workout.id ? "disabled" : ""}>
+          Cancelar treino
+        </button>
+      </div>
     `;
-    section.appendChild(panel);
   }
 
-  historyList = panel.querySelector<HTMLElement>(".training-history-list");
-  ensureHistoryListener();
+  if (isLocked) {
+    const activeName = workouts.find((item) => item.id === activeWorkoutId)?.nome ?? "o treino ativo";
+    return `<p class="mobile-lock-note">Finalize ou cancele ${escapeHtml(activeName)} antes de iniciar outro treino.</p>`;
+  }
+
+  return `
+    <div class="mobile-action-stack">
+      <button class="mobile-btn-start" type="button" data-action="start-workout" data-workout-id="${escapeAttribute(workout.id)}">
+        Iniciar treino
+      </button>
+    </div>
+  `;
 }
 
-function ensureHistoryListener() {
-  const currentServices = getServices();
-  const uid = activeUserId ?? currentServices?.auth.currentUser?.uid ?? null;
-  if (!currentServices || !uid || !historyList) return;
-  if (historyUid === uid && historyUnsubscribe) return;
+function renderExerciseCard(workout: WorkoutPlan, exercise: ExercisePlan, exerciseIndex: number, isWorkoutActive: boolean) {
+  const exerciseKey = getExerciseKey(workout.id, exerciseIndex);
+  const isOpen = expandedExercises.has(exerciseKey);
+  const status = getExerciseStatus(workout, exercise, exerciseIndex, isWorkoutActive);
 
-  stopHistoryListener();
-  historyUid = uid;
-  historyUnsubscribe = onSnapshot(
-    query(collection(currentServices.db, "users", uid, "treino_registros"), orderBy("createdAt", "desc"), limitDocs(10)),
-    (snap) => {
-      const records = snap.docs.map((item) => {
-        const data = item.data() as Record<string, unknown>;
-        const exercicios = Array.isArray(data.exercicios) ? data.exercicios : [];
-        return {
-          nomeTreino: String(data.nomeTreino ?? "Treino"),
-          dataHora: String(data.dataHora ?? "-"),
-          completo: Boolean(data.completo ?? false),
-          exercicios: exercicios.length
-        };
-      });
-      renderHistory(records);
-    },
-    () => {
-      if (historyList) historyList.innerHTML = `<p class="empty-state">Não foi possível carregar o histórico.</p>`;
+  return `
+    <article class="mobile-exercise-card ${status}" data-exercise-card="${escapeAttribute(exerciseKey)}">
+      <button class="mobile-exercise-header" type="button" data-action="toggle-exercise" data-workout-id="${escapeAttribute(workout.id)}" data-ex-index="${exerciseIndex}">
+        <span>
+          <span class="mobile-exercise-name">${escapeHtml(exercise.nome)}</span>
+          <span class="mobile-exercise-count">Treinos realizados: ${countExerciseDone(exercise.nome)}</span>
+        </span>
+        <span class="mobile-chevron">${isOpen ? "˄" : "˅"}</span>
+      </button>
+      <dl class="mobile-exercise-meta">
+        <div><dt>Método</dt><dd>${escapeHtml(emptyDash(exercise.tecnica))}</dd></div>
+        <div><dt>Séries</dt><dd>${exercise.series}</dd></div>
+        <div><dt>Rep</dt><dd>${exercise.repsMin}-${exercise.repsMax}</dd></div>
+        <div><dt>RIR</dt><dd>${escapeHtml(emptyDash(exercise.rir))}</dd></div>
+        <div><dt>Desc</dt><dd>${escapeHtml(emptyDash(exercise.descanso))}</dd></div>
+      </dl>
+      ${isOpen ? renderSeriesRows(workout, exercise, exerciseIndex, isWorkoutActive) : ""}
+    </article>
+  `;
+}
+
+function renderSeriesRows(workout: WorkoutPlan, exercise: ExercisePlan, exerciseIndex: number, isWorkoutActive: boolean) {
+  const rows = Array.from({ length: exercise.series }, (_, serieIndex) => {
+    const serieNumero = serieIndex + 1;
+    const value = getDraftValue(workout.id, exerciseIndex, serieNumero);
+    const previous = getPreviousSeries(workout.nome, exercise.nome, serieNumero);
+    const repClass = getRepFeedbackClass(value.reps, exercise.repsMin, exercise.repsMax);
+
+    return `
+      <div class="mobile-series-row">
+        <span>S${serieNumero}</span>
+        <span class="mobile-previous">${escapeHtml(previous)}</span>
+        <input
+          class="mobile-series-input"
+          inputmode="decimal"
+          placeholder="KG"
+          value="${escapeAttribute(value.kg)}"
+          data-action="input-kg"
+          data-workout-id="${escapeAttribute(workout.id)}"
+          data-ex-index="${exerciseIndex}"
+          data-serie="${serieNumero}"
+          ${isWorkoutActive ? "" : "disabled"}
+        />
+        <input
+          class="mobile-series-input ${repClass}"
+          inputmode="numeric"
+          placeholder="REP"
+          value="${escapeAttribute(value.reps)}"
+          data-action="input-reps"
+          data-workout-id="${escapeAttribute(workout.id)}"
+          data-ex-index="${exerciseIndex}"
+          data-serie="${serieNumero}"
+          ${isWorkoutActive ? "" : "disabled"}
+        />
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="mobile-series-table">
+      <div class="mobile-series-head"><span>Série</span><span>Anterior</span><span>KG/REP</span></div>
+      ${rows}
+    </div>
+  `;
+}
+
+function renderRecentHistory() {
+  const latest = records.slice(0, 5);
+  const items = latest.length
+    ? latest.map((record) => `
+        <div class="mobile-history-item">
+          <strong>${escapeHtml(record.nomeTreino)}</strong>
+          <small>${escapeHtml(record.dataHora)}</small>
+          <span>${record.completo ? "Completo" : "Incompleto"}</span>
+        </div>
+      `).join("")
+    : `<p class="mobile-empty">Nenhum treino salvo ainda.</p>`;
+
+  return `
+    <aside class="mobile-history-card">
+      <h3>Histórico recente</h3>
+      <div class="mobile-history-list">${items}</div>
+    </aside>
+  `;
+}
+
+function handleRootClick(event: Event) {
+  const target = event.target as Element | null;
+  const actionElement = target?.closest("[data-action]") as HTMLElement | null;
+  if (!actionElement) return;
+
+  const action = actionElement.getAttribute("data-action");
+  const workoutId = actionElement.getAttribute("data-workout-id") ?? "";
+  const workout = workouts.find((item) => item.id === workoutId);
+
+  if (action === "toggle-workout") {
+    if (activeWorkoutId && activeWorkoutId !== workoutId) {
+      showToast("Finalize ou cancele o treino ativo antes de abrir outro treino.");
+      return;
     }
-  );
+
+    expandedWorkoutId = expandedWorkoutId === workoutId ? null : workoutId;
+    saveTrainingState();
+    scheduleRender();
+    return;
+  }
+
+  if (action === "toggle-exercise") {
+    const exerciseIndex = Number(actionElement.getAttribute("data-ex-index") ?? -1);
+    const key = getExerciseKey(workoutId, exerciseIndex);
+    if (expandedExercises.has(key)) {
+      expandedExercises.delete(key);
+    } else {
+      expandedExercises.add(key);
+    }
+    saveTrainingState();
+    scheduleRender();
+    return;
+  }
+
+  if (!workout) return;
+
+  if (action === "start-workout") {
+    startWorkout(workout);
+    return;
+  }
+
+  if (action === "cancel-workout") {
+    cancelWorkout(workout);
+    return;
+  }
+
+  if (action === "save-workout") {
+    void saveWorkout(workout);
+  }
 }
 
-function stopHistoryListener() {
-  historyUnsubscribe?.();
-  historyUnsubscribe = null;
-  historyUid = null;
+function handleRootInput(event: Event) {
+  const input = event.target as HTMLInputElement | null;
+  if (!input?.matches("input[data-action]")) return;
+
+  const action = input.getAttribute("data-action");
+  const workoutId = input.getAttribute("data-workout-id") ?? "";
+  const exerciseIndex = Number(input.getAttribute("data-ex-index") ?? -1);
+  const serieNumero = Number(input.getAttribute("data-serie") ?? 0);
+
+  if (activeWorkoutId !== workoutId || exerciseIndex < 0 || serieNumero <= 0) return;
+
+  const key = getDraftKey(workoutId, exerciseIndex, serieNumero);
+  const current = draftValues[key] ?? { kg: "", reps: "" };
+
+  if (action === "input-kg") {
+    draftValues[key] = { ...current, kg: input.value };
+  }
+
+  if (action === "input-reps") {
+    draftValues[key] = { ...current, reps: input.value };
+    const exercise = workouts.find((item) => item.id === workoutId)?.exercicios[exerciseIndex];
+    if (exercise) {
+      input.classList.remove("rep-low", "rep-ok", "rep-high");
+      input.classList.add(getRepFeedbackClass(input.value, exercise.repsMin, exercise.repsMax));
+    }
+  }
+
+  pendingExercises.delete(getExerciseKey(workoutId, exerciseIndex));
+  updateExerciseStatusClass(workoutId, exerciseIndex);
+  saveTrainingState();
+}
+
+function startWorkout(workout: WorkoutPlan) {
+  if (activeWorkoutId && activeWorkoutId !== workout.id) {
+    const activeName = workouts.find((item) => item.id === activeWorkoutId)?.nome ?? "o treino ativo";
+    showToast(`Finalize ou cancele ${activeName} antes de iniciar outro treino.`);
+    return;
+  }
+
+  activeWorkoutId = workout.id;
+  expandedWorkoutId = workout.id;
+  pendingExercises.clear();
+  workout.exercicios.forEach((_, index) => expandedExercises.add(getExerciseKey(workout.id, index)));
+  saveTrainingState();
+  scheduleRender();
+  showToast(`Treino ${workout.nome} iniciado.`);
+}
+
+function cancelWorkout(workout: WorkoutPlan) {
+  if (activeWorkoutId !== workout.id) {
+    showToast("Nenhum treino ativo para cancelar.");
+    return;
+  }
+
+  const shouldCancel = window.confirm("Cancelar este treino? Nada será salvo e os dados preenchidos serão descartados.");
+  if (!shouldCancel) return;
+
+  clearDraftForWorkout(workout.id);
+  pendingExercises.clear();
+  activeWorkoutId = null;
+  saveTrainingState();
+  scheduleRender();
+  showToast("Treino cancelado sem salvar.");
+}
+
+async function saveWorkout(workout: WorkoutPlan) {
+  const currentServices = getServices();
+  if (!currentServices || !currentUid) {
+    showToast("Não foi possível identificar o aluno logado.");
+    return;
+  }
+
+  if (activeWorkoutId !== workout.id) {
+    showToast("Inicie o treino antes de salvar.");
+    return;
+  }
+
+  const complete = isWorkoutComplete(workout);
+  if (!complete) {
+    markPendingExercises(workout);
+    scheduleRender();
+    const shouldSave = window.confirm("Ainda faltam séries para preencher. Deseja salvar mesmo assim?");
+    if (!shouldSave) return;
+  }
+
+  const warnings = buildWorkoutWarnings(workout);
+  if (warnings) {
+    window.alert(`Avisos do treino\n\n${warnings}`);
+  }
+
+  const createdAt = Date.now();
+  savingWorkoutId = workout.id;
+  scheduleRender();
+
+  try {
+    await setDoc(doc(currentServices.db, "users", currentUid, "treino_registros", createdAt.toString()), {
+      idLocal: newId("web-"),
+      dataHora: formatDateTime(new Date(createdAt)),
+      nomeTreino: workout.nome,
+      completo: complete,
+      createdAt,
+      exercicios: buildExerciseRecords(workout)
+    });
+
+    clearDraftForWorkout(workout.id);
+    pendingExercises.clear();
+    activeWorkoutId = null;
+    savingWorkoutId = null;
+    saveTrainingState();
+    scheduleRender();
+    showToast(complete ? "Treino salvo completo!" : "Treino salvo incompleto!");
+  } catch (error) {
+    savingWorkoutId = null;
+    scheduleRender();
+    showToast((error as Error).message || "Erro ao salvar treino.");
+  }
+}
+
+function buildExerciseRecords(workout: WorkoutPlan): ExerciseRecord[] {
+  return workout.exercicios.map((exercise, exerciseIndex) => ({
+    nomeExercicio: exercise.nome,
+    series: Array.from({ length: exercise.series }, (_, serieIndex) => {
+      const serieNumero = serieIndex + 1;
+      const value = getDraftValue(workout.id, exerciseIndex, serieNumero);
+      if (!value.kg.trim() || !value.reps.trim()) return null;
+
+      return {
+        serieNumero,
+        kg: parseNumber(value.kg),
+        reps: Math.round(parseNumber(value.reps))
+      };
+    }).filter((serie): serie is SeriesRecord => Boolean(serie))
+  }));
+}
+
+function buildWorkoutWarnings(workout: WorkoutPlan) {
+  const warnings: string[] = [];
+
+  workout.exercicios.forEach((exercise, exerciseIndex) => {
+    const filledSeries = Array.from({ length: exercise.series }, (_, serieIndex) => {
+      const value = getDraftValue(workout.id, exerciseIndex, serieIndex + 1);
+      const kg = value.kg.trim() ? parseNumber(value.kg, Number.NaN) : Number.NaN;
+      const reps = value.reps.trim() ? Math.round(parseNumber(value.reps, Number.NaN)) : Number.NaN;
+      return Number.isFinite(kg) && Number.isFinite(reps) ? { kg, reps } : null;
+    }).filter((item): item is { kg: number; reps: number } => Boolean(item));
+
+    if (!filledSeries.length) return;
+
+    if (filledSeries.every((serie) => serie.reps > exercise.repsMax)) {
+      warnings.push(`✅ ${exercise.nome}: todas as séries ficaram acima do máximo (${exercise.repsMax}). Próxima vez: pode aumentar o peso.`);
+    }
+
+    if (filledSeries.every((serie) => serie.reps < exercise.repsMin)) {
+      warnings.push(`⚠️ ${exercise.nome}: todas as séries ficaram abaixo do mínimo (${exercise.repsMin}). Próxima vez: pode diminuir o peso.`);
+    }
+
+    const firstKg = filledSeries[0]?.kg ?? 0;
+    if (filledSeries.length >= 2 && filledSeries.some((serie) => Math.abs(serie.kg - firstKg) >= 0.5)) {
+      warnings.push(`⚠️ ${exercise.nome}: você mudou o peso entre as séries. Isso dificulta acompanhar a evolução.`);
+    }
+  });
+
+  return warnings.join("\n\n");
+}
+
+function markPendingExercises(workout: WorkoutPlan) {
+  pendingExercises.clear();
+  workout.exercicios.forEach((exercise, index) => {
+    if (!isExerciseComplete(workout.id, exercise, index)) {
+      pendingExercises.add(getExerciseKey(workout.id, index));
+      expandedExercises.add(getExerciseKey(workout.id, index));
+    }
+  });
+}
+
+function isWorkoutComplete(workout: WorkoutPlan) {
+  return workout.exercicios.every((exercise, index) => isExerciseComplete(workout.id, exercise, index));
+}
+
+function isExerciseComplete(workoutId: string, exercise: ExercisePlan, exerciseIndex: number) {
+  for (let serieNumero = 1; serieNumero <= exercise.series; serieNumero += 1) {
+    const value = getDraftValue(workoutId, exerciseIndex, serieNumero);
+    if (!value.kg.trim() || !value.reps.trim()) return false;
+  }
+  return true;
+}
+
+function exerciseHasAnyDraft(workoutId: string, exercise: ExercisePlan, exerciseIndex: number) {
+  for (let serieNumero = 1; serieNumero <= exercise.series; serieNumero += 1) {
+    const value = getDraftValue(workoutId, exerciseIndex, serieNumero);
+    if (value.kg.trim() || value.reps.trim()) return true;
+  }
+  return false;
+}
+
+function getExerciseStatus(workout: WorkoutPlan, exercise: ExercisePlan, exerciseIndex: number, isWorkoutActive: boolean) {
+  const key = getExerciseKey(workout.id, exerciseIndex);
+  if (pendingExercises.has(key)) return "status-pending";
+  if (isExerciseComplete(workout.id, exercise, exerciseIndex)) return "status-done";
+  if (exerciseHasAnyDraft(workout.id, exercise, exerciseIndex)) return "status-progress";
+  if (isWorkoutActive) return "status-started";
+  return "status-neutral";
+}
+
+function updateExerciseStatusClass(workoutId: string, exerciseIndex: number) {
+  const workout = workouts.find((item) => item.id === workoutId);
+  const exercise = workout?.exercicios[exerciseIndex];
+  if (!workout || !exercise) return;
+
+  const element = document.querySelector<HTMLElement>(`[data-exercise-card="${cssEscape(getExerciseKey(workoutId, exerciseIndex))}"]`);
+  if (!element) return;
+
+  element.classList.remove("status-neutral", "status-started", "status-progress", "status-done", "status-pending");
+  element.classList.add(getExerciseStatus(workout, exercise, exerciseIndex, activeWorkoutId === workoutId));
+}
+
+function getPreviousSeries(workoutName: string, exerciseName: string, serieNumero: number) {
+  const record = records.find((item) => sameName(item.nomeTreino, workoutName));
+  const exercise = record?.exercicios.find((item) => sameName(item.nomeExercicio, exerciseName));
+  const serie = exercise?.series.find((item) => item.serieNumero === serieNumero);
+
+  if (!serie) return "—";
+  return `${formatKg(serie.kg)}kg x ${serie.reps}`;
+}
+
+function countExerciseDone(exerciseName: string) {
+  return records.filter((record) => record.exercicios.some((exercise) => sameName(exercise.nomeExercicio, exerciseName) && exercise.series.length > 0)).length;
+}
+
+function getDraftValue(workoutId: string, exerciseIndex: number, serieNumero: number): DraftValue {
+  return draftValues[getDraftKey(workoutId, exerciseIndex, serieNumero)] ?? { kg: "", reps: "" };
+}
+
+function getDraftKey(workoutId: string, exerciseIndex: number, serieNumero: number) {
+  return `${workoutId}::${exerciseIndex}::${serieNumero}`;
+}
+
+function getExerciseKey(workoutId: string, exerciseIndex: number) {
+  return `${workoutId}::${exerciseIndex}`;
+}
+
+function clearDraftForWorkout(workoutId: string) {
+  const prefix = `${workoutId}::`;
+  Object.keys(draftValues).forEach((key) => {
+    if (key.startsWith(prefix)) delete draftValues[key];
+  });
+}
+
+function getRepFeedbackClass(value: string, repsMin: number, repsMax: number) {
+  const reps = value.trim() ? Math.round(parseNumber(value, Number.NaN)) : Number.NaN;
+  if (!Number.isFinite(reps)) return "";
+  if (reps < repsMin) return "rep-low";
+  if (reps > repsMax) return "rep-high";
+  return "rep-ok";
+}
+
+function saveTrainingState() {
+  if (!currentUid) return;
+
+  const state: SavedTrainingState = {
+    activeWorkoutId,
+    expandedWorkoutId,
+    expandedExercises: Array.from(expandedExercises),
+    draft: draftValues
+  };
+
+  localStorage.setItem(`${STORAGE_PREFIX}.${currentUid}`, JSON.stringify(state));
+}
+
+function loadTrainingState(uid: string) {
+  const raw = localStorage.getItem(`${STORAGE_PREFIX}.${uid}`);
+  if (!raw) {
+    activeWorkoutId = null;
+    expandedWorkoutId = null;
+    expandedExercises = new Set();
+    draftValues = {};
+    pendingExercises = new Set();
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as SavedTrainingState;
+    activeWorkoutId = parsed.activeWorkoutId ?? null;
+    expandedWorkoutId = parsed.expandedWorkoutId ?? null;
+    expandedExercises = new Set(parsed.expandedExercises ?? []);
+    draftValues = parsed.draft ?? {};
+    pendingExercises = new Set();
+  } catch {
+    activeWorkoutId = null;
+    expandedWorkoutId = null;
+    expandedExercises = new Set();
+    draftValues = {};
+    pendingExercises = new Set();
+  }
+}
+
+function normalize(value: string | null | undefined) {
+  return (value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function sameName(a: string, b: string) {
+  return normalize(a) === normalize(b);
+}
+
+function emptyDash(value: string) {
+  return value.trim() || "—";
+}
+
+function formatKg(value: number) {
+  return Number.isInteger(value) ? value.toFixed(1) : value.toString();
 }
 
 function escapeHtml(value: string) {
-  return value
+  return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -330,231 +1095,36 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
-function renderHistory(records: Array<{ nomeTreino: string; dataHora: string; completo: boolean; exercicios: number }>) {
-  if (!historyList) return;
-  if (!records.length) {
-    historyList.innerHTML = `<p class="empty-state">Nenhum treino finalizado ainda.</p>`;
-    return;
+function escapeAttribute(value: string) {
+  return escapeHtml(value);
+}
+
+function cssEscape(value: string) {
+  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+    return CSS.escape(value);
   }
-
-  historyList.innerHTML = records
-    .map(
-      (record) => `
-        <div class="training-history-item">
-          <strong>${escapeHtml(record.nomeTreino)}</strong>
-          <small>${escapeHtml(record.dataHora)}</small>
-          <span>${record.exercicios} exercício(s)</span>
-          <span class="training-history-badge">${record.completo ? "Completo" : "Incompleto"}</span>
-        </div>
-      `
-    )
-    .join("");
-}
-
-function applyTrainingState(refs: TrainingRefs) {
-  const isCurrentActive = activeWorkout?.id === refs.workoutId;
-  const hasActiveWorkout = Boolean(activeWorkout);
-  const exerciseStack = refs.panel.querySelector<HTMLElement>(".exercise-stack");
-
-  refs.select.disabled = hasActiveWorkout;
-  refs.select.title = hasActiveWorkout ? `Finalize ou cancele ${activeWorkout?.name} para escolher outro treino.` : "";
-
-  refs.startButton.hidden = isCurrentActive;
-  refs.startButton.disabled = hasActiveWorkout;
-  refs.startButton.textContent = hasActiveWorkout ? "Outro treino ativo" : "Começar treino";
-
-  refs.cancelButton.disabled = !isCurrentActive;
-  refs.finishButton.disabled = !isCurrentActive;
-
-  refs.panel.querySelectorAll<HTMLInputElement>(".series-row input").forEach((input) => {
-    input.disabled = !isCurrentActive;
-    input.title = isCurrentActive ? "" : "Comece o treino para preencher as séries.";
-  });
-
-  exerciseStack?.classList.toggle("training-active", isCurrentActive);
-  exerciseStack?.classList.toggle("training-locked", !isCurrentActive);
-
-  ensureStatus(refs);
-}
-
-function enhanceTrainingScreen() {
-  const refs = getTrainingRefs();
-  if (!refs) return;
-
-  ensureHistoryPanel(refs.section);
-  applyTrainingState(refs);
-}
-
-function preventOriginalAction(event: Event) {
-  event.preventDefault();
-  event.stopPropagation();
-  event.stopImmediatePropagation();
+  return value.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
 }
 
 function showToast(message: string) {
-  document.querySelector(".training-flow-toast")?.remove();
+  document.querySelector(".mobile-training-toast")?.remove();
   const toast = document.createElement("div");
-  toast.className = "training-flow-toast";
+  toast.className = "mobile-training-toast";
   toast.textContent = message;
   document.body.appendChild(toast);
   window.setTimeout(() => toast.remove(), 3600);
 }
 
-function setNativeInputValue(input: HTMLInputElement, value: string) {
-  const valueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-  valueSetter?.call(input, value);
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-  input.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function clearWorkoutInputs(panel: HTMLElement) {
-  panel.querySelectorAll<HTMLInputElement>(".series-row input").forEach((input) => setNativeInputValue(input, ""));
-}
-
-function readWorkoutFromDom(refs: TrainingRefs) {
-  let complete = true;
-  const exercicios = Array.from(refs.panel.querySelectorAll<HTMLElement>(".exercise-box")).map((box) => {
-    const nomeExercicio = box.querySelector("strong")?.textContent?.trim() || "Exercício";
-    const series = Array.from(box.querySelectorAll<HTMLElement>(".series-row"))
-      .map((row, index) => {
-        const inputs = row.querySelectorAll<HTMLInputElement>("input");
-        const kgRaw = inputs[0]?.value.trim() ?? "";
-        const repsRaw = inputs[1]?.value.trim() ?? "";
-
-        if (!kgRaw || !repsRaw) {
-          complete = false;
-          return null;
-        }
-
-        return {
-          serieNumero: index + 1,
-          kg: parseNumber(kgRaw),
-          reps: Math.round(parseNumber(repsRaw))
-        };
-      })
-      .filter((serie): serie is { serieNumero: number; kg: number; reps: number } => Boolean(serie));
-
-    return { nomeExercicio, series };
-  });
-
-  return { complete, exercicios };
-}
-
-async function finishWorkout(refs: TrainingRefs) {
-  const currentServices = getServices();
-  const uid = activeUserId ?? currentServices?.auth.currentUser?.uid ?? null;
-  if (!currentServices || !uid) {
-    showToast("Não foi possível identificar o aluno logado.");
-    return;
-  }
-
-  if (activeWorkout?.id !== refs.workoutId) {
-    showToast("Comece este treino antes de finalizar.");
-    return;
-  }
-
-  const { complete, exercicios } = readWorkoutFromDom(refs);
-  if (!complete) {
-    const shouldSave = window.confirm("Ainda faltam séries para preencher. Deseja salvar mesmo assim como incompleto?");
-    if (!shouldSave) return;
-  }
-
-  const createdAt = Date.now();
-  const previousText = refs.finishButton.textContent;
-  refs.finishButton.disabled = true;
-  refs.finishButton.textContent = "Salvando...";
-
-  try {
-    await setDoc(doc(currentServices.db, "users", uid, "treino_registros", createdAt.toString()), {
-      idLocal: newId("web-"),
-      dataHora: formatDateTime(new Date(createdAt)),
-      nomeTreino: refs.workoutName,
-      completo: complete,
-      createdAt,
-      exercicios
-    });
-
-    clearWorkoutInputs(refs.panel);
-    activeWorkout = null;
-    scheduleEnhancement();
-    showToast(complete ? "Treino finalizado e salvo no Firebase." : "Treino incompleto salvo no Firebase.");
-  } catch (error) {
-    showToast((error as Error).message || "Erro ao salvar treino.");
-  } finally {
-    refs.finishButton.textContent = previousText;
-    refs.finishButton.disabled = false;
-  }
-}
-
-function handleDocumentClick(event: MouseEvent) {
-  const button = (event.target as Element | null)?.closest<HTMLButtonElement>("button");
-  if (!button) return;
-
-  if (button.classList.contains(START_CLASS)) {
-    preventOriginalAction(event);
-    const refs = getTrainingRefs();
-    if (!refs) return;
-
-    if (activeWorkout) {
-      showToast(`Finalize ou cancele ${activeWorkout.name} antes de começar outro treino.`);
-      return;
-    }
-
-    activeWorkout = { id: refs.workoutId, name: refs.workoutName };
-    scheduleEnhancement();
-    showToast(`Treino ${refs.workoutName} iniciado.`);
-    return;
-  }
-
-  if (button.classList.contains(CANCEL_CLASS)) {
-    preventOriginalAction(event);
-    const refs = getTrainingRefs();
-    if (!refs) return;
-
-    if (activeWorkout?.id !== refs.workoutId) {
-      showToast("Nenhum treino ativo para cancelar.");
-      return;
-    }
-
-    const shouldCancel = window.confirm("Cancelar este treino? Nada será salvo e os dados preenchidos serão descartados.");
-    if (!shouldCancel) return;
-
-    clearWorkoutInputs(refs.panel);
-    activeWorkout = null;
-    scheduleEnhancement();
-    showToast("Treino cancelado sem salvar.");
-    return;
-  }
-
-  if (button.classList.contains(FINISH_CLASS)) {
-    preventOriginalAction(event);
-    const refs = getTrainingRefs();
-    if (!refs) return;
-    void finishWorkout(refs);
-  }
-}
-
-function handleDocumentChange(event: Event) {
-  const target = event.target as Element | null;
-  if (target?.matches("section.screen article.panel select")) scheduleEnhancement();
-}
-
-function bootTrainingFlowPatch() {
+function bootMobileTraining() {
   injectStyles();
   attachAuthListener();
 
-  if (!documentListenersAttached) {
-    documentListenersAttached = true;
-    document.addEventListener("click", handleDocumentClick, true);
-    document.addEventListener("change", handleDocumentChange, true);
-  }
-
   if (!observerStarted && document.body) {
     observerStarted = true;
-    new MutationObserver(scheduleEnhancement).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(scheduleRender).observe(document.body, { childList: true, subtree: true });
   }
 
-  scheduleEnhancement();
+  scheduleRender();
 }
 
-bootTrainingFlowPatch();
+bootMobileTraining();
