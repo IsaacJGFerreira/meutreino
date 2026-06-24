@@ -5,6 +5,7 @@ import "./styles.css";
 import "./trainingFlowPatch";
 import "./removeRecentTrainingHistory";
 import "./workoutBuilderDeletionConfirm";
+import "./desktopTrainingLayout";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
