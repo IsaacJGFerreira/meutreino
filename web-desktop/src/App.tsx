@@ -95,6 +95,41 @@ type Notice = {
   text: string;
 };
 
+function firebaseErrorMessage(error: unknown, fallback: string) {
+  const data = error as { code?: unknown; message?: unknown };
+  const code = typeof data?.code === "string" ? data.code : "";
+  const message = typeof data?.message === "string" ? data.message : "";
+  const host = window.location.hostname;
+
+  switch (code) {
+    case "auth/unauthorized-domain":
+      return `O Firebase recusou este endereço (${host}). Adicione ${host} em Firebase Authentication > Settings > Authorized domains.`;
+    case "auth/invalid-api-key":
+    case "auth/api-key-not-valid.-please-pass-a-valid-api-key.":
+      return "A chave apiKey do Firebase Web não é válida para este projeto.";
+    case "auth/configuration-not-found":
+      return "A configuração do Firebase Auth não foi encontrada. Confira se Email/Senha está ativado no Firebase Authentication.";
+    case "auth/invalid-credential":
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+      return "Email ou senha inválidos.";
+    case "auth/email-already-in-use":
+      return "Este email já está cadastrado. Use Entrar.";
+    case "auth/invalid-email":
+      return "Email inválido.";
+    case "auth/weak-password":
+      return "A senha precisa ter pelo menos 6 caracteres.";
+    case "auth/network-request-failed":
+      return "Falha de conexão com o Firebase. Verifique a internet e tente novamente.";
+    case "permission-denied":
+      return "O Firebase bloqueou o acesso aos dados. Confira as regras do Firestore para usuários autenticados.";
+    case "failed-precondition":
+      return "O Firestore pediu uma configuração extra para esta consulta. Abra o console do navegador para ver o link de criação do índice.";
+    default:
+      return message || fallback;
+  }
+}
+
 const SELECTED_STUDENT_KEY = "meutreino.selectedStudent";
 const emptyExercise: ExercisePlan = {
   nome: "",
@@ -258,7 +293,7 @@ function App() {
       (snap) => {
         setProfile(profileFromDoc(authUser.uid, snap.data(), authUser.email ?? ""));
       },
-      (error) => notify("error", error.message)
+      (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar perfil."))
     );
   }, [services, authUser]);
 
@@ -288,21 +323,37 @@ function App() {
     }
 
     const unsubs = [
-      onSnapshot(collection(services.db, "users", target.uid, "treinos"), (snap) => {
-        const list = snap.docs
-          .map((item) => mapWorkoutDoc(item.id, item.data()))
-          .sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome));
-        setWorkouts(list);
-      }),
-      onSnapshot(query(collection(services.db, "users", target.uid, "treino_registros"), orderBy("createdAt", "desc")), (snap) => {
-        setRecords(snap.docs.map((item) => workoutRecordFromDoc(item.id, item.data())));
-      }),
-      onSnapshot(query(collection(services.db, "users", target.uid, "progresso"), orderBy("createdAt", "desc")), (snap) => {
-        setProgress(snap.docs.map((item) => progressFromDoc(item.id, item.data())));
-      }),
-      onSnapshot(query(collection(services.db, "users", target.uid, "cardio"), orderBy("createdAt", "desc")), (snap) => {
-        setCardio(snap.docs.map((item) => cardioFromDoc(item.id, item.data())));
-      })
+      onSnapshot(
+        collection(services.db, "users", target.uid, "treinos"),
+        (snap) => {
+          const list = snap.docs
+            .map((item) => mapWorkoutDoc(item.id, item.data()))
+            .sort((a, b) => (a.ordem - b.ordem) || a.nome.localeCompare(b.nome));
+          setWorkouts(list);
+        },
+        (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar treinos."))
+      ),
+      onSnapshot(
+        query(collection(services.db, "users", target.uid, "treino_registros"), orderBy("createdAt", "desc")),
+        (snap) => {
+          setRecords(snap.docs.map((item) => workoutRecordFromDoc(item.id, item.data())));
+        },
+        (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar desempenho."))
+      ),
+      onSnapshot(
+        query(collection(services.db, "users", target.uid, "progresso"), orderBy("createdAt", "desc")),
+        (snap) => {
+          setProgress(snap.docs.map((item) => progressFromDoc(item.id, item.data())));
+        },
+        (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar progresso."))
+      ),
+      onSnapshot(
+        query(collection(services.db, "users", target.uid, "cardio"), orderBy("createdAt", "desc")),
+        (snap) => {
+          setCardio(snap.docs.map((item) => cardioFromDoc(item.id, item.data())));
+        },
+        (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar cardio."))
+      )
     ];
 
     return () => unsubs.forEach((unsubscribe) => unsubscribe());
@@ -318,28 +369,36 @@ function App() {
     const studentsQuery = query(collection(services.db, "users"), where("trainerId", "==", profile.uid));
     const codesQuery = query(collection(services.db, "invites"), where("type", "==", "ALUNO"), where("trainerUid", "==", profile.uid));
 
-    const unsubscribeStudents = onSnapshot(studentsQuery, (snap) => {
-      setStudents(
-        snap.docs
-          .map((item) => ({
-            uid: item.id,
-            name: String(item.data().name ?? "Sem nome"),
-            email: String(item.data().email ?? "Sem email")
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name))
-      );
-    });
+    const unsubscribeStudents = onSnapshot(
+      studentsQuery,
+      (snap) => {
+        setStudents(
+          snap.docs
+            .map((item) => ({
+              uid: item.id,
+              name: String(item.data().name ?? "Sem nome"),
+              email: String(item.data().email ?? "Sem email")
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        );
+      },
+      (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar alunos."))
+    );
 
-    const unsubscribeCodes = onSnapshot(codesQuery, (snap) => {
-      const available = snap.docs
-        .filter((item) => {
-          const data = item.data();
-          return !data.usedAt && !data.usedByUid;
-        })
-        .map((item) => item.id)
-        .sort();
-      setInviteCodes(available);
-    });
+    const unsubscribeCodes = onSnapshot(
+      codesQuery,
+      (snap) => {
+        const available = snap.docs
+          .filter((item) => {
+            const data = item.data();
+            return !data.usedAt && !data.usedByUid;
+          })
+          .map((item) => item.id)
+          .sort();
+        setInviteCodes(available);
+      },
+      (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar códigos."))
+    );
 
     return () => {
       unsubscribeStudents();
@@ -355,7 +414,8 @@ function App() {
 
     return onSnapshot(
       query(collection(services.db, "users", profile.uid, "notifications"), orderBy("createdAt", "desc")),
-      (snap) => setNotifications(snap.docs.map((item) => notificationFromDoc(item.id, item.data())))
+      (snap) => setNotifications(snap.docs.map((item) => notificationFromDoc(item.id, item.data()))),
+      (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar notificações."))
     );
   }, [services, profile?.uid, profile?.role]);
 
@@ -366,12 +426,17 @@ function App() {
       return;
     }
 
-    const unsubscribeUsers = onSnapshot(collection(services.db, "users"), (snap) => {
-      setAllUsers(snap.docs.map((item) => profileFromDoc(item.id, item.data())));
-    });
+    const unsubscribeUsers = onSnapshot(
+      collection(services.db, "users"),
+      (snap) => {
+        setAllUsers(snap.docs.map((item) => profileFromDoc(item.id, item.data())));
+      },
+      (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar usuários."))
+    );
     const unsubscribeRequests = onSnapshot(
       query(collection(services.db, "invite_requests"), where("status", "==", "PENDING")),
-      (snap) => setInviteRequests(snap.docs.map((item) => inviteRequestFromDoc(item.id, item.data())).sort((a, b) => b.createdAt - a.createdAt))
+      (snap) => setInviteRequests(snap.docs.map((item) => inviteRequestFromDoc(item.id, item.data())).sort((a, b) => b.createdAt - a.createdAt)),
+      (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar pedidos."))
     );
 
     return () => {
@@ -620,15 +685,28 @@ function AuthScreen({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      notify("warn", "Preencha email e senha.");
+      return;
+    }
+
+    if (mode === "register" && !name.trim()) {
+      notify("warn", "Preencha o nome.");
+      return;
+    }
+
     setBusy(true);
     try {
       if (mode === "login") {
-        await signInWithEmailAndPassword(services.auth, email.trim(), password);
+        await signInWithEmailAndPassword(services.auth, cleanEmail, cleanPassword);
       } else {
-        const created = await createUserWithEmailAndPassword(services.auth, email.trim(), password);
+        const created = await createUserWithEmailAndPassword(services.auth, cleanEmail, cleanPassword);
         await setDoc(doc(services.db, "users", created.user.uid), {
           name: name.trim(),
-          email: email.trim(),
+          email: cleanEmail,
           role,
           active: true,
           approved: false,
@@ -638,7 +716,10 @@ function AuthScreen({
         notify("ok", "Conta criada. Insira o código para liberar.");
       }
     } catch (error) {
-      notify("error", mode === "login" ? "Login inválido." : (error as Error).message);
+      notify(
+        "error",
+        firebaseErrorMessage(error, mode === "login" ? "Não foi possível entrar." : "Não foi possível criar a conta.")
+      );
     } finally {
       setBusy(false);
     }
