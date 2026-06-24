@@ -1,0 +1,15 @@
+{
+  "name": "MeuTreino",
+  "short_name": "MeuTreino",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#DEEFE4",
+  "theme_color": "#5AAB8A",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
