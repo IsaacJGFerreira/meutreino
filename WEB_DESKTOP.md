@@ -34,9 +34,12 @@ VITE_FIREBASE_PROJECT_ID=
 VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
 ```
 
-No GitHub Pages, coloque esses valores em `Settings > Secrets and variables > Actions`.
+O `VITE_FIREBASE_MEASUREMENT_ID` é opcional e só é usado quando o projeto Firebase fornece esse campo para Analytics.
+
+No GitHub Pages, coloque esses valores em `Settings > Secrets and variables > Actions`. Veja o passo a passo completo em [`FIREBASE_WEB_SETUP.md`](FIREBASE_WEB_SETUP.md).
 
 ## Publicação
 
