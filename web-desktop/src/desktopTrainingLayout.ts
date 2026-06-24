@@ -8,18 +8,9 @@ function injectDesktopTrainingStyles() {
   style.id = DESKTOP_TRAINING_STYLE_ID;
   style.textContent = `
     @media (min-width: 860px) {
-      .workspace {
-        padding-top: 18px;
-      }
-
-      .topbar {
-        min-height: 54px;
-        margin-bottom: 8px;
-      }
-
-      .topbar h2 {
-        font-size: 26px;
-      }
+      .workspace { padding-top: 18px; }
+      .topbar { min-height: 54px; margin-bottom: 8px; }
+      .topbar h2 { font-size: 26px; }
 
       .mobile-training-app.desktop-training-layout {
         width: min(100%, 1220px);
@@ -56,7 +47,7 @@ function injectDesktopTrainingStyles() {
         padding: 16px 18px;
         border: 1px solid rgba(90, 171, 138, 0.12);
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.82);
+        background: rgba(255, 255, 255, 0.86);
         box-shadow: 0 14px 26px rgba(41, 71, 61, 0.06);
       }
 
@@ -70,6 +61,7 @@ function injectDesktopTrainingStyles() {
         border-radius: 14px;
         color: var(--green-dark, #34785f);
         background: rgba(90, 171, 138, 0.16);
+        font-size: 22px;
       }
 
       .desktop-summary-card strong,
@@ -106,20 +98,18 @@ function injectDesktopTrainingStyles() {
       .desktop-training-layout .mobile-workout-card {
         border: 1px solid rgba(52, 120, 95, 0.12);
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.92);
         box-shadow: 0 14px 26px rgba(41, 71, 61, 0.11);
         overflow: hidden;
       }
 
       .desktop-training-layout .mobile-workout-card.is-active {
-        border-color: rgba(52, 120, 95, 0.22);
-        background: rgba(255, 255, 255, 0.96);
+        border-color: rgba(52, 120, 95, 0.24);
+        background: rgba(255, 255, 255, 0.98);
         box-shadow: 0 18px 34px rgba(41, 71, 61, 0.13);
       }
 
-      .desktop-training-layout .mobile-workout-card.is-locked {
-        opacity: 0.76;
-      }
+      .desktop-training-layout .mobile-workout-card.is-locked { opacity: 0.76; }
 
       .desktop-training-layout .mobile-workout-header {
         min-height: 94px;
@@ -131,9 +121,7 @@ function injectDesktopTrainingStyles() {
         color: #10212a;
       }
 
-      .desktop-training-layout .mobile-workout-header:hover {
-        background: rgba(90, 171, 138, 0.05);
-      }
+      .desktop-training-layout .mobile-workout-header:hover { background: rgba(90, 171, 138, 0.05); }
 
       .desktop-workout-copy strong {
         display: block;
@@ -164,17 +152,12 @@ function injectDesktopTrainingStyles() {
       .desktop-training-layout .mobile-exercise-card {
         border: 1px solid rgba(90, 171, 138, 0.26);
         border-radius: 14px;
-        background: rgba(252, 255, 253, 0.96);
+        background: rgba(252, 255, 253, 0.98);
         box-shadow: none;
       }
 
-      .desktop-training-layout .mobile-exercise-card.status-progress {
-        background: #fffaf0;
-      }
-
-      .desktop-training-layout .mobile-exercise-card.status-pending {
-        background: #fff7f7;
-      }
+      .desktop-training-layout .mobile-exercise-card.status-progress { background: #fffaf0; }
+      .desktop-training-layout .mobile-exercise-card.status-pending { background: #fff7f7; }
 
       .desktop-training-layout .mobile-exercise-header {
         padding: 24px 26px 12px;
@@ -316,7 +299,7 @@ function injectDesktopTrainingStyles() {
       .desktop-rail-card {
         border: 1px solid rgba(52, 120, 95, 0.12);
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.82);
+        background: rgba(255, 255, 255, 0.86);
         box-shadow: 0 14px 26px rgba(41, 71, 61, 0.08);
         padding: 20px;
       }
@@ -347,33 +330,10 @@ function injectDesktopTrainingStyles() {
         font-weight: 900;
       }
 
-      .desktop-rail-start {
-        width: 100%;
-        margin-top: 16px;
-      }
-
-      .desktop-progress-value {
-        margin: 4px 0 10px;
-        color: var(--green-dark, #34785f);
-        font-size: 34px;
-        line-height: 1;
-        font-weight: 900;
-      }
-
-      .desktop-progress-bar {
-        height: 8px;
-        overflow: hidden;
-        border-radius: 999px;
-        background: rgba(90, 171, 138, 0.18);
-      }
-
-      .desktop-progress-bar span {
-        display: block;
-        width: 75%;
-        height: 100%;
-        border-radius: inherit;
-        background: var(--green-dark, #34785f);
-      }
+      .desktop-rail-start { width: 100%; margin-top: 16px; }
+      .desktop-progress-value { margin: 4px 0 10px; color: var(--green-dark, #34785f); font-size: 34px; line-height: 1; font-weight: 900; }
+      .desktop-progress-bar { height: 8px; overflow: hidden; border-radius: 999px; background: rgba(90, 171, 138, 0.18); }
+      .desktop-progress-bar span { display: block; width: 75%; height: 100%; border-radius: inherit; background: var(--green-dark, #34785f); }
 
       .desktop-week-days {
         display: grid;
@@ -395,38 +355,19 @@ function injectDesktopTrainingStyles() {
         background: rgba(90, 171, 138, 0.14);
       }
 
-      .desktop-week-days span.done::after {
-        background: var(--green-dark, #34785f);
-      }
-
-      .desktop-workout-days {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        display: grid;
-        gap: 8px;
-        color: #60727a;
-        font-size: 14px;
-        font-weight: 650;
-      }
+      .desktop-week-days span.done::after { background: var(--green-dark, #34785f); }
+      .desktop-workout-days { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; color: #60727a; font-size: 14px; font-weight: 650; }
     }
 
     @media (max-width: 1179px) {
-      .desktop-training-content {
-        grid-template-columns: 1fr;
-      }
-
-      .desktop-training-rail {
-        display: none;
-      }
+      .desktop-training-content { grid-template-columns: 1fr; }
+      .desktop-training-rail { display: none; }
     }
 
     @media (max-width: 859px) {
       .desktop-training-summary,
       .desktop-training-rail,
-      .desktop-exercise-actions {
-        display: none !important;
-      }
+      .desktop-exercise-actions { display: none !important; }
     }
   `;
   document.head.appendChild(style);
@@ -459,7 +400,7 @@ function ensureSummary(app: HTMLElement) {
     title.insertAdjacentElement("afterend", summary);
   }
 
-  summary.innerHTML = `
+  setStableHtml(summary, `
     <article class="desktop-summary-card">
       <span class="desktop-summary-icon" aria-hidden="true">▦</span>
       <div><strong>${workoutCount || 0} dias</strong><span>de treino</span></div>
@@ -470,9 +411,9 @@ function ensureSummary(app: HTMLElement) {
     </article>
     <article class="desktop-summary-card">
       <span class="desktop-summary-icon" aria-hidden="true">◷</span>
-      <div><strong>Último treino</strong><span>${lastWorkout}</span></div>
+      <div><strong>Último treino</strong><span>${escapeHtml(lastWorkout)}</span></div>
     </article>
-  `;
+  `);
 }
 
 function ensureContentGrid(app: HTMLElement) {
@@ -494,7 +435,7 @@ function ensureContentGrid(app: HTMLElement) {
     content.appendChild(rail);
   }
 
-  rail.innerHTML = renderRail(app);
+  setStableHtml(rail, renderRail(app));
 }
 
 function renderRail(app: HTMLElement) {
@@ -510,10 +451,7 @@ function renderRail(app: HTMLElement) {
 
   return `
     <article class="desktop-rail-card">
-      <div class="desktop-rail-head">
-        <div><h3>Treino de hoje</h3></div>
-        <span class="desktop-rail-icon" aria-hidden="true">▦</span>
-      </div>
+      <div class="desktop-rail-head"><div><h3>Treino de hoje</h3></div><span class="desktop-rail-icon" aria-hidden="true">▦</span></div>
       <span class="desktop-pill">${escapeHtml(activeName)}</span>
       <small>${activeExercises || "—"} exercícios</small>
       <button class="desktop-rail-start" type="button" data-action="start-workout" data-workout-id="${escapeAttribute(activeId)}">Iniciar treino</button>
@@ -540,6 +478,7 @@ function renderRail(app: HTMLElement) {
 function enhanceWorkoutHeaders(app: HTMLElement) {
   app.querySelectorAll<HTMLButtonElement>(".mobile-workout-header").forEach((header) => {
     if (header.getAttribute(ENHANCED_ATTR) === "true") return;
+
     const workoutCard = header.closest<HTMLElement>(".mobile-workout-card");
     const name = header.querySelector("span:first-child")?.textContent?.trim() || "Treino";
     const exerciseNames = Array.from(workoutCard?.querySelectorAll(".mobile-exercise-name") ?? [])
@@ -595,6 +534,12 @@ function handleHistoryClick(event: MouseEvent) {
 
   const exerciseName = button.getAttribute("data-desktop-history") || "este exercício";
   window.alert(`Histórico de ${exerciseName}\n\nUse a coluna “Anterior” nas séries para comparar carga e repetições anteriores.`);
+}
+
+function setStableHtml(element: HTMLElement, html: string) {
+  if (element.dataset.lastDesktopHtml === html) return;
+  element.dataset.lastDesktopHtml = html;
+  element.innerHTML = html;
 }
 
 function escapeHtml(value: string) {
