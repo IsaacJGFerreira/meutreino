@@ -111,8 +111,14 @@ class ExerciciosTreinoFragment : Fragment() {
 
                 btnAdicionar.setOnClickListener { abrirDialogAdicionarExercicio() }
 
+                // Toque normal: edita o exercício.
+                listExercicios.setOnItemClickListener { _, _, position, _ ->
+                    abrirDialogEditarExercicio(position)
+                }
+
+                // Toque longo no card: exclui somente o exercício do treino.
                 listExercicios.setOnItemLongClickListener { _, _, position, _ ->
-                    mostrarAcoesExercicio(position)
+                    confirmarRemocaoExercicio(position, alvo)
                     true
                 }
 
@@ -379,23 +385,37 @@ class ExerciciosTreinoFragment : Fragment() {
             .setItems(arrayOf("Editar exercício", "Remover exercício")) { _, which ->
                 when (which) {
                     0 -> abrirDialogEditarExercicio(position)
-                    1 -> confirmarRemocaoExercicio(position)
+                    1 -> resolverUidAlvo()?.let { confirmarRemocaoExercicio(position, it) }
                 }
             }
             .show()
     }
 
-    private fun confirmarRemocaoExercicio(position: Int) {
+    private fun confirmarRemocaoExercicio(position: Int, uidDestino: String) {
         val t = treinoAtual ?: return
         val ex = t.exercicios.getOrNull(position) ?: return
 
+        if (t.exercicios.size <= 1) {
+            AppUiFeedback.showToast(requireContext(), "O treino precisa manter pelo menos 1 exercício.", Toast.LENGTH_SHORT)
+            return
+        }
+
         AppUiFeedback.dialogBuilder(requireContext())
             .setTitle("Remover exercício")
-            .setMessage("Remover \"${ex.nome}\"?")
+            .setMessage("Remover \"${ex.nome}\" deste treino?\n\nA alteração será salva no Firebase.")
             .setPositiveButton("Remover") { _, _ ->
                 t.exercicios.removeAt(position)
                 adapter.atualizar()
                 treinoAlterado = true
+
+                salvarTreinoAtual(
+                    uidDestino = uidDestino,
+                    mensagemNotificacao = "Seu treinador removeu o exercício \"${ex.nome}\" do treino \"${t.nome}\".",
+                    onOk = {
+                        if (!isAdded) return@salvarTreinoAtual
+                        AppUiFeedback.showToast(requireContext(), "Exercício removido e treino salvo.", Toast.LENGTH_SHORT)
+                    }
+                )
             }
             .setNegativeButton("Cancelar", null)
             .show()
