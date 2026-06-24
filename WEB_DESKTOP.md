@@ -38,6 +38,28 @@ VITE_FIREBASE_APP_ID=
 
 No GitHub Pages, coloque esses valores em `Settings > Secrets and variables > Actions`.
 
+Use a configuração de um app Web do Firebase, não o `google-services.json` do Android. No console do Firebase:
+
+1. Abra `Project settings`.
+2. Em `Your apps`, crie ou abra o app Web.
+3. Copie o objeto `firebaseConfig`.
+
+Para login e cadastro funcionarem no GitHub Pages, também adicione o domínio publicado em:
+
+```text
+Firebase Console > Authentication > Settings > Authorized domains
+```
+
+Domínios esperados:
+
+```text
+isaacjgferreira.github.io
+localhost
+127.0.0.1
+```
+
+Se o domínio não estiver nessa lista, o Firebase Auth recusa entrar e criar conta na versão web mesmo que o app Android continue funcionando.
+
 ## Publicação
 
 O workflow `.github/workflows/deploy-web-desktop.yml` publica o conteúdo de `web-desktop/dist` no GitHub Pages quando houver push na branch `origin`.
