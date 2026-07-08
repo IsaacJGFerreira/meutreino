@@ -422,11 +422,13 @@ class PerfilFragment : Fragment() {
         val treinoConcluidos = treinoDias.size
         tvResumoTreinoSemana.text = "✓ $treinoConcluidos de 7 dias"
 
-        layoutSemanaDots.removeAllViews()
         val labels = listOf("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom")
-        labels.forEachIndexed { index, label ->
-            layoutSemanaDots.addView(criarColunaDia(label, treinoDias.contains(index), cardioDias.contains(index)))
-        }
+        layoutSemanaDots.removeAllViews()
+        layoutSemanaDots.orientation = LinearLayout.VERTICAL
+        layoutSemanaDots.setPadding(0, dp(2), 0, 0)
+        layoutSemanaDots.addView(criarLinhaDias(labels))
+        layoutSemanaDots.addView(criarLinhaIndicadores("Treino", treinoDias, Color.parseColor("#15945F")))
+        layoutSemanaDots.addView(criarLinhaIndicadores("Cardio", cardioDias, Color.parseColor("#0EA8AA")))
 
         val metaSegura = if (metaCardio > 0) metaCardio else DEFAULT_CARDIO_GOAL
         val progresso = min(100, ((minutosCardioSemana.toDouble() / metaSegura.toDouble()) * 100.0).toInt())
@@ -437,40 +439,69 @@ class PerfilFragment : Fragment() {
         tvFaltamCardio.text = if (faltam > 0) "Faltam $faltam min" else "Meta concluída"
     }
 
-    private fun criarColunaDia(label: String, treinoFeito: Boolean, cardioFeito: Boolean): View {
+    private fun criarLinhaDias(labels: List<String>): LinearLayout {
         val ctx = requireContext()
-        val coluna = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        val linha = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
 
-        coluna.addView(TextView(ctx).apply {
-            text = label
-            textSize = 12f
-            setTextColor(Color.parseColor("#2F3E3F"))
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = android.view.Gravity.CENTER
+        linha.addView(TextView(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(46), LinearLayout.LayoutParams.WRAP_CONTENT)
+            text = ""
         })
 
-        val dots = LinearLayout(ctx).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER
-            setPadding(0, dp(6), 0, 0)
+        labels.forEach { label ->
+            linha.addView(TextView(ctx).apply {
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                text = label
+                textSize = 11f
+                setTextColor(Color.parseColor("#2F3E3F"))
+                typeface = Typeface.DEFAULT_BOLD
+                gravity = android.view.Gravity.CENTER
+                includeFontPadding = false
+            })
         }
-        dots.addView(criarDot(treinoFeito, Color.parseColor("#15945F")))
-        dots.addView(criarDot(cardioFeito, Color.parseColor("#0EA8AA")))
-        coluna.addView(dots)
 
-        val legends = LinearLayout(ctx).apply {
+        return linha
+    }
+
+    private fun criarLinhaIndicadores(label: String, diasFeitos: Set<Int>, color: Int): LinearLayout {
+        val ctx = requireContext()
+        val linha = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, dp(9), 0, 0)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
-        legends.addView(criarLegendaDot("Treino"))
-        legends.addView(criarLegendaDot("Cardio"))
-        coluna.addView(legends)
 
-        return coluna
+        linha.addView(TextView(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(46), LinearLayout.LayoutParams.WRAP_CONTENT)
+            text = label
+            textSize = 11f
+            setTextColor(color)
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            includeFontPadding = false
+        })
+
+        repeat(7) { index ->
+            val cell = LinearLayout(ctx).apply {
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                gravity = android.view.Gravity.CENTER
+            }
+            cell.addView(criarDot(diasFeitos.contains(index), color))
+            linha.addView(cell)
+        }
+
+        return linha
     }
 
     private fun criarDot(done: Boolean, color: Int): TextView {
@@ -480,29 +511,14 @@ class PerfilFragment : Fragment() {
             setStroke(dp(1), color)
         }
         return TextView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply {
-                marginEnd = dp(3)
-                marginStart = dp(3)
-            }
+            layoutParams = LinearLayout.LayoutParams(dp(24), dp(24))
             background = bg
             gravity = android.view.Gravity.CENTER
             text = if (done) "✓" else ""
-            textSize = 16f
+            textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
-        }
-    }
-
-    private fun criarLegendaDot(label: String): TextView {
-        return TextView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                marginStart = dp(2)
-                marginEnd = dp(2)
-            }
-            text = label
-            textSize = 9f
-            setTextColor(Color.parseColor("#5B6B62"))
-            gravity = android.view.Gravity.CENTER
+            includeFontPadding = false
         }
     }
 
