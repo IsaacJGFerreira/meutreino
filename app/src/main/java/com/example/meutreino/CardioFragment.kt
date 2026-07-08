@@ -39,10 +39,25 @@ class CardioFragment : Fragment() {
     // ✅ role do usuário logado
     private var meuRole: String = "ALUNO"
 
+    private fun safeContext(): Context? {
+        return if (isAdded) context else null
+    }
+
+    private fun isViewReady(): Boolean {
+        return isAdded && view != null && this::adapter.isInitialized
+    }
+
+    private fun showToastSafe(message: String) {
+        safeContext()?.let { ctx ->
+            AppUiFeedback.showToast(ctx, message, Toast.LENGTH_SHORT)
+        }
+    }
+
     // ✅ Qual UID vamos observar?
     private fun uidAlvo(): String? {
         val user = Firebase.auth.currentUser ?: return null
-        val prefs = requireContext().getSharedPreferences("meutreino_prefs", Context.MODE_PRIVATE)
+        val ctx = safeContext() ?: return null
+        val prefs = ctx.getSharedPreferences("meutreino_prefs", Context.MODE_PRIVATE)
         val selectedStudent = prefs.getString("selected_student_uid", null)
         return selectedStudent ?: user.uid
     }
@@ -60,7 +75,7 @@ class CardioFragment : Fragment() {
         btnAdicionarCardio = view.findViewById(R.id.btnAdicionarCardio)
         rvSemana = view.findViewById(R.id.rvSemana)
 
-        rvSemana.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        rvSemana.layoutManager = LinearLayoutManager(inflater.context, LinearLayoutManager.HORIZONTAL, false)
 
         adapter = DiaCardioAdapter(emptyList()) { dia ->
             abrirDetalhesDoDia(dia.dataChave)
@@ -89,13 +104,14 @@ class CardioFragment : Fragment() {
     private fun carregarRoleEIniciar() {
         val user = Firebase.auth.currentUser
         if (user == null) {
-            AppUiFeedback.showToast(requireContext(), "Usuário não logado.", Toast.LENGTH_SHORT)
+            showToastSafe("Usuário não logado.")
             return
         }
 
         Firebase.firestore.collection("users").document(user.uid)
             .get()
             .addOnSuccessListener { doc ->
+                if (!isViewReady()) return@addOnSuccessListener
 
                 meuRole = (doc.getString("role") ?: "ALUNO").trim().uppercase()
 
@@ -105,19 +121,20 @@ class CardioFragment : Fragment() {
                 val uidAlvo = uidAlvo() ?: return@addOnSuccessListener
 
                 // ✅ se for treinador e não selecionou aluno, não carrega nada
-                val prefs = requireContext().getSharedPreferences("meutreino_prefs", Context.MODE_PRIVATE)
+                val ctx = safeContext() ?: return@addOnSuccessListener
+                val prefs = ctx.getSharedPreferences("meutreino_prefs", Context.MODE_PRIVATE)
                 val selectedStudent = prefs.getString("selected_student_uid", null)
 
                 if (meuRole == "TREINADOR" && selectedStudent == null) {
                     lista = mutableListOf()
                     atualizarSemanaNaTela()
-                    AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
+                    showToastSafe("Selecione um aluno no Perfil.")
                     return@addOnSuccessListener
                 }
 
                 // ✅ 2) ALUNO: carrega local primeiro (offline)
                 if (meuRole == "ALUNO") {
-                    lista = CardioRepository.carregar(requireContext()).toMutableList()
+                    lista = CardioRepository.carregar(ctx).toMutableList()
                     atualizarSemanaNaTela()
                 } else {
                     // TREINADOR: começa vazio e vai esperar nuvem
@@ -129,7 +146,8 @@ class CardioFragment : Fragment() {
                 carregarDaNuvem(uidAlvo)
             }
             .addOnFailureListener { e ->
-                AppUiFeedback.showToast(requireContext(), "Erro ao carregar perfil: ${e.message}", Toast.LENGTH_SHORT)
+                if (!isAdded) return@addOnFailureListener
+                showToastSafe("Erro ao carregar perfil: ${e.message}")
             }
     }
 
@@ -137,19 +155,22 @@ class CardioFragment : Fragment() {
         CardioFirestoreRepository.carregar(
             uidAlvo = uidAlvo,
             onOk = { nuvem ->
+                if (!isViewReady()) return@carregar
 
                 lista = nuvem.toMutableList()
                 atualizarSemanaNaTela()
 
                 // ✅ só aluno salva cache local (e somente no próprio uid)
                 val userUid = Firebase.auth.currentUser?.uid
-                if (meuRole == "ALUNO" && userUid == uidAlvo) {
-                    CardioRepository.salvar(requireContext(), lista)
+                val ctx = safeContext()
+                if (meuRole == "ALUNO" && userUid == uidAlvo && ctx != null) {
+                    CardioRepository.salvar(ctx, lista)
                 }
             },
             onErro = { e ->
                 Log.e("CARDIO_FS", "❌ Erro ao carregar do Firestore", e)
-                AppUiFeedback.showToast(requireContext(), "Sem internet ou sem permissão.", Toast.LENGTH_SHORT)
+                if (!isAdded) return@carregar
+                showToastSafe("Sem internet ou sem permissão.")
             }
         )
     }
@@ -158,6 +179,8 @@ class CardioFragment : Fragment() {
     // ✅ Atualiza calendário + total
     // =========================
     private fun atualizarSemanaNaTela() {
+        if (!isViewReady()) return
+
         val (inicio, fim) = obterInicioEFimDaSemana(semanaCal)
 
         val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
@@ -223,47 +246,50 @@ class CardioFragment : Fragment() {
     // ✅ Dialog para adicionar cardio (SÓ ALUNO)
     // =========================
     private fun abrirDialogAdicionarCardio() {
+        val ctx = safeContext() ?: return
+
         if (meuRole != "ALUNO") {
-            AppUiFeedback.showToast(requireContext(), "Somente aluno pode registrar cardio.", Toast.LENGTH_SHORT)
+            showToastSafe("Somente aluno pode registrar cardio.")
             return
         }
 
-        val layout = android.widget.LinearLayout(requireContext())
+        val layout = android.widget.LinearLayout(ctx)
         layout.orientation = android.widget.LinearLayout.VERTICAL
         layout.setPadding(40, 20, 40, 10)
 
-        val etAtividade = android.widget.EditText(requireContext())
+        val etAtividade = android.widget.EditText(ctx)
         etAtividade.hint = "Atividade (ex: Corrida, Bike)"
         etAtividade.hintPortugueseIme()
         layout.addView(etAtividade)
 
-        val etTempoMin = android.widget.EditText(requireContext())
+        val etTempoMin = android.widget.EditText(ctx)
         etTempoMin.hint = "Tempo (min)"
         etTempoMin.inputType = android.text.InputType.TYPE_CLASS_NUMBER
         layout.addView(etTempoMin)
 
-        val etRitmo = android.widget.EditText(requireContext())
+        val etRitmo = android.widget.EditText(ctx)
         etRitmo.hint = "Ritmo (opcional: mm:ss/km)"
         etRitmo.hintPortugueseIme()
         layout.addView(etRitmo)
 
-        AppUiFeedback.dialogBuilder(requireContext())
+        AppUiFeedback.dialogBuilder(ctx)
             .setTitle("Adicionar Cardio (hoje)")
             .setView(layout)
             .setPositiveButton("Salvar") { _, _ ->
+                val currentContext = safeContext() ?: return@setPositiveButton
 
                 val atividade = etAtividade.text.toString().trim()
                 val tempoStr = etTempoMin.text.toString().trim()
                 val ritmo = etRitmo.text.toString().trim()
 
                 if (atividade.isBlank() || tempoStr.isBlank()) {
-                    AppUiFeedback.showToast(requireContext(), "Preencha atividade e tempo.", Toast.LENGTH_SHORT)
+                    AppUiFeedback.showToast(currentContext, "Preencha atividade e tempo.", Toast.LENGTH_SHORT)
                     return@setPositiveButton
                 }
 
                 val tempoMin = tempoStr.toIntOrNull()
                 if (tempoMin == null || tempoMin <= 0) {
-                    AppUiFeedback.showToast(requireContext(), "Tempo inválido.", Toast.LENGTH_SHORT)
+                    AppUiFeedback.showToast(currentContext, "Tempo inválido.", Toast.LENGTH_SHORT)
                     return@setPositiveButton
                 }
 
@@ -280,22 +306,24 @@ class CardioFragment : Fragment() {
 
                 // ✅ local (offline)
                 lista.add(0, item)
-                CardioRepository.salvar(requireContext(), lista)
+                CardioRepository.salvar(currentContext, lista)
 
                 // ✅ nuvem (uid do próprio aluno)
                 val uid = Firebase.auth.currentUser?.uid ?: return@setPositiveButton
                 CardioFirestoreRepository.salvar(uidAlvo = uid, registro = item)
 
                 atualizarSemanaNaTela()
-                AppUiFeedback.showToast(requireContext(), "Cardio salvo!", Toast.LENGTH_SHORT)
+                AppUiFeedback.showToast(currentContext, "Cardio salvo!", Toast.LENGTH_SHORT)
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
     private fun abrirMenuApagarRegistro(regs: List<CardioRegistro>) {
+        val ctx = safeContext() ?: return
+
         if (meuRole != "ALUNO") {
-            AppUiFeedback.showToast(requireContext(), "Treinador não pode apagar cardio.", Toast.LENGTH_SHORT)
+            showToastSafe("Treinador não pode apagar cardio.")
             return
         }
 
@@ -303,32 +331,35 @@ class CardioFragment : Fragment() {
             "${idx + 1}) ${r.atividade} | ${r.tempoMin} min | ${r.dataHora}"
         }.toTypedArray()
 
-        AppUiFeedback.dialogBuilder(requireContext())
+        AppUiFeedback.dialogBuilder(ctx)
             .setTitle("Apagar qual?")
             .setItems(itens) { _, which ->
+                val currentContext = safeContext() ?: return@setItems
                 val alvo = regs[which]
 
                 // ✅ Apaga local
                 lista.removeAll { it.id == alvo.id }
-                CardioRepository.salvar(requireContext(), lista)
+                CardioRepository.salvar(currentContext, lista)
                 atualizarSemanaNaTela()
 
                 // ✅ Apaga na nuvem
                 val uid = Firebase.auth.currentUser?.uid ?: return@setItems
                 CardioFirestoreRepository.apagar(uidAlvo = uid, id = alvo.id)
 
-                AppUiFeedback.showToast(requireContext(), "Apagado.", Toast.LENGTH_SHORT)
+                AppUiFeedback.showToast(currentContext, "Apagado.", Toast.LENGTH_SHORT)
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
     private fun abrirDetalhesDoDia(dataChave: String) {
+        val ctx = safeContext() ?: return
+
         val regs = lista.filter { chaveDia(it.dataHora) == dataChave }
             .sortedByDescending { it.dataHora }
 
         if (regs.isEmpty()) {
-            AppUiFeedback.showToast(requireContext(), "Sem cardio em $dataChave.", Toast.LENGTH_SHORT)
+            showToastSafe("Sem cardio em $dataChave.")
             return
         }
 
@@ -336,7 +367,7 @@ class CardioFragment : Fragment() {
             "🏃 ${it.atividade} | ${it.tempoMin} min | Ritmo: ${it.ritmo}\n📅 ${it.dataHora}"
         }.toTypedArray()
 
-        val builder = AppUiFeedback.dialogBuilder(requireContext())
+        val builder = AppUiFeedback.dialogBuilder(ctx)
             .setTitle("Cardios em $dataChave")
             .setItems(itens, null)
             .setPositiveButton("OK", null)
