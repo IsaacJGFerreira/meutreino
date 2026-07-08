@@ -1,3 +1,5 @@
+export {};
+
 const STYLE_ID = "meutreino-remove-recent-training-history";
 
 function injectRemoveRecentHistoryStyle() {
