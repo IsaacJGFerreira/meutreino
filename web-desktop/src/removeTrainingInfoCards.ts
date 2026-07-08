@@ -31,20 +31,8 @@ function injectRemoveTrainingInfoCardsStyle() {
   document.head.appendChild(style);
 }
 
-function removeTrainingInfoCards() {
-  document.querySelectorAll(".desktop-training-summary, .desktop-training-rail").forEach((item) => item.remove());
-}
-
 function bootRemoveTrainingInfoCards() {
   injectRemoveTrainingInfoCardsStyle();
-  removeTrainingInfoCards();
-
-  if (!document.body) return;
-
-  new MutationObserver(removeTrainingInfoCards).observe(document.body, {
-    childList: true,
-    subtree: true
-  });
 }
 
 bootRemoveTrainingInfoCards();
