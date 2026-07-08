@@ -7,6 +7,7 @@ import "./removeRecentTrainingHistory";
 import "./workoutBuilderDeletionConfirm";
 import "./desktopTrainingLayout";
 import "./desktopPerformanceLayout";
+import "./responsiveSidebarDrawer";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
