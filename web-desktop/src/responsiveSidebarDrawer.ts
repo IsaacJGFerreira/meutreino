@@ -2,10 +2,9 @@ export {};
 
 const STYLE_ID = "meutreino-responsive-sidebar-drawer";
 const OPEN_CLASS = "sidebar-drawer-open";
-const MOBILE_QUERY = "(max-width: 1024px)";
+const MOBILE_QUERY = "(max-width: 1180px)";
 
 let listenersAttached = false;
-let observerAttached = false;
 let mediaQuery: MediaQueryList | null = null;
 
 function injectResponsiveSidebarStyles() {
@@ -14,7 +13,7 @@ function injectResponsiveSidebarStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    @media (max-width: 1024px) {
+    @media (max-width: 1180px) {
       body.${OPEN_CLASS} {
         overflow: hidden;
       }
@@ -190,13 +189,9 @@ function injectResponsiveSidebarStyles() {
       }
     }
 
-    @media (min-width: 1025px) {
+    @media (min-width: 1181px) {
       .mobile-menu {
         display: none !important;
-      }
-
-      body.${OPEN_CLASS} {
-        overflow: auto;
       }
     }
   `;
@@ -221,15 +216,14 @@ function getMenuButton() {
 }
 
 function setSidebarOpen(open: boolean) {
-  const shouldOpen = open && isMobileLayout();
   const layout = getLayout();
   const sidebar = getSidebar();
   const button = getMenuButton();
 
-  document.body.classList.toggle(OPEN_CLASS, shouldOpen);
-  layout?.classList.toggle(OPEN_CLASS, shouldOpen);
-  sidebar?.setAttribute("aria-hidden", shouldOpen ? "false" : isMobileLayout() ? "true" : "false");
-  button?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  document.body.classList.toggle(OPEN_CLASS, open);
+  layout?.classList.toggle(OPEN_CLASS, open);
+  sidebar?.setAttribute("aria-hidden", open ? "false" : "true");
+  button?.setAttribute("aria-expanded", open ? "true" : "false");
 }
 
 function closeSidebar() {
@@ -237,13 +231,8 @@ function closeSidebar() {
 }
 
 function toggleSidebar() {
+  if (!isMobileLayout()) return;
   setSidebarOpen(!document.body.classList.contains(OPEN_CLASS));
-}
-
-function stopClick(event: MouseEvent) {
-  event.preventDefault();
-  event.stopPropagation();
-  event.stopImmediatePropagation();
 }
 
 function handleDocumentClick(event: MouseEvent) {
@@ -252,7 +241,8 @@ function handleDocumentClick(event: MouseEvent) {
 
   const menuButton = target.closest(".mobile-menu");
   if (menuButton) {
-    stopClick(event);
+    event.preventDefault();
+    event.stopPropagation();
     toggleSidebar();
     return;
   }
@@ -260,15 +250,15 @@ function handleDocumentClick(event: MouseEvent) {
   if (!document.body.classList.contains(OPEN_CLASS)) return;
 
   const sidebar = target.closest(".sidebar");
-  const navButton = target.closest(".sidebar .nav-list button, .sidebar-footer button, .selected-student button");
+  const navButton = target.closest(".sidebar button");
+  const workspace = target.closest(".workspace");
 
   if (navButton) {
-    window.requestAnimationFrame(closeSidebar);
+    window.setTimeout(closeSidebar, 80);
     return;
   }
 
-  if (!sidebar) {
-    stopClick(event);
+  if (!sidebar || workspace) {
     closeSidebar();
   }
 }
@@ -307,10 +297,7 @@ function bootResponsiveSidebarDrawer() {
     window.addEventListener("resize", handleResize);
   }
 
-  if (!observerAttached && document.body) {
-    observerAttached = true;
-    new MutationObserver(syncAccessibility).observe(document.body, { childList: true, subtree: true });
-  }
+  new MutationObserver(syncAccessibility).observe(document.body, { childList: true, subtree: true });
 }
 
 bootResponsiveSidebarDrawer();
