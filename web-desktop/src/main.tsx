@@ -6,6 +6,7 @@ import "./trainingFlowPatch";
 import "./removeRecentTrainingHistory";
 import "./workoutBuilderDeletionConfirm";
 import "./desktopTrainingLayout";
+import "./desktopPerformanceLayout";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
