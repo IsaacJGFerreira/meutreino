@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
     private val requestNotificationsPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (!granted) {
+        if (!granted && !isFinishing && !isDestroyed) {
             AppUiFeedback.showToast(this, "Permita notificações para receber atualizações de treino.", Toast.LENGTH_SHORT)
         }
     }
@@ -100,7 +100,8 @@ class MainActivity : AppCompatActivity() {
         // Atualiza badge ao voltar pra activity
         atualizarBadgeAluno()
 
-        // Listener pra atualizar badge quando Perfil trocar aluno
+        // Evita registrar listeners duplicados em recriações rápidas da Activity.
+        prefsListener?.let { prefs.unregisterOnSharedPreferenceChangeListener(it) }
         prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == KEY_SELECTED_STUDENT || key == KEY_SELECTED_STUDENT_NAME) {
                 atualizarBadgeAluno()
@@ -130,6 +131,7 @@ class MainActivity : AppCompatActivity() {
     private fun carregarRoleEIniciar(uid: String, savedInstanceState: Bundle?) {
         Firebase.firestore.collection("users").document(uid).get()
             .addOnSuccessListener { doc ->
+                if (isFinishing || isDestroyed) return@addOnSuccessListener
 
                 // Se doc não existe, bloqueia
                 if (!doc.exists()) {
@@ -189,6 +191,8 @@ class MainActivity : AppCompatActivity() {
                 atualizarBadgeAluno()
             }
             .addOnFailureListener {
+                if (isFinishing || isDestroyed) return@addOnFailureListener
+
                 // Em falha temporária (ex.: sem internet), mantém sessão atual para evitar
                 // "expulsar" o aluno e perder o que já estava preenchido na tela.
                 userRole = "ALUNO"
@@ -214,7 +218,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun abrirMenuBottomSheet() {
         // Se por algum motivo ainda não sabemos role, não abre
-        if (userRole.isBlank()) return
+        if (userRole.isBlank() || isFinishing || isDestroyed) return
 
         val dialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.bottomsheet_menu_layout, null)
@@ -261,12 +265,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun trocarTela(fragment: Fragment, limparBackStack: Boolean) {
+        if (isFinishing || isDestroyed) return
+
+        val atual = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
+        if (atual != null && atual::class == fragment::class && !limparBackStack) {
+            return
+        }
+
         if (limparBackStack) {
             supportFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
         }
-        supportFragmentManager.beginTransaction()
+
+        val transaction = supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, fragment)
-            .commit()
+
+        if (supportFragmentManager.isStateSaved) {
+            transaction.commitAllowingStateLoss()
+        } else {
+            transaction.commit()
+        }
     }
 
     fun navegarPara(fragment: Fragment) {
@@ -319,6 +336,7 @@ class MainActivity : AppCompatActivity() {
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .limit(1)
             .addSnapshotListener { snap, err ->
+                if (isFinishing || isDestroyed) return@addSnapshotListener
                 if (err != null) return@addSnapshotListener
 
                 val latest = snap?.documents?.firstOrNull() ?: return@addSnapshotListener
