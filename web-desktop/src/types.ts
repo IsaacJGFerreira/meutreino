@@ -10,6 +10,7 @@ export type UserProfile = {
   trainerId?: string | null;
   idade?: number;
   alturaCm?: number;
+  cardioMetaSemanalMin?: number;
 };
 
 export type ExercisePlan = {
