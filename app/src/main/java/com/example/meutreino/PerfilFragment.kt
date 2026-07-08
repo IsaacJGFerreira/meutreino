@@ -4,6 +4,9 @@ import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
@@ -11,6 +14,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -18,10 +23,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 
 class PerfilFragment : Fragment() {
 
@@ -30,6 +42,7 @@ class PerfilFragment : Fragment() {
         private const val KEY_SELECTED_STUDENT = "selected_student_uid"
         private const val KEY_SELECTED_STUDENT_NAME = "selected_student_name"
         private const val KEY_LAST_NOTIFICATION_TS = "last_workout_notification_ts"
+        private const val DEFAULT_CARDIO_GOAL = 150
     }
 
     private val repoRedeem = InviteRedeemRepository()
@@ -49,6 +62,11 @@ class PerfilFragment : Fragment() {
         val tvInfo = view.findViewById<TextView>(R.id.tvPerfilInfo)
         val btnCodigo = view.findViewById<Button>(R.id.btnInserirCodigo)
         val btnSolicitar = view.findViewById<Button>(R.id.btnSolicitarCodigos)
+
+        val tvProfileName = view.findViewById<TextView>(R.id.tvProfileName)
+        val tvProfileEmail = view.findViewById<TextView>(R.id.tvProfileEmail)
+        val tvProfileRole = view.findViewById<TextView>(R.id.tvProfileRole)
+        val tvProfileStatus = view.findViewById<TextView>(R.id.tvProfileStatus)
 
         val tvTituloCodigos = view.findViewById<TextView>(R.id.tvTituloCodigos)
         val rvCodigos = view.findViewById<RecyclerView>(R.id.rvCodigosDisponiveis)
@@ -70,12 +88,21 @@ class PerfilFragment : Fragment() {
         val tvUltimoProgresso = view.findViewById<TextView>(R.id.tvUltimoProgresso)
         val tvUltimoCardio = view.findViewById<TextView>(R.id.tvUltimoCardio)
 
+        val cardWeeklyProgress = view.findViewById<View>(R.id.cardWeeklyProgress)
+        val layoutSemanaDots = view.findViewById<LinearLayout>(R.id.layoutSemanaDots)
+        val tvResumoTreinoSemana = view.findViewById<TextView>(R.id.tvResumoTreinoSemana)
+        val tvMetaCardioValor = view.findViewById<TextView>(R.id.tvMetaCardioValor)
+        val progressCardioMeta = view.findViewById<ProgressBar>(R.id.progressCardioMeta)
+        val tvFaltamCardio = view.findViewById<TextView>(R.id.tvFaltamCardio)
+
         val cardNotification = view.findViewById<View>(R.id.cardNotification)
         val tvNotificacaoTitulo = view.findViewById<TextView>(R.id.tvNotificacaoTitulo)
         val tvNotificacaoMensagem = view.findViewById<TextView>(R.id.tvNotificacaoMensagem)
         val btnMarcarNotificacaoLida = view.findViewById<Button>(R.id.btnMarcarNotificacaoLida)
 
         tvTitulo.text = "Perfil"
+        tvUltimoPeso.visibility = View.GONE
+        tvUltimoProgresso.visibility = View.GONE
 
         val codeAdapter = InviteCodeAdapter(mutableListOf()) { code -> copiarParaClipboard(code) }
         rvCodigos.layoutManager = LinearLayoutManager(requireContext())
@@ -97,6 +124,7 @@ class PerfilFragment : Fragment() {
 
         cardStudentMetrics.visibility = View.GONE
         cardStudentStatus.visibility = View.GONE
+        cardWeeklyProgress.visibility = View.GONE
         cardNotification.visibility = View.GONE
 
         tvTituloCodigos.visibility = View.GONE
@@ -109,6 +137,10 @@ class PerfilFragment : Fragment() {
         val user = Firebase.auth.currentUser
         if (user == null) {
             tvInfo.text = "Usuário não logado."
+            tvProfileName.text = "Usuário não logado"
+            tvProfileEmail.text = "—"
+            tvProfileRole.text = "—"
+            tvProfileStatus.text = "Bloqueado"
             btnCodigo.visibility = View.GONE
             return view
         }
@@ -118,18 +150,22 @@ class PerfilFragment : Fragment() {
         Firebase.firestore.collection("users").document(user.uid)
             .get()
             .addOnSuccessListener { doc ->
+                if (!isAdded) return@addOnSuccessListener
 
                 val name = doc.getString("name") ?: "Sem nome"
                 val email = doc.getString("email") ?: (user.email ?: "Sem email")
                 val role = (doc.getString("role") ?: "ALUNO").trim().uppercase()
                 val approved = doc.getBoolean("approved") ?: false
+                val metaInicial = readInt(doc, "cardioMetaSemanalMin")
+                    ?: readInt(doc, "metaSemanalCardioMin")
+                    ?: readInt(doc, "cardioGoalMin")
+                    ?: DEFAULT_CARDIO_GOAL
 
-                tvInfo.text = """
-                    Nome: $name
-                    Email: $email
-                    Tipo: $role
-                    Status: ${if (approved) "Liberado" else "Aguardando código"}
-                """.trimIndent()
+                tvInfo.text = "Nome: $name\nEmail: $email\nTipo: $role\nStatus: ${if (approved) "Liberado" else "Aguardando código"}"
+                tvProfileName.text = name
+                tvProfileEmail.text = email
+                tvProfileRole.text = role
+                tvProfileStatus.text = if (approved) "✓ Liberado" else "Aguardando"
 
                 btnCodigo.visibility = if (approved) View.GONE else View.VISIBLE
 
@@ -157,6 +193,7 @@ class PerfilFragment : Fragment() {
                 if (role == "ALUNO" && approved) {
                     cardStudentMetrics.visibility = View.VISIBLE
                     cardStudentStatus.visibility = View.VISIBLE
+                    cardWeeklyProgress.visibility = View.VISIBLE
                     cardNotification.visibility = View.VISIBLE
 
                     StudentDataCleanupScheduler.executarSeNecessario(requireContext(), user.uid) { limpou ->
@@ -166,18 +203,32 @@ class PerfilFragment : Fragment() {
                                 "Limpeza anual automática concluída.",
                                 Toast.LENGTH_SHORT
                             )
-                            carregarResumoAluno(
-                                user.uid,
-                                tvUltimoTreino,
-                                tvUltimoPeso,
-                                tvUltimoProgresso,
-                                tvUltimoCardio
+                            carregarPainelAcompanhamentoAluno(
+                                uid = user.uid,
+                                metaInicial = metaInicial,
+                                tvUltimoTreino = tvUltimoTreino,
+                                tvUltimoCardio = tvUltimoCardio,
+                                layoutSemanaDots = layoutSemanaDots,
+                                tvResumoTreinoSemana = tvResumoTreinoSemana,
+                                tvMetaCardioValor = tvMetaCardioValor,
+                                progressCardioMeta = progressCardioMeta,
+                                tvFaltamCardio = tvFaltamCardio
                             )
                         }
                     }
 
                     carregarDadosAluno(user.uid, etIdade, etAltura)
-                    carregarResumoAluno(user.uid, tvUltimoTreino, tvUltimoPeso, tvUltimoProgresso, tvUltimoCardio)
+                    carregarPainelAcompanhamentoAluno(
+                        uid = user.uid,
+                        metaInicial = metaInicial,
+                        tvUltimoTreino = tvUltimoTreino,
+                        tvUltimoCardio = tvUltimoCardio,
+                        layoutSemanaDots = layoutSemanaDots,
+                        tvResumoTreinoSemana = tvResumoTreinoSemana,
+                        tvMetaCardioValor = tvMetaCardioValor,
+                        progressCardioMeta = progressCardioMeta,
+                        tvFaltamCardio = tvFaltamCardio
+                    )
                     iniciarListenerNotificacoesAluno(user.uid, tvNotificacaoTitulo, tvNotificacaoMensagem)
 
                     btnSalvarDadosAluno.setOnClickListener {
@@ -190,7 +241,12 @@ class PerfilFragment : Fragment() {
                 }
             }
             .addOnFailureListener {
+                if (!isAdded) return@addOnFailureListener
                 tvInfo.text = "Erro ao carregar dados do perfil."
+                tvProfileName.text = "Erro ao carregar perfil"
+                tvProfileEmail.text = "—"
+                tvProfileRole.text = "—"
+                tvProfileStatus.text = "Erro"
                 btnCodigo.visibility = View.GONE
                 btnSolicitar.visibility = View.GONE
             }
@@ -208,6 +264,7 @@ class PerfilFragment : Fragment() {
         Firebase.firestore.collection("users").document(uid)
             .get()
             .addOnSuccessListener { doc ->
+                if (!isAdded) return@addOnSuccessListener
                 val idade = (doc.getLong("idade") ?: 0L).toInt()
                 val altura = doc.getDouble("alturaCm") ?: doc.getLong("alturaCm")?.toDouble()
 
@@ -236,75 +293,254 @@ class PerfilFragment : Fragment() {
             .document(uid)
             .update(mapOf("idade" to idade, "alturaCm" to altura))
             .addOnSuccessListener {
+                if (!isAdded) return@addOnSuccessListener
                 AppUiFeedback.showToast(requireContext(), "Dados do aluno salvos.", Toast.LENGTH_SHORT)
             }
             .addOnFailureListener { e ->
+                if (!isAdded) return@addOnFailureListener
                 AppUiFeedback.showToast(requireContext(), "Erro ao salvar: ${e.message}", Toast.LENGTH_SHORT)
             }
     }
 
-    private fun carregarResumoAluno(
+    private fun carregarPainelAcompanhamentoAluno(
         uid: String,
+        metaInicial: Int,
         tvUltimoTreino: TextView,
-        tvUltimoPeso: TextView,
-        tvUltimoProgresso: TextView,
-        tvUltimoCardio: TextView
+        tvUltimoCardio: TextView,
+        layoutSemanaDots: LinearLayout,
+        tvResumoTreinoSemana: TextView,
+        tvMetaCardioValor: TextView,
+        progressCardioMeta: ProgressBar,
+        tvFaltamCardio: TextView
     ) {
         val db = Firebase.firestore
+        val weekStart = inicioDaSemanaAtual()
 
         db.collection("users").document(uid).collection("treino_registros")
             .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(1)
+            .limit(80)
             .get()
-            .addOnSuccessListener { snap ->
-                val doc = snap.documents.firstOrNull()
-                if (doc == null) {
-                    tvUltimoTreino.text = "Último treino: sem registros"
-                } else {
-                    val nome = doc.getString("nomeTreino") ?: "Treino"
-                    val data = doc.getString("dataHora") ?: "sem data"
-                    tvUltimoTreino.text = "Último treino: $nome • $data"
-                }
-            }
+            .addOnSuccessListener { treinoSnap ->
+                if (!isAdded) return@addOnSuccessListener
 
-        db.collection("users").document(uid).collection("progresso")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(1)
+                val treinoDocs = treinoSnap.documents
+                val ultimoTreino = treinoDocs.firstOrNull()
+                tvUltimoTreino.text = if (ultimoTreino == null) {
+                    "Último treino\nSem registros"
+                } else {
+                    val nome = ultimoTreino.getString("nomeTreino") ?: "Treino"
+                    val data = ultimoTreino.getString("dataHora") ?: "sem data"
+                    "Último treino\n$nome • $data"
+                }
+
+                val treinoDias = treinoDocs
+                    .filter { it.getBoolean("completo") ?: false }
+                    .mapNotNull { diaSemanaDoDocumento(it, weekStart) }
+                    .toSet()
+
+                db.collection("users").document(uid).collection("cardio")
+                    .orderBy("createdAt", Query.Direction.DESCENDING)
+                    .limit(80)
+                    .get()
+                    .addOnSuccessListener { cardioSnap ->
+                        if (!isAdded) return@addOnSuccessListener
+
+                        val cardioDocs = cardioSnap.documents
+                        val ultimoCardio = cardioDocs.firstOrNull()
+                        tvUltimoCardio.text = if (ultimoCardio == null) {
+                            "Último cardio\nSem registros"
+                        } else {
+                            val atividade = ultimoCardio.getString("atividade") ?: "Cardio"
+                            val tempo = (ultimoCardio.getLong("tempoMin") ?: 0L).toInt()
+                            val data = ultimoCardio.getString("dataHora") ?: "sem data"
+                            "Último cardio\n$atividade • ${tempo}min • $data"
+                        }
+
+                        val cardioDias = cardioDocs.mapNotNull { diaSemanaDoDocumento(it, weekStart) }.toSet()
+                        val minutosCardioSemana = cardioDocs
+                            .filter { diaSemanaDoDocumento(it, weekStart) != null }
+                            .sumOf { (it.getLong("tempoMin") ?: 0L).toInt() }
+
+                        carregarMetaCardio(uid, metaInicial) { meta ->
+                            if (!isAdded) return@carregarMetaCardio
+                            renderizarProgressoSemana(
+                                layoutSemanaDots = layoutSemanaDots,
+                                tvResumoTreinoSemana = tvResumoTreinoSemana,
+                                tvMetaCardioValor = tvMetaCardioValor,
+                                progressCardioMeta = progressCardioMeta,
+                                tvFaltamCardio = tvFaltamCardio,
+                                treinoDias = treinoDias,
+                                cardioDias = cardioDias,
+                                minutosCardioSemana = minutosCardioSemana,
+                                metaCardio = meta
+                            )
+                        }
+                    }
+                    .addOnFailureListener {
+                        if (!isAdded) return@addOnFailureListener
+                        tvUltimoCardio.text = "Último cardio\nErro ao carregar"
+                        renderizarProgressoSemana(layoutSemanaDots, tvResumoTreinoSemana, tvMetaCardioValor, progressCardioMeta, tvFaltamCardio, treinoDias, emptySet(), 0, metaInicial)
+                    }
+            }
+            .addOnFailureListener {
+                if (!isAdded) return@addOnFailureListener
+                tvUltimoTreino.text = "Último treino\nErro ao carregar"
+                tvUltimoCardio.text = "Último cardio\nErro ao carregar"
+                renderizarProgressoSemana(layoutSemanaDots, tvResumoTreinoSemana, tvMetaCardioValor, progressCardioMeta, tvFaltamCardio, emptySet(), emptySet(), 0, metaInicial)
+            }
+    }
+
+    private fun carregarMetaCardio(uid: String, metaInicial: Int, onMeta: (Int) -> Unit) {
+        Firebase.firestore.collection("users")
+            .document(uid)
+            .collection("cardio_meta")
+            .document("current")
             .get()
-            .addOnSuccessListener { snap ->
-                val doc = snap.documents.firstOrNull()
-                if (doc == null) {
-                    tvUltimoPeso.text = "Último peso: sem registros"
-                    tvUltimoProgresso.text = "Último progresso: sem registros"
-                } else {
-                    val data = doc.getString("data") ?: "sem data"
-                    val peso = doc.getDouble("pesoKg") ?: doc.getLong("pesoKg")?.toDouble() ?: 0.0
-                    tvUltimoPeso.text = "Último peso: ${String.format("%.1f", peso)} kg"
-
-                    val fotos = listOf(
-                        doc.getString("fotoFrenteUri"),
-                        doc.getString("fotoLadoUri"),
-                        doc.getString("fotoCostasUri")
-                    ).count { !it.isNullOrBlank() }
-                    tvUltimoProgresso.text = "Último progresso: $data • $fotos foto(s)"
-                }
+            .addOnSuccessListener { doc ->
+                val meta = readInt(doc, "cardioMetaSemanalMin")
+                    ?: readInt(doc, "metaSemanalCardioMin")
+                    ?: readInt(doc, "cardioGoalMin")
+                    ?: metaInicial
+                onMeta(if (meta > 0) meta else DEFAULT_CARDIO_GOAL)
             }
-
-        db.collection("users").document(uid).collection("cardio")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { snap ->
-                val doc = snap.documents.firstOrNull()
-                if (doc == null) {
-                    tvUltimoCardio.text = "Último cardio: sem registros"
-                } else {
-                    val atividade = doc.getString("atividade") ?: "Cardio"
-                    val tempo = (doc.getLong("tempoMin") ?: 0L).toInt()
-                    val data = doc.getString("dataHora") ?: "sem data"
-                    tvUltimoCardio.text = "Último cardio: $atividade • ${tempo}min • $data"
-                }
+            .addOnFailureListener {
+                onMeta(if (metaInicial > 0) metaInicial else DEFAULT_CARDIO_GOAL)
             }
+    }
+
+    private fun renderizarProgressoSemana(
+        layoutSemanaDots: LinearLayout,
+        tvResumoTreinoSemana: TextView,
+        tvMetaCardioValor: TextView,
+        progressCardioMeta: ProgressBar,
+        tvFaltamCardio: TextView,
+        treinoDias: Set<Int>,
+        cardioDias: Set<Int>,
+        minutosCardioSemana: Int,
+        metaCardio: Int
+    ) {
+        val treinoConcluidos = treinoDias.size
+        tvResumoTreinoSemana.text = "✓ $treinoConcluidos de 7 dias"
+
+        layoutSemanaDots.removeAllViews()
+        val labels = listOf("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom")
+        labels.forEachIndexed { index, label ->
+            layoutSemanaDots.addView(criarColunaDia(label, treinoDias.contains(index), cardioDias.contains(index)))
+        }
+
+        val metaSegura = if (metaCardio > 0) metaCardio else DEFAULT_CARDIO_GOAL
+        val progresso = min(100, ((minutosCardioSemana.toDouble() / metaSegura.toDouble()) * 100.0).toInt())
+        val faltam = max(metaSegura - minutosCardioSemana, 0)
+
+        tvMetaCardioValor.text = "$minutosCardioSemana de $metaSegura min"
+        progressCardioMeta.progress = progresso
+        tvFaltamCardio.text = if (faltam > 0) "Faltam $faltam min" else "Meta concluída"
+    }
+
+    private fun criarColunaDia(label: String, treinoFeito: Boolean, cardioFeito: Boolean): View {
+        val ctx = requireContext()
+        val coluna = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        coluna.addView(TextView(ctx).apply {
+            text = label
+            textSize = 12f
+            setTextColor(Color.parseColor("#2F3E3F"))
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = android.view.Gravity.CENTER
+        })
+
+        val dots = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, dp(6), 0, 0)
+        }
+        dots.addView(criarDot(treinoFeito, Color.parseColor("#15945F")))
+        dots.addView(criarDot(cardioFeito, Color.parseColor("#0EA8AA")))
+        coluna.addView(dots)
+
+        val legends = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER
+        }
+        legends.addView(criarLegendaDot("Treino"))
+        legends.addView(criarLegendaDot("Cardio"))
+        coluna.addView(legends)
+
+        return coluna
+    }
+
+    private fun criarDot(done: Boolean, color: Int): TextView {
+        val bg = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(if (done) color else Color.WHITE)
+            setStroke(dp(1), color)
+        }
+        return TextView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply {
+                marginEnd = dp(3)
+                marginStart = dp(3)
+            }
+            background = bg
+            gravity = android.view.Gravity.CENTER
+            text = if (done) "✓" else ""
+            textSize = 16f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+        }
+    }
+
+    private fun criarLegendaDot(label: String): TextView {
+        return TextView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                marginStart = dp(2)
+                marginEnd = dp(2)
+            }
+            text = label
+            textSize = 9f
+            setTextColor(Color.parseColor("#5B6B62"))
+            gravity = android.view.Gravity.CENTER
+        }
+    }
+
+    private fun inicioDaSemanaAtual(): Long {
+        val cal = Calendar.getInstance()
+        cal.firstDayOfWeek = Calendar.MONDAY
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        return cal.timeInMillis
+    }
+
+    private fun diaSemanaDoDocumento(doc: DocumentSnapshot, weekStart: Long): Int? {
+        val date = dataDocumento(doc) ?: return null
+        val end = weekStart + 7L * 24L * 60L * 60L * 1000L
+        if (date.time < weekStart || date.time >= end) return null
+        return ((date.time - weekStart) / (24L * 60L * 60L * 1000L)).toInt().coerceIn(0, 6)
+    }
+
+    private fun dataDocumento(doc: DocumentSnapshot): Date? {
+        val createdAt = doc.getLong("createdAt")
+        if (createdAt != null && createdAt > 0) return Date(createdAt)
+
+        val dataHora = doc.getString("dataHora") ?: return null
+        return runCatching {
+            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).parse(dataHora)
+                ?: SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(dataHora)
+        }.getOrNull()
+    }
+
+    private fun readInt(doc: DocumentSnapshot, field: String): Int? {
+        return doc.getLong(field)?.toInt() ?: doc.getDouble(field)?.toInt()
+    }
+
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 
     private fun iniciarListenerNotificacoesAluno(
@@ -382,11 +618,13 @@ class PerfilFragment : Fragment() {
 
         batch.commit()
             .addOnSuccessListener {
+                if (!isAdded) return@addOnSuccessListener
                 tvTitulo.text = "Atualizações do treinador"
                 tvMensagem.text = "Sem novas atualizações"
                 AppUiFeedback.showToast(requireContext(), "Notificações marcadas como lidas.", Toast.LENGTH_SHORT)
             }
             .addOnFailureListener { e ->
+                if (!isAdded) return@addOnFailureListener
                 AppUiFeedback.showToast(requireContext(), "Erro ao atualizar: ${e.message}", Toast.LENGTH_SHORT)
             }
     }
@@ -410,6 +648,7 @@ class PerfilFragment : Fragment() {
                     code = code,
                     uid = user.uid,
                     onOk = { tipo ->
+                        if (!isAdded) return@resgatarCodigo
                         AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Sucesso!")
                             .setMessage("Conta liberada como $tipo.")
@@ -419,6 +658,7 @@ class PerfilFragment : Fragment() {
                             .show()
                     },
                     onErr = { msg ->
+                        if (!isAdded) return@resgatarCodigo
                         AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Erro")
                             .setMessage(msg)
@@ -458,6 +698,7 @@ class PerfilFragment : Fragment() {
                     trainerUid = user.uid,
                     qty = qty,
                     onOk = {
+                        if (!isAdded) return@criarPedido
                         AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Pedido enviado")
                             .setMessage("Seu pedido foi enviado para aprovação do admin.")
@@ -465,6 +706,7 @@ class PerfilFragment : Fragment() {
                             .show()
                     },
                     onErr = { msg ->
+                        if (!isAdded) return@criarPedido
                         AppUiFeedback.dialogBuilder(requireContext())
                             .setTitle("Erro")
                             .setMessage(msg)
@@ -533,6 +775,7 @@ class PerfilFragment : Fragment() {
             .whereEqualTo("trainerUid", user.uid)
             .get()
             .addOnSuccessListener { snap1 ->
+                if (!isAdded) return@addOnSuccessListener
                 val codes1 = filtrarDisponiveis(snap1.documents)
 
                 if (codes1.isNotEmpty()) {
@@ -545,14 +788,17 @@ class PerfilFragment : Fragment() {
                     .whereEqualTo("trainerId", user.uid)
                     .get()
                     .addOnSuccessListener { snap2 ->
+                        if (!isAdded) return@addOnSuccessListener
                         val codes2 = filtrarDisponiveis(snap2.documents)
                         adapter.update(codes2)
                     }
                     .addOnFailureListener { e ->
+                        if (!isAdded) return@addOnFailureListener
                         AppUiFeedback.showToast(requireContext(), "Erro ao buscar códigos: ${e.message}", Toast.LENGTH_SHORT)
                     }
             }
             .addOnFailureListener { e ->
+                if (!isAdded) return@addOnFailureListener
                 AppUiFeedback.showToast(requireContext(), "Erro ao buscar códigos: ${e.message}", Toast.LENGTH_SHORT)
             }
     }
@@ -564,6 +810,7 @@ class PerfilFragment : Fragment() {
             .whereEqualTo("trainerId", user.uid)
             .get()
             .addOnSuccessListener { snap ->
+                if (!isAdded) return@addOnSuccessListener
                 val alunos = snap.documents.map { d ->
                     TrainerStudentItem(
                         uid = d.id,
@@ -575,6 +822,7 @@ class PerfilFragment : Fragment() {
                 adapter.update(alunos)
             }
             .addOnFailureListener { e ->
+                if (!isAdded) return@addOnFailureListener
                 AppUiFeedback.showToast(
                     requireContext(),
                     "Erro ao buscar alunos: ${e.message}",
