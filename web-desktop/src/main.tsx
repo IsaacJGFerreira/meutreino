@@ -8,6 +8,7 @@ import "./workoutBuilderDeletionConfirm";
 import "./desktopTrainingLayout";
 import "./desktopPerformanceLayout";
 import "./responsiveSidebarDrawer";
+import "./studentProfileCardioGoalFix";
 import "./studentProfileDashboard";
 
 createRoot(document.getElementById("root")!).render(
