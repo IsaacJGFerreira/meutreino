@@ -1,3 +1,5 @@
+export {};
+
 const STYLE_ID = "meutreino-responsive-sidebar-drawer";
 const OPEN_CLASS = "sidebar-drawer-open";
 const MOBILE_QUERY = "(max-width: 1180px)";
