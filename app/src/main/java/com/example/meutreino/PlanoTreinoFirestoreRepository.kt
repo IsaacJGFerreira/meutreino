@@ -18,6 +18,54 @@ object PlanoTreinoFirestoreRepository {
             .ifBlank { "treino_sem_nome" }
     }
 
+    private fun treinoPayload(
+        treino: TreinoPlan,
+        alunoUid: String,
+        createdBy: String,
+        createdAt: Any,
+        updatedAt: Long
+    ): Map<String, Any> {
+        val exerciciosMap: List<Map<String, Any>> = treino.exercicios.map { ex ->
+            mapOf(
+                "nome" to ex.nome,
+                "series" to ex.series,
+                "repsMin" to ex.repsMin,
+                "repsMax" to ex.repsMax,
+                "descanso" to ex.descanso,
+                "tecnica" to ex.tecnica,
+                "rir" to ex.rir
+            )
+        }
+
+        return mapOf(
+            "nome" to treino.nome,
+            "ordem" to (treino.ordem ?: 0),
+            "exercicios" to exerciciosMap,
+            "assignedTo" to alunoUid,
+            "createdBy" to createdBy,
+            "updatedAt" to updatedAt,
+            "createdAt" to createdAt
+        )
+    }
+
+    private fun notificationPayload(fromUid: String, mensagem: String, now: Long): Map<String, Any> {
+        return mapOf(
+            "type" to "TREINO_ATUALIZADO",
+            "message" to mensagem,
+            "read" to false,
+            "createdAt" to now,
+            "fromUid" to fromUid
+        )
+    }
+
+    private fun profileUpdatePayload(mensagem: String, now: Long): Map<String, Any> {
+        return mapOf(
+            "lastWorkoutUpdateAt" to now,
+            "lastWorkoutUpdateMessage" to mensagem,
+            "updatedAt" to now
+        )
+    }
+
     fun carregarTreinos(
         uidAlvo: String,
         onOk: (List<TreinoPlan>) -> Unit,
@@ -80,45 +128,116 @@ object PlanoTreinoFirestoreRepository {
             return
         }
 
-        val treinoId = docIdSeguro(treino.nome)
-
-        val exerciciosMap = treino.exercicios.map { ex ->
-            hashMapOf(
-                "nome" to ex.nome,
-                "series" to ex.series,
-                "repsMin" to ex.repsMin,
-                "repsMax" to ex.repsMax,
-                "descanso" to ex.descanso,
-                "tecnica" to ex.tecnica,
-                "rir" to ex.rir
-            )
-        }
-
-        val payload = hashMapOf(
-            "nome" to treino.nome,
-            "ordem" to (treino.ordem ?: 0),
-            "exercicios" to exerciciosMap,
-            "assignedTo" to alunoUid,
-            "createdBy" to user.uid,
-            "updatedAt" to System.currentTimeMillis(),
-            "createdAt" to System.currentTimeMillis()
-        )
-
-        Firebase.firestore.collection("users")
+        val db = Firebase.firestore
+        val treinoRef = db.collection("users")
             .document(alunoUid)
             .collection("treinos")
-            .document(treinoId)
-            .set(payload, SetOptions.merge())
-            .addOnSuccessListener {
-                if (notifyStudent) {
-                    registrarAtualizacaoTreino(
-                        alunoUid = alunoUid,
-                        mensagem = notificationMessage
-                            ?: "Seu treinador atualizou o treino \"${treino.nome}\"."
-                    )
-                }
-                onOk?.invoke()
+            .document(docIdSeguro(treino.nome))
+        val now = System.currentTimeMillis()
+        val shouldNotify = notifyStudent && user.uid != alunoUid
+        val mensagem = notificationMessage
+            ?: "Seu treinador atualizou o treino \"${treino.nome}\"."
+        val notificationRef = db.collection("users")
+            .document(alunoUid)
+            .collection("notifications")
+            .document()
+        val profileRef = db.collection("users").document(alunoUid)
+
+        db.runTransaction { transaction ->
+            val existing = transaction.get(treinoRef)
+            val createdAt = existing.get("createdAt") ?: now
+            val createdBy = existing.getString("createdBy") ?: user.uid
+
+            transaction.set(
+                treinoRef,
+                treinoPayload(treino, alunoUid, createdBy, createdAt, now),
+                SetOptions.merge()
+            )
+
+            if (shouldNotify) {
+                transaction.set(notificationRef, notificationPayload(user.uid, mensagem, now))
+                transaction.set(
+                    profileRef,
+                    profileUpdatePayload(mensagem, now),
+                    SetOptions.merge()
+                )
             }
+            true
+        }
+            .addOnSuccessListener { onOk?.invoke() }
+            .addOnFailureListener { e -> onErro?.invoke(e) }
+    }
+
+    fun renomearTreinoDoAluno(
+        alunoUid: String,
+        nomeAntigo: String,
+        treinoRenomeado: TreinoPlan,
+        notifyStudent: Boolean = true,
+        onOk: (() -> Unit)? = null,
+        onErro: ((Exception) -> Unit)? = null
+    ) {
+        val user = Firebase.auth.currentUser
+        if (user == null) {
+            onErro?.invoke(IllegalStateException("Usuário não logado"))
+            return
+        }
+
+        val nomeNovo = treinoRenomeado.nome.trim()
+        if (nomeNovo.isBlank()) {
+            onErro?.invoke(IllegalArgumentException("Digite um nome para o treino."))
+            return
+        }
+
+        val db = Firebase.firestore
+        val base = db.collection("users").document(alunoUid).collection("treinos")
+        val oldId = docIdSeguro(nomeAntigo)
+        val newId = docIdSeguro(nomeNovo)
+        val oldRef = base.document(oldId)
+        val newRef = base.document(newId)
+        val now = System.currentTimeMillis()
+        val shouldNotify = notifyStudent && user.uid != alunoUid
+        val mensagem = "Seu treinador renomeou o treino \"$nomeAntigo\" para \"$nomeNovo\"."
+        val notificationRef = db.collection("users")
+            .document(alunoUid)
+            .collection("notifications")
+            .document()
+        val profileRef = db.collection("users").document(alunoUid)
+
+        db.runTransaction { transaction ->
+            val oldSnapshot = transaction.get(oldRef)
+            if (!oldSnapshot.exists()) {
+                throw IllegalStateException("O treino original não foi encontrado.")
+            }
+
+            if (oldId != newId) {
+                val collision = transaction.get(newRef)
+                if (collision.exists()) {
+                    throw IllegalStateException("Já existe outro treino com esse nome.")
+                }
+            }
+
+            val createdAt = oldSnapshot.get("createdAt") ?: now
+            val createdBy = oldSnapshot.getString("createdBy") ?: user.uid
+            val payload = treinoPayload(treinoRenomeado, alunoUid, createdBy, createdAt, now)
+
+            if (oldId == newId) {
+                transaction.set(newRef, payload, SetOptions.merge())
+            } else {
+                transaction.set(newRef, payload)
+                transaction.delete(oldRef)
+            }
+
+            if (shouldNotify) {
+                transaction.set(notificationRef, notificationPayload(user.uid, mensagem, now))
+                transaction.set(
+                    profileRef,
+                    profileUpdatePayload(mensagem, now),
+                    SetOptions.merge()
+                )
+            }
+            true
+        }
+            .addOnSuccessListener { onOk?.invoke() }
             .addOnFailureListener { e -> onErro?.invoke(e) }
     }
 
@@ -148,18 +267,36 @@ object PlanoTreinoFirestoreRepository {
     fun atualizarOrdemTreinos(
         alunoUid: String,
         treinos: List<TreinoPlan>,
+        notifyStudent: Boolean = false,
         onOk: (() -> Unit)? = null,
         onErro: ((Exception) -> Unit)? = null
     ) {
-        val batch = Firebase.firestore.batch()
-        val base = Firebase.firestore.collection("users")
+        val db = Firebase.firestore
+        val batch = db.batch()
+        val base = db.collection("users")
             .document(alunoUid)
             .collection("treinos")
+        val now = System.currentTimeMillis()
 
         treinos.forEachIndexed { index, treino ->
             treino.ordem = index
             val ref = base.document(docIdSeguro(treino.nome))
-            batch.set(ref, mapOf("ordem" to index, "updatedAt" to System.currentTimeMillis()), SetOptions.merge())
+            batch.set(ref, mapOf("ordem" to index, "updatedAt" to now), SetOptions.merge())
+        }
+
+        val user = Firebase.auth.currentUser
+        if (notifyStudent && user != null && user.uid != alunoUid) {
+            val mensagem = "Seu treinador reorganizou a ordem dos seus treinos."
+            val notificationRef = db.collection("users")
+                .document(alunoUid)
+                .collection("notifications")
+                .document()
+            batch.set(notificationRef, notificationPayload(user.uid, mensagem, now))
+            batch.set(
+                db.collection("users").document(alunoUid),
+                profileUpdatePayload(mensagem, now),
+                SetOptions.merge()
+            )
         }
 
         batch.commit()

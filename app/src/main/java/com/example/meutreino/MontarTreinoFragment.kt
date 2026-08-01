@@ -27,6 +27,7 @@ class MontarTreinoFragment : Fragment() {
 
     private var meuRole: String = "ALUNO"
     private var alunoUidSelecionado: String? = null
+    private var atualizandoOrdem = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,7 +39,13 @@ class MontarTreinoFragment : Fragment() {
         val btnAdicionar = view.findViewById<Button>(R.id.btnAdicionarTreino)
         listTreinos = view.findViewById(R.id.listTreinos)
 
-        adapter = TreinoListAdapter(requireContext(), treinos)
+        adapter = TreinoListAdapter(
+            context = requireContext(),
+            treinos = treinos,
+            onMoveUp = { position -> moverTreino(position, position - 1) },
+            onMoveDown = { position -> moverTreino(position, position + 1) },
+            onRename = { position -> abrirDialogRenomearTreino(position) }
+        )
         listTreinos.adapter = adapter
 
         val user = Firebase.auth.currentUser
@@ -177,6 +184,7 @@ class MontarTreinoFragment : Fragment() {
 
         if (position > 0) opcoes.add("Mover para cima")
         if (position < treinos.lastIndex) opcoes.add("Mover para baixo")
+        opcoes.add("Editar nome")
         opcoes.add("Remover treino")
 
         AppUiFeedback.dialogBuilder(requireContext())
@@ -185,31 +193,121 @@ class MontarTreinoFragment : Fragment() {
                 when (opcoes[which]) {
                     "Mover para cima" -> moverTreino(position, position - 1)
                     "Mover para baixo" -> moverTreino(position, position + 1)
+                    "Editar nome" -> abrirDialogRenomearTreino(position)
                     "Remover treino" -> confirmarRemocaoTreino(position)
                 }
             }
             .show()
     }
 
-    private fun moverTreino(origem: Int, destino: Int) {
-        if (origem !in treinos.indices || destino !in treinos.indices || origem == destino) return
+    private fun abrirDialogRenomearTreino(position: Int) {
+        val treinoAtual = treinos.getOrNull(position) ?: return
+        val alvo = if (meuRole == "TREINADOR") alunoUidSelecionado else Firebase.auth.currentUser?.uid
+        if (alvo.isNullOrBlank()) {
+            AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
+            return
+        }
 
+        val input = EditText(requireContext()).apply {
+            setText(treinoAtual.nome)
+            selectAll()
+            hint = "Nome do treino"
+            hintPortugueseIme()
+        }
+
+        val dialog = AppUiFeedback.dialogBuilder(requireContext())
+            .setTitle("Editar nome do treino")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Salvar", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            saveButton.setOnClickListener {
+                val novoNome = input.text.toString().trim()
+                if (novoNome.isBlank()) {
+                    input.error = "Digite um nome"
+                    return@setOnClickListener
+                }
+                if (treinos.indices.any { index ->
+                        index != position && treinos[index].nome.equals(novoNome, ignoreCase = true)
+                    }) {
+                    input.error = "Esse treino já existe"
+                    return@setOnClickListener
+                }
+                if (novoNome == treinoAtual.nome) {
+                    dialog.dismiss()
+                    return@setOnClickListener
+                }
+
+                val treinoRenomeado = TreinoPlan(
+                    nome = novoNome,
+                    exercicios = treinoAtual.exercicios.toMutableList(),
+                    ordem = treinoAtual.ordem
+                )
+                saveButton.isEnabled = false
+
+                PlanoTreinoFirestoreRepository.renomearTreinoDoAluno(
+                    alunoUid = alvo,
+                    nomeAntigo = treinoAtual.nome,
+                    treinoRenomeado = treinoRenomeado,
+                    notifyStudent = meuRole == "TREINADOR",
+                    onOk = {
+                        if (!isAdded) return@renomearTreinoDoAluno
+                        treinos[position] = treinoRenomeado
+                        adapter.atualizar(treinos)
+                        runCatching { PlanoTreinoRepository.salvarTreinos(requireContext(), treinos) }
+                        AppUiFeedback.showToast(requireContext(), "Nome do treino atualizado.", Toast.LENGTH_SHORT)
+                        dialog.dismiss()
+                    },
+                    onErro = { error ->
+                        if (!isAdded) return@renomearTreinoDoAluno
+                        saveButton.isEnabled = true
+                        AppUiFeedback.showToast(
+                            requireContext(),
+                            "Erro ao renomear: ${error.message}",
+                            Toast.LENGTH_SHORT
+                        )
+                    }
+                )
+            }
+        }
+        dialog.show()
+    }
+
+    private fun moverTreino(origem: Int, destino: Int) {
+        if (atualizandoOrdem || origem !in treinos.indices || destino !in treinos.indices || origem == destino) return
+
+        val alvo = if (meuRole == "TREINADOR") alunoUidSelecionado else Firebase.auth.currentUser?.uid
+        if (alvo.isNullOrBlank()) {
+            AppUiFeedback.showToast(requireContext(), "Selecione um aluno no Perfil.", Toast.LENGTH_SHORT)
+            return
+        }
+
+        val ordemAnterior = treinos.toList()
         val item = treinos.removeAt(origem)
         treinos.add(destino, item)
         treinos.forEachIndexed { index, treino -> treino.ordem = index }
         adapter.atualizar(treinos)
 
-        val alvo = if (meuRole == "TREINADOR") alunoUidSelecionado else Firebase.auth.currentUser?.uid
-        if (alvo.isNullOrBlank()) return
-
+        atualizandoOrdem = true
         PlanoTreinoFirestoreRepository.atualizarOrdemTreinos(
             alunoUid = alvo,
             treinos = treinos,
+            notifyStudent = meuRole == "TREINADOR",
             onOk = {
+                atualizandoOrdem = false
                 if (!isAdded) return@atualizarOrdemTreinos
+                runCatching { PlanoTreinoRepository.salvarTreinos(requireContext(), treinos) }
                 AppUiFeedback.showToast(requireContext(), "Ordem dos treinos atualizada.", Toast.LENGTH_SHORT)
             },
             onErro = { e ->
+                atualizandoOrdem = false
+                treinos.clear()
+                treinos.addAll(ordemAnterior)
+                treinos.forEachIndexed { index, treino -> treino.ordem = index }
+                adapter.atualizar(treinos)
                 if (!isAdded) return@atualizarOrdemTreinos
                 AppUiFeedback.showToast(requireContext(), "Erro ao atualizar ordem: ${e.message}", Toast.LENGTH_SHORT)
             }

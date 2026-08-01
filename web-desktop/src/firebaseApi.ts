@@ -6,7 +6,8 @@ import {
   runTransaction,
   setDoc,
   updateDoc,
-  writeBatch
+  writeBatch,
+  type Transaction
 } from "firebase/firestore";
 import type { FirebaseServices } from "./firebase";
 import type { ExercisePlan, ProgressRecord, WorkoutPlan } from "./types";
@@ -73,7 +74,12 @@ export function mapWorkoutDoc(id: string, data: Record<string, unknown>): Workou
   };
 }
 
-export function workoutPayload(plan: WorkoutPlan, targetUid: string, createdBy: string) {
+export function workoutPayload(
+  plan: WorkoutPlan,
+  targetUid: string,
+  createdBy: string,
+  createdAt = Date.now()
+) {
   return {
     nome: plan.nome,
     ordem: plan.ordem ?? 0,
@@ -88,28 +94,139 @@ export function workoutPayload(plan: WorkoutPlan, targetUid: string, createdBy: 
     })),
     assignedTo: targetUid,
     createdBy,
-    createdAt: Date.now(),
+    createdAt,
     updatedAt: Date.now()
   };
+}
+
+function addWorkoutNotificationToTransaction(
+  tx: Transaction,
+  services: FirebaseServices,
+  targetUid: string,
+  currentUid: string,
+  message: string,
+  now: number
+) {
+  const noteRef = doc(collection(services.db, "users", targetUid, "notifications"));
+  const profileRef = doc(services.db, "users", targetUid);
+
+  tx.set(noteRef, {
+    type: "TREINO_ATUALIZADO",
+    message,
+    read: false,
+    createdAt: now,
+    fromUid: currentUid
+  });
+  tx.set(
+    profileRef,
+    {
+      lastWorkoutUpdateAt: now,
+      lastWorkoutUpdateMessage: message,
+      updatedAt: now
+    },
+    { merge: true }
+  );
 }
 
 export async function saveWorkoutPlan(
   services: FirebaseServices,
   targetUid: string,
   currentUid: string,
-  plan: WorkoutPlan
+  plan: WorkoutPlan,
+  previousWorkoutId?: string
 ) {
-  const ref = doc(services.db, "users", targetUid, "treinos", safeDocId(plan.nome));
-  await setDoc(ref, workoutPayload(plan, targetUid, currentUid), { merge: true });
+  const nextWorkoutId = safeDocId(plan.nome);
+  const previousId = previousWorkoutId?.trim() || null;
+  const nextRef = doc(services.db, "users", targetUid, "treinos", nextWorkoutId);
+  const now = Date.now();
+
+  await runTransaction(services.db, async (tx) => {
+    let previousName: string | null = null;
+    let createdAt = now;
+
+    if (previousId) {
+      const previousRef = doc(services.db, "users", targetUid, "treinos", previousId);
+      const previousSnap = await tx.get(previousRef);
+      if (!previousSnap.exists()) throw new Error("O treino original não foi encontrado.");
+
+      const previousData = previousSnap.data();
+      previousName = String(previousData.nome ?? plan.nome);
+      const storedCreatedAt = Number(previousData.createdAt);
+      if (Number.isFinite(storedCreatedAt) && storedCreatedAt > 0) createdAt = storedCreatedAt;
+
+      if (previousId !== nextWorkoutId) {
+        const collisionSnap = await tx.get(nextRef);
+        if (collisionSnap.exists()) throw new Error("Já existe outro treino com esse nome.");
+      }
+    } else {
+      const existingSnap = await tx.get(nextRef);
+      if (existingSnap.exists()) throw new Error("Já existe outro treino com esse nome.");
+    }
+
+    const payload = workoutPayload(plan, targetUid, currentUid, createdAt);
+    if (previousId === nextWorkoutId) {
+      tx.set(nextRef, payload, { merge: true });
+    } else {
+      tx.set(nextRef, payload);
+    }
+
+    if (previousId && previousId !== nextWorkoutId) {
+      tx.delete(doc(services.db, "users", targetUid, "treinos", previousId));
+    }
+
+    if (targetUid !== currentUid) {
+      const message = !previousId
+        ? `Seu treinador adicionou o treino "${plan.nome}".`
+        : previousName && previousName !== plan.nome
+          ? `Seu treinador renomeou o treino "${previousName}" para "${plan.nome}".`
+          : `Seu treinador atualizou o treino "${plan.nome}". Confira as mudanças.`;
+      addWorkoutNotificationToTransaction(tx, services, targetUid, currentUid, message, now);
+    }
+  });
+
+  return nextWorkoutId;
+}
+
+export async function updateWorkoutOrder(
+  services: FirebaseServices,
+  targetUid: string,
+  currentUid: string,
+  workouts: WorkoutPlan[]
+) {
+  if (workouts.length === 0) return;
+
+  const now = Date.now();
+  const batch = writeBatch(services.db);
+  workouts.forEach((workout, index) => {
+    batch.set(
+      doc(services.db, "users", targetUid, "treinos", workout.id),
+      { ordem: index, updatedAt: now },
+      { merge: true }
+    );
+  });
 
   if (targetUid !== currentUid) {
-    await registerWorkoutNotification(
-      services,
-      targetUid,
-      currentUid,
-      `Seu treinador atualizou o treino "${plan.nome}".`
+    const message = "Seu treinador reorganizou a ordem dos seus treinos.";
+    const noteRef = doc(collection(services.db, "users", targetUid, "notifications"));
+    batch.set(noteRef, {
+      type: "TREINO_ATUALIZADO",
+      message,
+      read: false,
+      createdAt: now,
+      fromUid: currentUid
+    });
+    batch.set(
+      doc(services.db, "users", targetUid),
+      {
+        lastWorkoutUpdateAt: now,
+        lastWorkoutUpdateMessage: message,
+        updatedAt: now
+      },
+      { merge: true }
     );
   }
+
+  await batch.commit();
 }
 
 export async function deleteWorkoutPlan(

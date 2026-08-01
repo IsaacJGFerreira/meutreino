@@ -30,14 +30,43 @@
             android:fontFamily="sans-serif-medium"
             android:textStyle="bold"/>
 
-        <TextView
-            android:id="@+id/tvSeta"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⌄"
-            android:textSize="18sp"
-            android:textColor="#64898A"
-            android:fontFamily="sans-serif-medium"/>
+            android:layout_marginStart="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnMoverTreinoCima"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Mover treino para cima"
+                android:focusable="false"
+                android:src="@android:drawable/arrow_up_float"
+                android:tint="#64898A" />
+
+            <ImageButton
+                android:id="@+id/btnMoverTreinoBaixo"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Mover treino para baixo"
+                android:focusable="false"
+                android:src="@android:drawable/arrow_down_float"
+                android:tint="#64898A" />
+
+            <ImageButton
+                android:id="@+id/btnEditarNomeTreino"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Editar nome do treino"
+                android:focusable="false"
+                android:src="@android:drawable/ic_menu_edit"
+                android:tint="#64898A" />
+        </LinearLayout>
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

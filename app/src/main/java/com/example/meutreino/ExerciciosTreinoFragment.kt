@@ -272,6 +272,11 @@ class ExerciciosTreinoFragment : Fragment() {
 
         if (exercicioEdicao != null) {
             etNome?.setText(exercicioEdicao.nome)
+            etNome?.isEnabled = false
+            etNome?.keyListener = null
+            dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilNome)
+                ?.helperText = "O nome do exercício não pode ser alterado na edição."
+            dialogView.findViewById<TextView>(R.id.tvTituloDialog)?.text = "Editar exercício"
             etSeries?.setText(exercicioEdicao.series.toString())
             etRepsMin?.setText(exercicioEdicao.repsMin.toString())
             etRepsMax?.setText(exercicioEdicao.repsMax.toString())
@@ -315,7 +320,7 @@ class ExerciciosTreinoFragment : Fragment() {
         )
 
         btnSalvar?.setOnClickListener {
-            val nome = etNome?.text?.toString()?.trim().orEmpty()
+            val nome = exercicioEdicao?.nome ?: etNome?.text?.toString()?.trim().orEmpty()
             val seriesStr = etSeries?.text?.toString()?.trim().orEmpty()
             val repsMinStr = etRepsMin?.text?.toString()?.trim().orEmpty()
             val repsMaxStr = etRepsMax?.text?.toString()?.trim().orEmpty()
@@ -341,12 +346,23 @@ class ExerciciosTreinoFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            if (repsMin > repsMax) {
+                AppUiFeedback.showToast(
+                    requireContext(),
+                    "As repetições mínimas não podem ser maiores que as máximas",
+                    Toast.LENGTH_SHORT
+                )
+                return@setOnClickListener
+            }
+
             // banco exercícios (local + nuvem se novo)
-            val nomesBanco = BancoExerciciosRepository.obterNomes(requireContext())
-            val jaExiste = nomesBanco.any { it.equals(nome, true) }
-            if (!jaExiste) {
-                BancoExerciciosRepository.adicionar(requireContext(), nome)
-                BancoExerciciosFirestoreRepository.adicionar(nome)
+            if (exercicioEdicao == null) {
+                val nomesBanco = BancoExerciciosRepository.obterNomes(requireContext())
+                val jaExiste = nomesBanco.any { it.equals(nome, true) }
+                if (!jaExiste) {
+                    BancoExerciciosRepository.adicionar(requireContext(), nome)
+                    BancoExerciciosFirestoreRepository.adicionar(nome)
+                }
             }
 
             val ex = ExercicioPlan(
