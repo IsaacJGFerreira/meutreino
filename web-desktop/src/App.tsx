@@ -72,7 +72,8 @@ import {
   redeemInviteCode,
   rejectInviteRequest,
   safeDocId,
-  saveWorkoutPlan
+  saveWorkoutPlan,
+  updateWorkoutOrder
 } from "./firebaseApi";
 import type {
   CardioRecord,
@@ -1229,28 +1230,86 @@ function WorkoutBuilderView({
   const [name, setName] = useState("");
   const [exercises, setExercises] = useState<ExercisePlan[]>([]);
   const [draftExercise, setDraftExercise] = useState<ExercisePlan>(emptyExercise);
+  const [editingExerciseIndex, setEditingExerciseIndex] = useState<number | null>(null);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [movingWorkoutId, setMovingWorkoutId] = useState("");
 
   useEffect(() => {
     const current = workouts.find((item) => item.id === editingId);
     if (!current) return;
     setName(current.nome);
-    setExercises(current.exercicios);
+    setExercises(current.exercicios.map((exercise) => ({ ...exercise })));
+    setEditingExerciseIndex(null);
+    setDraftExercise(emptyExercise);
   }, [editingId, workouts]);
 
   function startNew() {
     setEditingId("");
     setName("");
     setExercises([]);
+    setEditingExerciseIndex(null);
     setDraftExercise(emptyExercise);
   }
 
-  function addExercise() {
-    if (!draftExercise.nome.trim()) {
+  function cancelExerciseEdit() {
+    setEditingExerciseIndex(null);
+    setDraftExercise(emptyExercise);
+  }
+
+  function editExercise(index: number) {
+    const exercise = exercises[index];
+    if (!exercise) return;
+    setEditingExerciseIndex(index);
+    setDraftExercise({ ...exercise });
+  }
+
+  function saveExerciseDraft() {
+    const originalExercise = editingExerciseIndex === null ? null : exercises[editingExerciseIndex];
+    const exerciseName = originalExercise?.nome ?? draftExercise.nome.trim();
+
+    if (!exerciseName) {
       notify("warn", "Informe o nome do exercício.");
       return;
     }
-    setExercises((current) => [...current, { ...draftExercise, nome: draftExercise.nome.trim() }]);
-    setDraftExercise(emptyExercise);
+
+    if (
+      !Number.isInteger(draftExercise.series) ||
+      !Number.isInteger(draftExercise.repsMin) ||
+      !Number.isInteger(draftExercise.repsMax) ||
+      draftExercise.series <= 0 ||
+      draftExercise.repsMin <= 0 ||
+      draftExercise.repsMax <= 0
+    ) {
+      notify("warn", "Séries e repetições precisam ser números inteiros maiores que zero.");
+      return;
+    }
+
+    if (draftExercise.repsMin > draftExercise.repsMax) {
+      notify("warn", "A repetição mínima não pode ser maior que a máxima.");
+      return;
+    }
+
+    if (!draftExercise.descanso.trim() || !draftExercise.rir.trim()) {
+      notify("warn", "Informe o descanso e o RIR.");
+      return;
+    }
+
+    const nextExercise: ExercisePlan = {
+      ...draftExercise,
+      nome: exerciseName,
+      descanso: draftExercise.descanso.trim(),
+      tecnica: draftExercise.tecnica.trim() || "-",
+      rir: draftExercise.rir.trim()
+    };
+
+    if (editingExerciseIndex !== null && originalExercise) {
+      setExercises((current) =>
+        current.map((exercise, index) => (index === editingExerciseIndex ? nextExercise : exercise))
+      );
+    } else {
+      setExercises((current) => [...current, nextExercise]);
+    }
+    cancelExerciseEdit();
   }
 
   async function savePlan(event: FormEvent) {
@@ -1259,28 +1318,67 @@ function WorkoutBuilderView({
       notify("warn", "Selecione um aluno.");
       return;
     }
-    if (!name.trim() || exercises.length === 0) {
+    const trimmedName = name.trim();
+    if (!trimmedName || exercises.length === 0) {
       notify("warn", "Informe o treino e pelo menos um exercício.");
       return;
     }
 
+    const nextWorkoutId = safeDocId(trimmedName);
+    if (workouts.some((workout) => workout.id !== editingId && workout.id === nextWorkoutId)) {
+      notify("warn", "Já existe outro treino com esse nome.");
+      return;
+    }
+
     const plan: WorkoutPlan = {
-      id: editingId || safeDocId(name),
-      nome: name.trim(),
+      id: nextWorkoutId,
+      nome: trimmedName,
       ordem: workouts.find((item) => item.id === editingId)?.ordem ?? workouts.length,
-      exercicios: exercises
+      exercicios: exercises.map((exercise) => ({ ...exercise }))
     };
 
-    await saveWorkoutPlan(services, target.uid, profile.uid, plan);
-    notify("ok", "Treino salvo.");
-    setEditingId(plan.id);
+    setSavingPlan(true);
+    try {
+      const savedId = await saveWorkoutPlan(services, target.uid, profile.uid, plan, editingId || undefined);
+      setName(trimmedName);
+      setEditingId(savedId);
+      notify("ok", editingId ? "Treino atualizado." : "Treino salvo.");
+    } catch (error) {
+      notify("error", firebaseErrorMessage(error, "Não foi possível salvar o treino."));
+    } finally {
+      setSavingPlan(false);
+    }
   }
 
   async function removePlan(workout: WorkoutPlan) {
     if (!target) return;
-    await deleteWorkoutPlan(services, target.uid, profile.uid, workout.nome);
-    notify("ok", "Treino removido.");
-    startNew();
+    try {
+      await deleteWorkoutPlan(services, target.uid, profile.uid, workout.nome);
+      notify("ok", "Treino removido.");
+      startNew();
+    } catch (error) {
+      notify("error", firebaseErrorMessage(error, "Não foi possível remover o treino."));
+    }
+  }
+
+  async function movePlan(index: number, direction: -1 | 1) {
+    if (!target || movingWorkoutId) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= workouts.length) return;
+
+    const next = workouts.map((workout) => ({ ...workout }));
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    const reordered = next.map((workout, order) => ({ ...workout, ordem: order }));
+
+    setMovingWorkoutId(workouts[index].id);
+    try {
+      await updateWorkoutOrder(services, target.uid, profile.uid, reordered);
+      notify("ok", "Ordem dos treinos atualizada.");
+    } catch (error) {
+      notify("error", firebaseErrorMessage(error, "Não foi possível atualizar a ordem dos treinos."));
+    } finally {
+      setMovingWorkoutId("");
+    }
   }
 
   function moveExercise(index: number, direction: -1 | 1) {
@@ -1289,6 +1387,20 @@ function WorkoutBuilderView({
     if (targetIndex < 0 || targetIndex >= next.length) return;
     [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
     setExercises(next);
+    setEditingExerciseIndex((current) => {
+      if (current === index) return targetIndex;
+      if (current === targetIndex) return index;
+      return current;
+    });
+  }
+
+  function removeExercise(index: number) {
+    setExercises((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    if (editingExerciseIndex === index) {
+      cancelExerciseEdit();
+    } else if (editingExerciseIndex !== null && editingExerciseIndex > index) {
+      setEditingExerciseIndex(editingExerciseIndex - 1);
+    }
   }
 
   if (profile.role !== "TREINADOR") return <EmptyPage title="Montagem disponível para treinador" />;
@@ -1309,7 +1421,21 @@ function WorkoutBuilderView({
           <form className="stack" onSubmit={savePlan}>
             <TextInput label="Nome do treino" value={name} onChange={setName} />
             <div className="exercise-form">
-              <TextInput label="Exercício" value={draftExercise.nome} onChange={(nome) => setDraftExercise((current) => ({ ...current, nome }))} />
+              {editingExerciseIndex !== null && (
+                <div className="exercise-edit-heading">
+                  <strong>Editando exercício</strong>
+                  <button className="ghost-btn" onClick={cancelExerciseEdit} type="button">
+                    <X size={16} />
+                    Cancelar edição
+                  </button>
+                </div>
+              )}
+              <TextInput
+                disabled={editingExerciseIndex !== null}
+                label="Exercício"
+                value={draftExercise.nome}
+                onChange={(nome) => setDraftExercise((current) => ({ ...current, nome }))}
+              />
               <TextInput
                 label="Séries"
                 value={String(draftExercise.series)}
@@ -1331,15 +1457,18 @@ function WorkoutBuilderView({
               <TextInput label="Descanso" value={draftExercise.descanso} onChange={(descanso) => setDraftExercise((current) => ({ ...current, descanso }))} />
               <TextInput label="Técnica" value={draftExercise.tecnica} onChange={(tecnica) => setDraftExercise((current) => ({ ...current, tecnica }))} />
               <TextInput label="RIR" value={draftExercise.rir} onChange={(rir) => setDraftExercise((current) => ({ ...current, rir }))} />
-              <button className="secondary-btn" onClick={addExercise} type="button">
-                <Plus size={17} />
-                Adicionar
+              <button className="secondary-btn" onClick={saveExerciseDraft} type="button">
+                {editingExerciseIndex === null ? <Plus size={17} /> : <Save size={17} />}
+                {editingExerciseIndex === null ? "Adicionar" : "Salvar edição"}
               </button>
+              {editingExerciseIndex !== null && (
+                <p className="form-helper">O nome do exercício fica bloqueado durante a edição.</p>
+              )}
             </div>
 
             <div className="exercise-stack compact">
               {exercises.map((exercise, index) => (
-                <div className="list-row" key={`${exercise.nome}-${index}`}>
+                <div className={`list-row ${editingExerciseIndex === index ? "selected" : ""}`} key={`${exercise.nome}-${index}`}>
                   <div>
                     <strong>{exercise.nome}</strong>
                     <small>
@@ -1347,13 +1476,16 @@ function WorkoutBuilderView({
                     </small>
                   </div>
                   <div className="row-actions">
-                    <button aria-label="Subir" onClick={() => moveExercise(index, -1)} type="button">
+                    <button aria-label="Editar exercício" onClick={() => editExercise(index)} type="button">
+                      <SquarePen size={16} />
+                    </button>
+                    <button aria-label="Subir exercício" disabled={index === 0} onClick={() => moveExercise(index, -1)} type="button">
                       <ArrowUp size={16} />
                     </button>
-                    <button aria-label="Descer" onClick={() => moveExercise(index, 1)} type="button">
+                    <button aria-label="Descer exercício" disabled={index === exercises.length - 1} onClick={() => moveExercise(index, 1)} type="button">
                       <ArrowDown size={16} />
                     </button>
-                    <button aria-label="Remover" onClick={() => setExercises((current) => current.filter((_, i) => i !== index))} type="button">
+                    <button aria-label="Remover" onClick={() => removeExercise(index)} type="button">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -1361,9 +1493,9 @@ function WorkoutBuilderView({
               ))}
             </div>
 
-            <button className="primary-btn" type="submit">
+            <button className="primary-btn" disabled={savingPlan} type="submit">
               <Save size={18} />
-              Salvar treino
+              {savingPlan ? "Salvando..." : editingId ? "Atualizar treino" : "Salvar treino"}
             </button>
           </form>
         </article>
@@ -1372,13 +1504,29 @@ function WorkoutBuilderView({
           <SectionTitle icon={Dumbbell} title="Treinos salvos" />
           <div className="list">
             {workouts.length === 0 && <EmptyState title="Nenhum treino salvo" />}
-            {workouts.map((workout) => (
-              <div className="list-row" key={workout.id}>
+            {workouts.map((workout, index) => (
+              <div className="list-row workout-list-row" key={workout.id}>
                 <div>
                   <strong>{workout.nome}</strong>
                   <small>{workout.exercicios.length} exercício(s)</small>
                 </div>
                 <div className="row-actions">
+                  <button
+                    aria-label={`Mover ${workout.nome} para cima`}
+                    disabled={index === 0 || Boolean(movingWorkoutId)}
+                    onClick={() => movePlan(index, -1)}
+                    type="button"
+                  >
+                    <ArrowUp size={16} />
+                  </button>
+                  <button
+                    aria-label={`Mover ${workout.nome} para baixo`}
+                    disabled={index === workouts.length - 1 || Boolean(movingWorkoutId)}
+                    onClick={() => movePlan(index, 1)}
+                    type="button"
+                  >
+                    <ArrowDown size={16} />
+                  </button>
                   <button aria-label="Editar" onClick={() => setEditingId(workout.id)} type="button">
                     <SquarePen size={16} />
                   </button>
@@ -1819,18 +1967,26 @@ function TextInput({
   value,
   onChange,
   type = "text",
-  autoComplete
+  autoComplete,
+  disabled = false
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   type?: string;
   autoComplete?: string;
+  disabled?: boolean;
 }) {
   return (
     <label className="field">
       <span>{label}</span>
-      <input autoComplete={autoComplete} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input
+        autoComplete={autoComplete}
+        disabled={disabled}
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </label>
   );
 }

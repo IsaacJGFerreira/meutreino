@@ -134,6 +134,12 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(90, 171, 138, 0.16);
 }
 
+.field input:disabled {
+  color: var(--muted);
+  background: #eef3f0;
+  cursor: not-allowed;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -591,6 +597,37 @@ select:focus {
   grid-column: span 1;
 }
 
+.exercise-edit-heading,
+.form-helper {
+  grid-column: 1 / -1;
+}
+
+.exercise-edit-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--green-soft);
+}
+
+.form-helper {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.workout-list-row > div:first-child {
+  min-width: 0;
+}
+
+.workout-list-row .row-actions {
+  flex-shrink: 0;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -775,6 +812,17 @@ select:focus {
   }
 
   .list-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workout-list-row .row-actions,
+  .exercise-stack.compact .row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .exercise-edit-heading {
     align-items: flex-start;
     flex-direction: column;
   }
