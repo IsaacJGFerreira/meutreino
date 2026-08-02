@@ -386,18 +386,21 @@ function injectStyles() {
     }
 
     .mobile-series-input.rep-low {
-      border-color: #d95f5f;
-      background: #fff1f1;
+      border-color: #d94e5e;
+      background: #fff0f2;
+      color: #7a1725;
     }
 
     .mobile-series-input.rep-ok {
-      border-color: #ccd8d3;
-      background: #ffffff;
+      border-color: #5b8fd9;
+      background: #eff6ff;
+      color: #214b7a;
     }
 
     .mobile-series-input.rep-high {
-      border-color: #5aab8a;
-      background: #eef8f2;
+      border-color: #d59422;
+      background: #fff7e6;
+      color: #774b08;
     }
 
     .mobile-action-stack {
