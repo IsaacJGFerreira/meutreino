@@ -323,19 +323,6 @@ function injectStyles() {
       font-size: 30px;
     }
 
-    .student-menu-button {
-      width: 62px;
-      height: 62px;
-      display: grid;
-      place-items: center;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.92);
-      color: #10212a;
-      box-shadow: 0 14px 34px rgba(41, 71, 61, 0.14);
-      font-size: 28px;
-      font-weight: 900;
-    }
-
     .student-dashboard-grid {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -878,10 +865,6 @@ function injectStyles() {
         height: 42px;
       }
 
-      .student-menu-button {
-        width: 54px;
-        height: 54px;
-      }
     }
   `;
   document.head.appendChild(style);
@@ -961,7 +944,6 @@ function renderProfileHtml(profile: StudentProfileState) {
     <div class="student-profile-dashboard">
       <header class="student-profile-top">
         <h1 class="student-profile-title"><span class="student-profile-title-icon">☘</span>${escapeHtml(profile.name)}</h1>
-        <button class="student-menu-button" type="button" data-student-action="open-menu" aria-label="Abrir menu">☰</button>
       </header>
 
       <div class="student-dashboard-grid">
@@ -1248,12 +1230,6 @@ function handleClick(event: MouseEvent) {
   if (!actionElement) return;
 
   const action = actionElement.getAttribute("data-student-action");
-  if (action === "open-menu") {
-    event.preventDefault();
-    event.stopPropagation();
-    document.querySelector<HTMLButtonElement>(".mobile-menu")?.click();
-  }
-
   if (action === "mark-notifications") {
     event.preventDefault();
     event.stopPropagation();

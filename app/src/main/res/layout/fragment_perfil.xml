@@ -308,28 +308,40 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
-                        android:layout_weight="1">
+                        android:layout_weight="1"
+                        app:boxBackgroundColor="@color/surface_soft"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeColor="@color/neon_outline_strong"
+                        app:hintTextColor="@color/text_secondary">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etIdade"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="Idade"
-                            android:inputType="number" />
+                            android:inputType="number"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_secondary" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:layout_weight="1">
+                        android:layout_weight="1"
+                        app:boxBackgroundColor="@color/surface_soft"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeColor="@color/neon_outline_strong"
+                        app:hintTextColor="@color/text_secondary">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etAltura"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="Altura (cm)"
-                            android:inputType="numberDecimal" />
+                            android:inputType="numberDecimal"
+                            android:textColor="@color/text_primary"
+                            android:textColorHint="@color/text_secondary" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
