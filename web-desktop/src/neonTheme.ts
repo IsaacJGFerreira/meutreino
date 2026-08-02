@@ -649,15 +649,25 @@ if (!document.getElementById(STYLE_ID)) {
       background: rgba(13, 29, 31, 0.76) !important;
     }
 
-    .mobile-series-input.rep-high,
     .mobile-series-input.rep-ok {
-      border-color: rgba(78, 240, 174, 0.5) !important;
-      background: rgba(78, 240, 174, 0.07) !important;
+      color: #e6f1ff !important;
+      border-color: rgba(106, 168, 255, 0.82) !important;
+      background: rgba(63, 126, 210, 0.16) !important;
+      box-shadow: inset 0 0 0 1px rgba(106, 168, 255, 0.08) !important;
+    }
+
+    .mobile-series-input.rep-high {
+      color: #ffe8b2 !important;
+      border-color: rgba(245, 184, 76, 0.88) !important;
+      background: rgba(245, 184, 76, 0.16) !important;
+      box-shadow: inset 0 0 0 1px rgba(245, 184, 76, 0.1) !important;
     }
 
     .mobile-series-input.rep-low {
-      border-color: rgba(234, 120, 134, 0.62) !important;
-      background: rgba(234, 120, 134, 0.07) !important;
+      color: #ffe0e4 !important;
+      border-color: rgba(255, 107, 122, 0.9) !important;
+      background: rgba(255, 82, 103, 0.17) !important;
+      box-shadow: inset 0 0 0 1px rgba(255, 107, 122, 0.1) !important;
     }
 
     .mobile-btn-start,
