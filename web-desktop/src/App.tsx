@@ -171,6 +171,7 @@ function workoutRecordFromDoc(id: string, data: DocumentData): WorkoutRecord {
     nomeTreino: String(data.nomeTreino ?? "Treino"),
     completo: Boolean(data.completo ?? false),
     createdAt: Number(data.createdAt ?? 0),
+    duracaoSegundos: Number(data.duracaoSegundos ?? 0),
     exercicios: rawExercises.map((item: unknown) => {
       const ex = item as Record<string, unknown>;
       const seriesRaw = Array.isArray(ex.series) ? ex.series : [];
@@ -225,6 +226,16 @@ function volumeForRecord(record: WorkoutRecord) {
     (total, ex) => total + ex.series.reduce((sum, serie) => sum + serie.kg * serie.reps, 0),
     0
   );
+}
+
+function formatWorkoutDuration(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(Number.isFinite(totalSeconds) ? totalSeconds : 0));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}min ${seconds}s`;
+  if (minutes > 0) return `${minutes}min ${seconds}s`;
+  return `${seconds}s`;
 }
 
 function readSelectedStudent(): TrainerStudent | null {
@@ -1592,6 +1603,7 @@ function PerformanceView({ target, records }: { target: TrainerStudent | { uid: 
                 <strong>{record.nomeTreino}</strong>
                 <small>
                   {record.dataHora} · {record.completo ? "Completo" : "Incompleto"}
+                  {record.duracaoSegundos > 0 ? ` · ${formatWorkoutDuration(record.duracaoSegundos)}` : ""}
                 </small>
               </div>
               <span className="badge">{Math.round(volumeForRecord(record)).toLocaleString("pt-BR")} kg</span>

@@ -17,9 +17,11 @@ class TreinoDraftViewModel(
     companion object {
         private const val KEY_DRAFTS = "treino_drafts"
         private const val KEY_TREINO_ATIVO = "treino_ativo"
+        private const val KEY_TREINO_INICIO_MS = "treino_inicio_ms"
         private const val PREFS_NAME = "meutreino_draft_prefs"
         private const val PREF_KEY_DRAFTS = "drafts_serializados"
         private const val PREF_KEY_TREINO_ATIVO = "treino_ativo"
+        private const val PREF_KEY_TREINO_INICIO_MS = "treino_inicio_ms"
     }
 
     // chave = "treino|exercicio|serie"
@@ -70,9 +72,37 @@ class TreinoDraftViewModel(
         return savedStateHandle.get<String>(KEY_TREINO_ATIVO)
     }
 
+    fun inicioTreinoMs(): Long? {
+        return savedStateHandle.get<Long>(KEY_TREINO_INICIO_MS)?.takeIf { it > 0L }
+    }
+
+    fun iniciarTreino(nomeTreino: String, inicioMs: Long = System.currentTimeMillis()) {
+        val mudouDeTreino = treinoAtivo() != nomeTreino
+        savedStateHandle[KEY_TREINO_ATIVO] = nomeTreino
+        prefs?.edit()?.putString(PREF_KEY_TREINO_ATIVO, nomeTreino)?.apply()
+
+        if (mudouDeTreino || inicioTreinoMs() == null) {
+            definirInicioTreino(inicioMs)
+        }
+    }
+
+    fun duracaoTreinoSegundos(fimMs: Long = System.currentTimeMillis()): Long {
+        val inicioMs = inicioTreinoMs() ?: return 0L
+        return ((fimMs - inicioMs) / 1000L).coerceAtLeast(1L)
+    }
+
     fun definirTreinoAtivo(nomeTreino: String?) {
         savedStateHandle[KEY_TREINO_ATIVO] = nomeTreino
         prefs?.edit()?.putString(PREF_KEY_TREINO_ATIVO, nomeTreino)?.apply()
+        if (nomeTreino == null) definirInicioTreino(null)
+    }
+
+    private fun definirInicioTreino(inicioMs: Long?) {
+        savedStateHandle[KEY_TREINO_INICIO_MS] = inicioMs
+        prefs?.edit()?.apply {
+            if (inicioMs == null) remove(PREF_KEY_TREINO_INICIO_MS)
+            else putLong(PREF_KEY_TREINO_INICIO_MS, inicioMs)
+        }?.apply()
     }
 
     private fun chave(t: String, e: String, s: Int) = "$t|$e|$s"
@@ -120,6 +150,8 @@ class TreinoDraftViewModel(
         val ativo = prefsLocal.getString(PREF_KEY_TREINO_ATIVO, null)
         if (!ativo.isNullOrBlank()) {
             savedStateHandle[KEY_TREINO_ATIVO] = ativo
+            val inicioMs = prefsLocal.getLong(PREF_KEY_TREINO_INICIO_MS, 0L)
+            definirInicioTreino(if (inicioMs > 0L) inicioMs else System.currentTimeMillis())
         }
     }
 }

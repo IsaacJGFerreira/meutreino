@@ -57,7 +57,8 @@ object RegistroTreinoRepository {
                     dataHora = obj.getString("dataHora"),
                     nomeTreino = obj.getString("nomeTreino"),
                     completo = obj.optBoolean("completo", true),
-                    exercicios = exercicios
+                    exercicios = exercicios,
+                    duracaoSegundos = obj.optLong("duracaoSegundos", 0L)
                 )
             )
         }
@@ -94,6 +95,7 @@ object RegistroTreinoRepository {
             obj.put("dataHora", treino.dataHora)
             obj.put("nomeTreino", treino.nomeTreino)
             obj.put("completo", treino.completo)
+            obj.put("duracaoSegundos", treino.duracaoSegundos)
 
             val exerciciosArr = JSONArray()
             treino.exercicios.forEach { ex ->

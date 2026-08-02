@@ -24,6 +24,7 @@ type DraftValue = {
 
 type SavedTrainingState = {
   activeWorkoutId?: string | null;
+  workoutStartedAt?: number | null;
   expandedWorkoutId?: string | null;
   expandedWorkoutIds?: string[];
   expandedExercises?: string[];
@@ -36,6 +37,7 @@ let workouts: WorkoutPlan[] = [];
 let records: WorkoutRecord[] = [];
 let draftValues: Record<string, DraftValue> = {};
 let activeWorkoutId: string | null = null;
+let workoutStartedAt: number | null = null;
 let expandedWorkoutIds = new Set<string>();
 let expandedExercises = new Set<string>();
 let pendingExercises = new Set<string>();
@@ -47,6 +49,8 @@ let renderQueued = false;
 let workoutsUnsubscribe: (() => void) | null = null;
 let recordsUnsubscribe: (() => void) | null = null;
 let lastRenderedHtml = "";
+let timerIntervalId: number | null = null;
+let savingDurationSeconds: number | null = null;
 
 function getServices() {
   if (services) return services;
@@ -77,11 +81,13 @@ function attachAuthListener() {
       startFirebaseListeners(currentUid);
     } else {
       activeWorkoutId = null;
+      workoutStartedAt = null;
       expandedWorkoutIds = new Set();
       expandedExercises = new Set();
       draftValues = {};
     }
 
+    syncTimerTicker();
     scheduleRender();
   });
 }
@@ -99,6 +105,7 @@ function startFirebaseListeners(uid: string) {
 
       if (activeWorkoutId && !workouts.some((workout) => workout.id === activeWorkoutId)) {
         activeWorkoutId = null;
+        workoutStartedAt = null;
       }
 
       const validIds = new Set(workouts.map((workout) => workout.id));
@@ -109,6 +116,7 @@ function startFirebaseListeners(uid: string) {
       }
 
       saveTrainingState();
+      syncTimerTicker();
       scheduleRender();
     },
     () => {
@@ -145,6 +153,7 @@ function workoutRecordFromDoc(id: string, data: DocumentData): WorkoutRecord {
     nomeTreino: String(data.nomeTreino ?? "Treino"),
     completo: Boolean(data.completo ?? false),
     createdAt: Number(data.createdAt ?? 0),
+    duracaoSegundos: Number(data.duracaoSegundos ?? 0),
     exercicios: rawExercises.map((item: unknown): ExerciseRecord => {
       const exercise = item as Record<string, unknown>;
       const rawSeries = Array.isArray(exercise.series) ? exercise.series : [];
@@ -561,6 +570,8 @@ function renderMobileTraining() {
     root.innerHTML = html;
     lastRenderedHtml = html;
   }
+
+  updateTimerDom();
 }
 
 function renderTrainingHtml() {
@@ -579,22 +590,24 @@ function renderTrainingHtml() {
         </div>
         <span class="neon-heading-icon" aria-hidden="true">◆</span>
       </div>
-      ${focusWorkout ? `
-        <section class="neon-training-hero">
-          <div class="neon-training-hero-icon" aria-hidden="true">◆</div>
-          <div class="neon-training-hero-copy">
-            <span>${activeWorkoutId ? "PLANO ATIVO" : "PRÓXIMO PLANO"}</span>
-            <strong>${escapeHtml(focusWorkout.nome)}</strong>
-            <small>${focusWorkout.exercicios.length} exercício(s) · séries, repetições e descanso</small>
-          </div>
-          <span class="neon-training-state">${activeWorkoutId ? "EM ANDAMENTO" : "PRONTO"}</span>
+      <section class="neon-training-hero neon-training-timer">
+        <div class="neon-training-hero-icon" aria-hidden="true">◷</div>
+        <div class="neon-training-hero-copy">
+          <span>${activeWorkoutId ? "TEMPO DE TREINO" : "CRONÔMETRO DE TREINO"}</span>
+          <strong class="neon-training-timer-value" data-workout-timer>00:00:00</strong>
+          <small>${activeWorkoutId && focusWorkout
+            ? escapeHtml(focusWorkout.nome)
+            : "Inicie um treino abaixo para começar"}</small>
+        </div>
+        <span class="neon-training-state">${activeWorkoutId ? "EM ANDAMENTO" : "PRONTO"}</span>
+        ${focusWorkout ? `
           <div class="neon-training-progress-copy">
             <span>${progress.filled} de ${progress.total} séries preenchidas</span>
             <strong>${progress.percent}%</strong>
           </div>
           <div class="neon-training-progress"><span style="width:${progress.percent}%"></span></div>
-        </section>
-      ` : ""}
+        ` : ""}
+      </section>
       <div class="mobile-training-list">${workoutCards}</div>
       ${renderRecentHistory()}
     </div>
@@ -749,7 +762,7 @@ function renderRecentHistory() {
     ? latest.map((record) => `
         <div class="mobile-history-item">
           <strong>${escapeHtml(record.nomeTreino)}</strong>
-          <small>${escapeHtml(record.dataHora)}</small>
+          <small>${escapeHtml(record.dataHora)}${record.duracaoSegundos > 0 ? ` · ${formatDurationLabel(record.duracaoSegundos)}` : ""}</small>
           <span>${record.completo ? "Completo" : "Incompleto"}</span>
         </div>
       `).join("")
@@ -858,10 +871,12 @@ function startWorkout(workout: WorkoutPlan) {
   }
 
   activeWorkoutId = workout.id;
+  if (!workoutStartedAt) workoutStartedAt = Date.now();
   expandedWorkoutIds.add(workout.id);
   pendingExercises.clear();
   workout.exercicios.forEach((_, index) => expandedExercises.add(getExerciseKey(workout.id, index)));
   saveTrainingState();
+  syncTimerTicker();
   scheduleRender();
   showToast(`Treino ${workout.nome} iniciado.`);
 }
@@ -878,7 +893,10 @@ function cancelWorkout(workout: WorkoutPlan) {
   clearDraftForWorkout(workout.id);
   pendingExercises.clear();
   activeWorkoutId = null;
+  workoutStartedAt = null;
+  savingDurationSeconds = null;
   saveTrainingState();
+  syncTimerTicker();
   scheduleRender();
   showToast("Treino cancelado sem salvar.");
 }
@@ -909,6 +927,7 @@ async function saveWorkout(workout: WorkoutPlan) {
   }
 
   const createdAt = Date.now();
+  savingDurationSeconds = Math.max(1, getElapsedSeconds(createdAt));
   savingWorkoutId = workout.id;
   scheduleRender();
 
@@ -919,18 +938,23 @@ async function saveWorkout(workout: WorkoutPlan) {
       nomeTreino: workout.nome,
       completo: complete,
       createdAt,
+      duracaoSegundos: savingDurationSeconds,
       exercicios: buildExerciseRecords(workout)
     });
 
     clearDraftForWorkout(workout.id);
     pendingExercises.clear();
     activeWorkoutId = null;
+    workoutStartedAt = null;
     savingWorkoutId = null;
+    savingDurationSeconds = null;
     saveTrainingState();
+    syncTimerTicker();
     scheduleRender();
     showToast(complete ? "Treino salvo completo!" : "Treino salvo incompleto!");
   } catch (error) {
     savingWorkoutId = null;
+    savingDurationSeconds = null;
     scheduleRender();
     showToast((error as Error).message || "Erro ao salvar treino.");
   }
@@ -1079,6 +1103,7 @@ function saveTrainingState() {
 
   const state: SavedTrainingState = {
     activeWorkoutId,
+    workoutStartedAt,
     expandedWorkoutIds: Array.from(expandedWorkoutIds),
     expandedExercises: Array.from(expandedExercises),
     draft: draftValues
@@ -1091,6 +1116,7 @@ function loadTrainingState(uid: string) {
   const raw = localStorage.getItem(`${STORAGE_PREFIX}.${uid}`);
   if (!raw) {
     activeWorkoutId = null;
+    workoutStartedAt = null;
     expandedWorkoutIds = new Set();
     expandedExercises = new Set();
     draftValues = {};
@@ -1101,12 +1127,19 @@ function loadTrainingState(uid: string) {
   try {
     const parsed = JSON.parse(raw) as SavedTrainingState;
     activeWorkoutId = parsed.activeWorkoutId ?? null;
+    const parsedStartedAt = Number(parsed.workoutStartedAt ?? 0);
+    workoutStartedAt = activeWorkoutId && Number.isFinite(parsedStartedAt) && parsedStartedAt > 0
+      ? parsedStartedAt
+      : activeWorkoutId
+        ? Date.now()
+        : null;
     expandedWorkoutIds = new Set(parsed.expandedWorkoutIds ?? (parsed.expandedWorkoutId ? [parsed.expandedWorkoutId] : []));
     expandedExercises = new Set(parsed.expandedExercises ?? []);
     draftValues = parsed.draft ?? {};
     pendingExercises = new Set();
   } catch {
     activeWorkoutId = null;
+    workoutStartedAt = null;
     expandedWorkoutIds = new Set();
     expandedExercises = new Set();
     draftValues = {};
@@ -1128,6 +1161,47 @@ function emptyDash(value: string) {
 
 function formatKg(value: number) {
   return Number.isInteger(value) ? value.toFixed(1) : value.toString();
+}
+
+function getElapsedSeconds(now = Date.now()) {
+  if (!workoutStartedAt) return 0;
+  return Math.max(0, Math.floor((now - workoutStartedAt) / 1000));
+}
+
+function formatTimer(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(Number.isFinite(totalSeconds) ? totalSeconds : 0));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  return [hours, minutes, seconds].map((value) => value.toString().padStart(2, "0")).join(":");
+}
+
+function formatDurationLabel(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(Number.isFinite(totalSeconds) ? totalSeconds : 0));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}min ${seconds}s`;
+  if (minutes > 0) return `${minutes}min ${seconds}s`;
+  return `${seconds}s`;
+}
+
+function updateTimerDom() {
+  const elapsed = savingDurationSeconds ?? (activeWorkoutId ? getElapsedSeconds() : 0);
+  document.querySelectorAll<HTMLElement>("[data-workout-timer]").forEach((element) => {
+    element.textContent = formatTimer(elapsed);
+  });
+}
+
+function syncTimerTicker() {
+  const shouldRun = Boolean(activeWorkoutId && workoutStartedAt);
+  if (shouldRun && timerIntervalId === null) {
+    timerIntervalId = window.setInterval(updateTimerDom, 1000);
+  } else if (!shouldRun && timerIntervalId !== null) {
+    window.clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
+  updateTimerDom();
 }
 
 function escapeHtml(value: string) {
@@ -1168,6 +1242,7 @@ function isMutationInsideTrainingRoot(mutation: MutationRecord) {
 function bootMobileTraining() {
   injectStyles();
   attachAuthListener();
+  syncTimerTicker();
 
   if (!documentListenersAttached) {
     documentListenersAttached = true;

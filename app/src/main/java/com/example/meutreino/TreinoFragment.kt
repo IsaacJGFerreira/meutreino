@@ -2,11 +2,14 @@ package com.example.meutreino
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import java.util.Locale
 
 class TreinoFragment : Fragment() {
 
@@ -21,7 +25,20 @@ class TreinoFragment : Fragment() {
 
     private lateinit var rvTreinosDia: RecyclerView
     private lateinit var adapter: TreinoDiaAdapter
+    private lateinit var tvCronometroTitulo: TextView
+    private lateinit var tvCronometroTreino: TextView
+    private lateinit var tvCronometroStatus: TextView
+    private lateinit var tvCronometroEstado: TextView
     private val treinos = mutableListOf<TreinoPlan>()
+    private val cronometroHandler = Handler(Looper.getMainLooper())
+    private var cronometroTreinoNome: String? = null
+    private var cronometroInicioMs: Long? = null
+    private val cronometroRunnable = object : Runnable {
+        override fun run() {
+            renderizarCronometro()
+            if (cronometroInicioMs != null) cronometroHandler.postDelayed(this, 1000L)
+        }
+    }
 
     private var meuRole: String = "ALUNO"
 
@@ -37,6 +54,10 @@ class TreinoFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_treino, container, false)
 
         rvTreinosDia = view.findViewById(R.id.rvTreinosDia)
+        tvCronometroTitulo = view.findViewById(R.id.tvCronometroTitulo)
+        tvCronometroTreino = view.findViewById(R.id.tvCronometroTreino)
+        tvCronometroStatus = view.findViewById(R.id.tvCronometroStatus)
+        tvCronometroEstado = view.findViewById(R.id.tvCronometroEstado)
         rvTreinosDia.layoutManager = LinearLayoutManager(requireContext())
 
         draftVM.initialize(requireContext())
@@ -50,8 +71,11 @@ class TreinoFragment : Fragment() {
             getAnterior = { treinoNome, exercicioNome, serieNumero ->
                 buscarSerieAnterior(treinoNome, exercicioNome, serieNumero)
             },
-            draftVM = draftVM
-        ) { treino, preenchimentoDoTreino, completo ->
+            draftVM = draftVM,
+            onTreinoAtivoAlterado = { nomeTreino, inicioMs ->
+                atualizarEstadoCronometro(nomeTreino, inicioMs)
+            }
+        ) { treino, preenchimentoDoTreino, completo, duracaoSegundos ->
 
             if (!isAdded) return@TreinoDiaAdapter
 
@@ -71,7 +95,8 @@ class TreinoFragment : Fragment() {
                 dataHora = dataHora,
                 nomeTreino = treino.nome,
                 completo = completo,
-                exercicios = montarExerciciosRegistro(treino, preenchimentoDoTreino)
+                exercicios = montarExerciciosRegistro(treino, preenchimentoDoTreino),
+                duracaoSegundos = duracaoSegundos
             )
 
             // ✅ aluno salva local + nuvem
@@ -86,6 +111,7 @@ class TreinoFragment : Fragment() {
         }
 
         rvTreinosDia.adapter = adapter
+        atualizarEstadoCronometro(draftVM.treinoAtivo(), draftVM.inicioTreinoMs())
 
         // ✅ 1) Carrega cache local (rápido/offline) — só para ALUNO faz sentido
         carregarCacheLocal()
@@ -94,6 +120,53 @@ class TreinoFragment : Fragment() {
         carregarTreinosDaNuvemComRole()
 
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        atualizarEstadoCronometro(draftVM.treinoAtivo(), draftVM.inicioTreinoMs())
+    }
+
+    override fun onPause() {
+        cronometroHandler.removeCallbacks(cronometroRunnable)
+        super.onPause()
+    }
+
+    override fun onDestroyView() {
+        cronometroHandler.removeCallbacks(cronometroRunnable)
+        super.onDestroyView()
+    }
+
+    private fun atualizarEstadoCronometro(nomeTreino: String?, inicioMs: Long?) {
+        cronometroHandler.removeCallbacks(cronometroRunnable)
+        cronometroTreinoNome = nomeTreino
+        cronometroInicioMs = if (!nomeTreino.isNullOrBlank()) inicioMs else null
+        renderizarCronometro()
+        if (cronometroInicioMs != null) cronometroHandler.postDelayed(cronometroRunnable, 1000L)
+    }
+
+    private fun renderizarCronometro() {
+        if (!::tvCronometroTreino.isInitialized) return
+        val inicioMs = cronometroInicioMs
+        val ativo = !cronometroTreinoNome.isNullOrBlank() && inicioMs != null
+        val duracaoSegundos = if (ativo) {
+            ((System.currentTimeMillis() - inicioMs!!) / 1000L).coerceAtLeast(0L)
+        } else {
+            0L
+        }
+
+        tvCronometroTitulo.text = if (ativo) "TEMPO DE TREINO" else "CRONÔMETRO DE TREINO"
+        tvCronometroTreino.text = formatarCronometro(duracaoSegundos)
+        tvCronometroStatus.text = if (ativo) cronometroTreinoNome else "Inicie um treino abaixo para começar"
+        tvCronometroEstado.text = if (ativo) "EM ANDAMENTO" else "PRONTO"
+        tvCronometroTreino.contentDescription = "Tempo de treino: ${formatarCronometro(duracaoSegundos)}"
+    }
+
+    private fun formatarCronometro(totalSegundos: Long): String {
+        val horas = totalSegundos / 3600L
+        val minutos = (totalSegundos % 3600L) / 60L
+        val segundos = totalSegundos % 60L
+        return String.format(Locale.US, "%02d:%02d:%02d", horas, minutos, segundos)
     }
 
     private fun montarExerciciosRegistro(

@@ -45,6 +45,7 @@ object RegistroTreinoFirestoreRepository {
             "dataHora" to registro.dataHora,
             "nomeTreino" to registro.nomeTreino,
             "completo" to registro.completo,
+            "duracaoSegundos" to registro.duracaoSegundos,
             "createdAt" to System.currentTimeMillis(),
             "exercicios" to exerciciosMap
         )
@@ -130,6 +131,7 @@ object RegistroTreinoFirestoreRepository {
         val dataHora = (m["dataHora"] as? String) ?: return null
         val nomeTreino = (m["nomeTreino"] as? String) ?: return null
         val completo = (m["completo"] as? Boolean) ?: false
+        val duracaoSegundos = (m["duracaoSegundos"] as? Number)?.toLong() ?: 0L
 
         val exerciciosRaw = m["exercicios"] as? List<*> ?: emptyList<Any>()
         val exercicios = exerciciosRaw.mapNotNull { exAny ->
@@ -163,7 +165,8 @@ object RegistroTreinoFirestoreRepository {
             dataHora = dataHora,
             nomeTreino = nomeTreino,
             completo = completo,
-            exercicios = exercicios
+            exercicios = exercicios,
+            duracaoSegundos = duracaoSegundos
         )
 
     }
