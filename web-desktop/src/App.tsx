@@ -156,6 +156,15 @@ function normalizeRole(value: unknown): Role {
 }
 
 function profileFromDoc(uid: string, data: DocumentData | undefined, fallbackEmail = ""): UserProfile {
+  const rawCreatedAt = data?.createdAt;
+  const createdAt = typeof rawCreatedAt === "number"
+    ? rawCreatedAt
+    : typeof rawCreatedAt?.toMillis === "function"
+      ? rawCreatedAt.toMillis()
+      : typeof rawCreatedAt?.seconds === "number"
+        ? rawCreatedAt.seconds * 1000
+        : undefined;
+
   return {
     uid,
     name: String(data?.name ?? "Sem nome"),
@@ -166,6 +175,8 @@ function profileFromDoc(uid: string, data: DocumentData | undefined, fallbackEma
     trainerId: typeof data?.trainerId === "string" ? data.trainerId : null,
     idade: typeof data?.idade === "number" ? data.idade : undefined,
     alturaCm: typeof data?.alturaCm === "number" ? data.alturaCm : undefined,
+    pesoKg: typeof data?.pesoKg === "number" ? data.pesoKg : undefined,
+    createdAt,
     cardioMetaSemanalMin: Number(data?.cardioMetaSemanalMin ?? data?.metaSemanalCardioMin ?? data?.cardioGoalMin ?? 180)
   };
 }
@@ -935,18 +946,20 @@ function ProfileView({
 }) {
   const [age, setAge] = useState(profile.idade?.toString() ?? "");
   const [height, setHeight] = useState(profile.alturaCm?.toString() ?? "");
+  const [weight, setWeight] = useState(profile.pesoKg?.toString() ?? progress[0]?.pesoKg?.toString() ?? "");
   const [requestQty, setRequestQty] = useState("5");
 
   async function saveStudentData(event: FormEvent) {
     event.preventDefault();
     const idade = Number(age);
     const alturaCm = parseNumber(height);
-    if (!idade || idade < 10 || idade > 100 || alturaCm < 100 || alturaCm > 250) {
-      notify("warn", "Preencha idade e altura válidas.");
+    const pesoKg = parseNumber(weight);
+    if (!idade || idade < 10 || idade > 100 || alturaCm < 100 || alturaCm > 250 || pesoKg <= 0 || pesoKg > 500) {
+      notify("warn", "Preencha idade, altura e peso válidos.");
       return;
     }
 
-    await updateDoc(doc(services.db, "users", profile.uid), { idade, alturaCm });
+    await updateDoc(doc(services.db, "users", profile.uid), { idade, alturaCm, pesoKg });
     notify("ok", "Dados do aluno salvos.");
   }
 
@@ -1014,6 +1027,14 @@ function ProfileView({
               <dt>Status</dt>
               <dd>{profile.approved ? "Liberado" : "Aguardando código"}</dd>
             </div>
+            <div>
+              <dt>Plano</dt>
+              <dd>{profile.active ? "Ativo" : "Inativo"}</dd>
+            </div>
+            <div>
+              <dt>Desde</dt>
+              <dd>{new Date(profile.createdAt ?? user.metadata.creationTime ?? Date.now()).getFullYear()}</dd>
+            </div>
           </dl>
           {!profile.approved && <RedeemCodeForm busy={busy} onRedeem={onRedeem} />}
         </article>
@@ -1024,6 +1045,7 @@ function ProfileView({
             <form className="inline-form" onSubmit={saveStudentData}>
               <TextInput label="Idade" value={age} onChange={setAge} type="number" />
               <TextInput label="Altura em cm" value={height} onChange={setHeight} type="number" />
+              <TextInput label="Peso em kg" value={weight} onChange={setWeight} type="number" />
               <button className="primary-btn" type="submit">
                 <Save size={18} />
                 Salvar

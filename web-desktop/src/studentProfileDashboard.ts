@@ -10,7 +10,7 @@ const CARDIO_GOAL_ROOT_ID = "meutreino-cardio-goal-root";
 const DASHBOARD_CLASS = "student-profile-dashboard-active";
 const WORKSPACE_CLASS = "student-profile-dashboard-mode";
 const SELECTED_STUDENT_KEY = "meutreino.selectedStudent";
-const DEFAULT_CARDIO_GOAL = 150;
+const DEFAULT_CARDIO_GOAL = 180;
 
 type Role = "ALUNO" | "TREINADOR" | "ADMIN";
 
@@ -20,8 +20,11 @@ type StudentProfileState = {
   email: string;
   role: Role;
   approved: boolean;
+  active: boolean;
   idade?: number;
   alturaCm?: number;
+  pesoKg?: number;
+  createdAt?: number;
   cardioMetaSemanalMin: number;
 };
 
@@ -96,6 +99,16 @@ function normalizeRole(value: unknown): Role {
   return "ALUNO";
 }
 
+function readMillis(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (!value || typeof value !== "object") return undefined;
+
+  const candidate = value as { toMillis?: () => number; seconds?: number };
+  if (typeof candidate.toMillis === "function") return candidate.toMillis();
+  if (typeof candidate.seconds === "number") return candidate.seconds * 1000;
+  return undefined;
+}
+
 function profileFromDoc(uid: string, data: DocumentData | undefined, fallbackEmail = ""): StudentProfileState {
   const rawGoal = Number(data?.cardioMetaSemanalMin ?? data?.metaSemanalCardioMin ?? data?.cardioGoalMin ?? DEFAULT_CARDIO_GOAL);
 
@@ -105,8 +118,11 @@ function profileFromDoc(uid: string, data: DocumentData | undefined, fallbackEma
     email: String(data?.email ?? fallbackEmail ?? ""),
     role: normalizeRole(data?.role),
     approved: Boolean(data?.approved ?? data?.active ?? false),
+    active: Boolean(data?.active ?? data?.approved ?? true),
     idade: typeof data?.idade === "number" ? data.idade : undefined,
     alturaCm: typeof data?.alturaCm === "number" ? data.alturaCm : undefined,
+    pesoKg: typeof data?.pesoKg === "number" ? data.pesoKg : undefined,
+    createdAt: readMillis(data?.createdAt),
     cardioMetaSemanalMin: Number.isFinite(rawGoal) && rawGoal > 0 ? rawGoal : DEFAULT_CARDIO_GOAL
   };
 }
@@ -866,6 +882,591 @@ function injectStyles() {
       }
 
     }
+
+    /* Perfil neon do aluno: composição fiel ao painel de referência. */
+    .student-profile-dashboard {
+      width: min(100%, 1320px);
+      gap: 14px;
+    }
+
+    .student-profile-dashboard svg {
+      width: 1em;
+      height: 1em;
+      display: block;
+    }
+
+    .student-profile-dashboard .student-profile-hero {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      overflow: hidden;
+      position: relative;
+      padding: 0 8px 2px;
+    }
+
+    .student-profile-dashboard .student-profile-title {
+      margin: 0;
+      color: #f3f8f6 !important;
+      font-size: clamp(34px, 4vw, 48px);
+      line-height: 1;
+      letter-spacing: -0.055em;
+      font-weight: 900;
+    }
+
+    .student-profile-title-line {
+      width: 78px;
+      height: 4px;
+      display: block;
+      margin-top: 10px;
+      border-radius: 999px;
+      background: #4ef0ae;
+      box-shadow: 0 0 18px rgba(78, 240, 174, 0.72);
+    }
+
+    .student-profile-dashboard .student-profile-pulse {
+      width: min(330px, 32vw);
+      height: 84px;
+      flex: 0 0 auto;
+      color: #20d996;
+      opacity: 0.88;
+      filter: drop-shadow(0 0 10px rgba(78, 240, 174, 0.34));
+    }
+
+    .student-profile-main-grid,
+    .student-profile-bottom-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.16fr);
+      gap: 14px;
+    }
+
+    .student-profile-bottom-grid {
+      grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+    }
+
+    .student-profile-dashboard .student-dashboard-card {
+      min-width: 0;
+      padding: 22px 24px;
+      color: #f3f8f6 !important;
+      border: 1px solid rgba(118, 164, 153, 0.27) !important;
+      border-radius: 17px !important;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(78, 240, 174, 0.04), transparent 34%),
+        linear-gradient(145deg, rgba(12, 31, 33, 0.96), rgba(5, 19, 22, 0.98)) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 18px 44px rgba(0, 0, 0, 0.16) !important;
+    }
+
+    .student-profile-dashboard .student-card-head,
+    .student-profile-dashboard .student-section-heading {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin: 0 0 18px;
+    }
+
+    .student-profile-dashboard .student-card-head h3,
+    .student-profile-dashboard .student-section-heading h3 {
+      margin: 0;
+      color: #f3f8f6 !important;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .student-profile-dashboard .student-card-icon,
+    .student-profile-dashboard .student-section-heading > span {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      color: #42eba9 !important;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      font-size: 25px;
+    }
+
+    .student-profile-dashboard .student-card-icon svg,
+    .student-profile-dashboard .student-section-heading > span svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    .student-profile-dashboard .student-profile-lines {
+      display: grid;
+      margin: 0;
+    }
+
+    .student-profile-dashboard .student-profile-lines > div {
+      min-height: 40px;
+      display: grid;
+      grid-template-columns: 24px 108px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(118, 164, 153, 0.18) !important;
+    }
+
+    .student-profile-dashboard .student-profile-lines > div:last-child {
+      border-bottom: 0 !important;
+    }
+
+    .student-profile-dashboard .student-profile-lines dt,
+    .student-profile-dashboard .student-profile-lines dd {
+      margin: 0;
+    }
+
+    .student-profile-dashboard .student-profile-lines dt {
+      color: #a4b8b2 !important;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .student-profile-dashboard .student-profile-lines dd {
+      min-width: 0;
+      color: #f3f8f6 !important;
+      font-size: 14px;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .student-profile-dashboard .student-line-icon {
+      display: grid;
+      place-items: center;
+      color: #40e8a6 !important;
+      font-size: 17px;
+    }
+
+    .student-profile-dashboard .student-line-icon svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .student-profile-dashboard .student-status-pill {
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 12px;
+      color: #4ef0ae !important;
+      border: 0 !important;
+      border-radius: 999px !important;
+      background: rgba(20, 174, 118, 0.16) !important;
+      font-size: 13px;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .student-profile-dashboard .student-data-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px 20px;
+      align-items: end;
+    }
+
+    .student-profile-dashboard .student-field {
+      display: grid;
+      gap: 7px;
+      color: #a4b8b2 !important;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .student-profile-dashboard .student-input-wrap {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      color: #f3f8f6 !important;
+      border: 1px solid rgba(118, 164, 153, 0.32) !important;
+      border-radius: 11px !important;
+      background: rgba(5, 19, 22, 0.8) !important;
+    }
+
+    .student-profile-dashboard .student-input-wrap > span {
+      display: grid;
+      place-items: center;
+      color: #42e9a8 !important;
+      font-size: 18px;
+    }
+
+    .student-profile-dashboard .student-input-wrap > span svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .student-profile-dashboard .student-input-wrap input {
+      width: 100%;
+      min-width: 0;
+      height: 54px;
+      padding: 0;
+      color: #f3f8f6 !important;
+      border: 0 !important;
+      outline: 0;
+      background: transparent !important;
+      box-shadow: none !important;
+      font-size: 15px;
+      font-weight: 750;
+    }
+
+    .student-profile-dashboard .student-input-wrap:focus-within {
+      border-color: #4ef0ae !important;
+      box-shadow: 0 0 0 3px rgba(78, 240, 174, 0.09) !important;
+    }
+
+    .student-profile-dashboard .student-save-button {
+      width: 100%;
+      min-height: 46px;
+      grid-column: 1;
+      padding: 0 22px;
+      color: #04110d !important;
+      border: 1px solid rgba(179, 255, 220, 0.55) !important;
+      border-radius: 10px !important;
+      background: linear-gradient(100deg, #2de09e, #58efb4) !important;
+      box-shadow: 0 8px 24px rgba(35, 197, 137, 0.2) !important;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .student-profile-dashboard .student-quick-panel {
+      padding: 15px 22px 18px;
+    }
+
+    .student-profile-dashboard .student-quick-panel .student-section-heading {
+      margin-bottom: 11px;
+    }
+
+    .student-profile-dashboard .student-quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .student-profile-dashboard .student-quick-card {
+      min-width: 0;
+      min-height: 96px;
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+      padding: 15px 17px;
+      border: 1px solid rgba(118, 164, 153, 0.2);
+      border-radius: 13px;
+      background: linear-gradient(145deg, rgba(15, 39, 41, 0.74), rgba(5, 20, 22, 0.82));
+    }
+
+    .student-profile-dashboard .student-goal-quick {
+      grid-template-columns: 54px minmax(0, 1fr) 54px;
+    }
+
+    .student-profile-dashboard .student-summary-icon {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      color: #42e9a8 !important;
+      border: 1px solid rgba(78, 240, 174, 0.48) !important;
+      border-radius: 13px;
+      background: rgba(78, 240, 174, 0.07) !important;
+      box-shadow: inset 0 0 18px rgba(78, 240, 174, 0.05) !important;
+      font-size: 26px;
+    }
+
+    .student-profile-dashboard .student-summary-icon svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .student-profile-dashboard .student-quick-card small,
+    .student-profile-dashboard .student-quick-card strong,
+    .student-profile-dashboard .student-quick-card div > span {
+      display: block;
+    }
+
+    .student-profile-dashboard .student-quick-card small {
+      margin-bottom: 4px;
+      color: #91a6a0 !important;
+      font-size: 11px;
+    }
+
+    .student-profile-dashboard .student-quick-card strong {
+      color: #f3f8f6 !important;
+      font-size: 16px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .student-profile-dashboard .student-quick-card div > span {
+      margin-top: 3px;
+      color: #b4c7c2 !important;
+      font-size: 12px;
+    }
+
+    .student-profile-dashboard .student-goal-ring {
+      width: 50px;
+      height: 50px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      border-radius: 999px;
+      background: conic-gradient(#4ef0ae var(--student-goal-percent), rgba(78, 240, 174, 0.12) 0);
+      box-shadow: 0 0 14px rgba(78, 240, 174, 0.18);
+    }
+
+    .student-profile-dashboard .student-goal-ring::before {
+      content: "";
+      position: absolute;
+      inset: 5px;
+      border-radius: inherit;
+      background: #092023;
+    }
+
+    .student-profile-dashboard .student-goal-ring b {
+      position: relative;
+      z-index: 1;
+      color: #4ef0ae;
+      font-size: 11px;
+    }
+
+    .student-profile-dashboard .student-week-card,
+    .student-profile-dashboard .student-updates-card {
+      min-height: 278px;
+    }
+
+    .student-profile-dashboard .student-section-heading > div {
+      min-width: 0;
+    }
+
+    .student-profile-dashboard .student-section-heading p {
+      margin: 4px 0 0;
+      color: #91a6a0 !important;
+      font-size: 12px;
+    }
+
+    .student-profile-dashboard .student-week-scroll {
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .student-profile-dashboard .student-week-matrix {
+      min-width: 540px;
+      display: grid;
+      grid-template-columns: 72px repeat(7, minmax(48px, 1fr));
+      align-items: center;
+      gap: 15px 7px;
+      padding: 7px 0 8px;
+    }
+
+    .student-profile-dashboard .student-week-matrix > strong,
+    .student-profile-dashboard .student-week-matrix > b {
+      color: #b8cbc6 !important;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .student-profile-dashboard .student-week-matrix > b {
+      color: #a4b8b2 !important;
+      text-align: left;
+    }
+
+    .student-profile-dashboard .student-week-cell {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      justify-self: center;
+      color: transparent;
+      border: 1px solid rgba(126, 168, 158, 0.42);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .student-profile-dashboard .student-week-cell.is-done {
+      color: #04110d;
+      border-color: #4ef0ae;
+      background: #4ef0ae;
+      box-shadow: 0 0 15px rgba(78, 240, 174, 0.45);
+    }
+
+    .student-profile-dashboard .student-week-legend {
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      margin-top: 16px;
+      color: #91a6a0;
+      font-size: 11px;
+    }
+
+    .student-profile-dashboard .student-week-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .student-profile-dashboard .student-week-legend i {
+      width: 14px;
+      height: 14px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid rgba(126, 168, 158, 0.52);
+      border-radius: 999px;
+      font-size: 9px;
+      font-style: normal;
+    }
+
+    .student-profile-dashboard .student-week-legend i.is-done {
+      color: #04110d;
+      border-color: #4ef0ae;
+      background: #4ef0ae;
+    }
+
+    .student-profile-dashboard .student-updates-card {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .student-profile-dashboard .student-updates-list {
+      display: grid;
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid rgba(118, 164, 153, 0.2);
+      border-radius: 11px;
+    }
+
+    .student-profile-dashboard .student-update-row {
+      min-height: 46px;
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(118, 164, 153, 0.17);
+    }
+
+    .student-profile-dashboard .student-update-row:last-child {
+      border-bottom: 0;
+    }
+
+    .student-profile-dashboard .student-update-row > i {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #4ef0ae;
+      box-shadow: 0 0 9px rgba(78, 240, 174, 0.6);
+    }
+
+    .student-profile-dashboard .student-update-row > i.is-read {
+      background: #506661;
+      box-shadow: none;
+    }
+
+    .student-profile-dashboard .student-update-row > span {
+      min-width: 0;
+      color: #e7f0ed !important;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .student-profile-dashboard .student-update-row time {
+      color: #8ba09a;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .student-profile-dashboard .student-update-empty {
+      padding: 18px;
+      color: #91a6a0;
+      font-size: 13px;
+    }
+
+    .student-profile-dashboard .student-mark-read-button {
+      min-height: 42px;
+      align-self: flex-end;
+      margin-top: auto;
+      padding: 0 24px;
+      color: #4ef0ae !important;
+      border: 1px solid rgba(78, 240, 174, 0.52) !important;
+      border-radius: 11px !important;
+      background: rgba(78, 240, 174, 0.04) !important;
+      box-shadow: none !important;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .student-profile-dashboard .student-mark-read-button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    @media (max-width: 1060px) {
+      .student-profile-main-grid,
+      .student-profile-bottom-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .student-profile-dashboard .student-quick-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .student-profile-dashboard .student-profile-hero {
+        min-height: 58px;
+        padding-inline: 2px;
+      }
+
+      .student-profile-dashboard .student-profile-title {
+        font-size: 34px;
+      }
+
+      .student-profile-dashboard .student-profile-pulse {
+        display: none;
+      }
+
+      .student-profile-dashboard .student-dashboard-card {
+        padding: 18px 16px;
+        border-radius: 15px !important;
+      }
+
+      .student-profile-dashboard .student-data-form,
+      .student-profile-dashboard .student-quick-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .student-profile-dashboard .student-save-button {
+        grid-column: auto;
+      }
+
+      .student-profile-dashboard .student-profile-lines > div {
+        grid-template-columns: 20px 72px minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .student-profile-dashboard .student-profile-lines dt,
+      .student-profile-dashboard .student-profile-lines dd {
+        font-size: 12px;
+      }
+
+      .student-profile-dashboard .student-update-row {
+        grid-template-columns: 9px minmax(0, 1fr);
+      }
+
+      .student-profile-dashboard .student-update-row time {
+        grid-column: 2;
+      }
+
+      .student-profile-dashboard .student-mark-read-button {
+        width: 100%;
+        margin-top: 14px;
+      }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -933,106 +1534,126 @@ function renderProfileDashboard() {
   }
 }
 
+function renderProfileIcon(name: "user" | "mail" | "tag" | "shield" | "star" | "calendar" | "settings" | "dumbbell" | "heart" | "target" | "bolt" | "bell") {
+  const paths = {
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    tag: '<path d="M20 13 13 20 4 11V4h7Z"/><circle cx="8.5" cy="8.5" r="1.5"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+    star: '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1Z"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/>',
+    dumbbell: '<path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/>',
+    heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    bolt: '<path d="m13 2-9 12h7l-1 8 9-12h-7Z"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>'
+  };
+  return `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[name]}</svg>`;
+}
+
+function profileSinceYear(profile: StudentProfileState) {
+  const authCreatedAt = authUser?.metadata.creationTime ? Date.parse(authUser.metadata.creationTime) : 0;
+  const value = profile.createdAt || authCreatedAt || Date.now();
+  return new Date(value).getFullYear();
+}
+
+function formatNotificationDate(value: number) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value)).replace(",", " •");
+}
+
 function renderProfileHtml(profile: StudentProfileState) {
-  const latestRecord = records[0];
+  const latestRecord = records.find((item) => item.completo) ?? records[0];
   const latestCardio = cardio[0];
   const week = buildWeeklyProgress(profile.cardioMetaSemanalMin);
   const unreadCount = notifications.filter((item) => !item.read).length;
-  const unreadMessages = notifications.filter((item) => !item.read).slice(0, 3);
+  const latestMessages = notifications.slice(0, 3);
+  const cardioPercent = week.cardioGoal > 0 ? Math.min(100, Math.round((week.cardioMinutes / week.cardioGoal) * 100)) : 0;
 
   return `
     <div class="student-profile-dashboard">
-      <header class="student-profile-top">
-        <h1 class="student-profile-title"><span class="student-profile-title-icon">☘</span>${escapeHtml(profile.name)}</h1>
+      <header class="student-profile-hero">
+        <div>
+          <h1 class="student-profile-title">${escapeHtml(profile.name)}</h1>
+          <span class="student-profile-title-line" aria-hidden="true"></span>
+        </div>
+        <svg class="student-profile-pulse" aria-hidden="true" viewBox="0 0 320 84" fill="none"><path d="M1 50h168l12-2 9-36 15 66 13-42 13 29 17-46 14 31h57" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="319" cy="50" r="5" fill="currentColor"/></svg>
       </header>
 
-      <div class="student-dashboard-grid">
+      <div class="student-profile-main-grid">
         <article class="student-dashboard-card">
-          <div class="student-card-head"><span class="student-card-icon">♡</span><h3>Perfil</h3></div>
-          <div class="student-profile-card-body">
-            <div class="student-avatar-large">♙<span class="student-avatar-badge">✓</span></div>
-            <dl class="student-profile-lines">
-              <div><span class="student-line-icon">♙</span><dt>Nome</dt><dd>${escapeHtml(profile.name)}</dd></div>
-              <div><span class="student-line-icon">✉</span><dt>Email</dt><dd>${escapeHtml(profile.email || authUser?.email || "-")}</dd></div>
-              <div><span class="student-line-icon">⌂</span><dt>Tipo</dt><dd>${escapeHtml(profile.role)}</dd></div>
-              <div><span class="student-line-icon">♢</span><dt>Status</dt><dd><span class="student-status-pill">✓ ${profile.approved ? "Liberado" : "Aguardando"}</span></dd></div>
-            </dl>
-          </div>
+          <div class="student-card-head"><span class="student-card-icon">${renderProfileIcon("user")}</span><h3>Perfil do aluno</h3></div>
+          <dl class="student-profile-lines">
+            <div><span class="student-line-icon">${renderProfileIcon("user")}</span><dt>Nome</dt><dd>${escapeHtml(profile.name)}</dd></div>
+            <div><span class="student-line-icon">${renderProfileIcon("mail")}</span><dt>Email</dt><dd>${escapeHtml(profile.email || authUser?.email || "-")}</dd></div>
+            <div><span class="student-line-icon">${renderProfileIcon("tag")}</span><dt>Tipo</dt><dd>${escapeHtml(profile.role)}</dd></div>
+            <div><span class="student-line-icon">${renderProfileIcon("shield")}</span><dt>Status</dt><dd><span class="student-status-pill">✓ ${profile.approved ? "Liberado" : "Aguardando"}</span></dd></div>
+            <div><span class="student-line-icon">${renderProfileIcon("star")}</span><dt>Plano</dt><dd><span class="student-status-pill">★ ${profile.active ? "Ativo" : "Inativo"}</span></dd></div>
+            <div><span class="student-line-icon">${renderProfileIcon("calendar")}</span><dt>Desde</dt><dd>${profileSinceYear(profile)}</dd></div>
+          </dl>
         </article>
 
         <article class="student-dashboard-card">
-          <div class="student-card-head"><span class="student-card-icon">▱</span><h3>Dados do aluno</h3></div>
+          <div class="student-card-head"><span class="student-card-icon">${renderProfileIcon("settings")}</span><h3>Dados do aluno</h3></div>
           <form class="student-data-form" data-student-form="profile">
             <label class="student-field">Idade
-              <span class="student-input-wrap"><span>▣</span><input type="number" inputmode="numeric" data-student-input="idade" value="${escapeAttribute(profile.idade?.toString() ?? "")}" /></span>
+              <span class="student-input-wrap"><span>${renderProfileIcon("calendar")}</span><input aria-label="Idade" type="number" inputmode="numeric" data-student-input="idade" value="${escapeAttribute(profile.idade?.toString() ?? "")}" /></span>
             </label>
-            <label class="student-field">Altura em cm
-              <span class="student-input-wrap"><span>♙</span><input type="number" inputmode="numeric" data-student-input="altura" value="${escapeAttribute(profile.alturaCm?.toString() ?? "")}" /></span>
+            <label class="student-field">Altura (cm)
+              <span class="student-input-wrap"><span>${renderProfileIcon("user")}</span><input aria-label="Altura em centímetros" type="number" inputmode="decimal" data-student-input="altura" value="${escapeAttribute(profile.alturaCm?.toString() ?? "")}" /></span>
             </label>
-            <button class="student-save-button" type="submit">▣ Salvar</button>
+            <label class="student-field">Peso (kg)
+              <span class="student-input-wrap"><span>${renderProfileIcon("tag")}</span><input aria-label="Peso em quilogramas" type="number" inputmode="decimal" step="0.1" data-student-input="peso" value="${escapeAttribute(profile.pesoKg?.toString() ?? "")}" /></span>
+            </label>
+            <button class="student-save-button" type="submit">✓ Salvar</button>
           </form>
         </article>
       </div>
 
-      <div class="student-summary-grid">
-        <article class="student-summary-card">
-          <span class="student-summary-icon">▮</span>
-          <div><small>Último treino</small><strong>${latestRecord ? `${escapeHtml(latestRecord.nomeTreino)} ·<br />${escapeHtml(latestRecord.dataHora)}` : "Sem registros"}</strong></div>
-          <span class="student-summary-arrow">›</span>
+      <article class="student-dashboard-card student-quick-panel">
+        <div class="student-section-heading"><span>${renderProfileIcon("bolt")}</span><h3>Resumo rápido</h3></div>
+        <div class="student-quick-grid">
+          <div class="student-quick-card"><span class="student-summary-icon">${renderProfileIcon("dumbbell")}</span><div><small>Último treino</small><strong>${latestRecord ? escapeHtml(latestRecord.nomeTreino) : "Sem registros"}</strong><span>${latestRecord ? escapeHtml(latestRecord.dataHora) : ""}</span></div></div>
+          <div class="student-quick-card"><span class="student-summary-icon">${renderProfileIcon("heart")}</span><div><small>Último cardio</small><strong>${latestCardio ? escapeHtml(latestCardio.atividade) : "Sem registros"}</strong><span>${latestCardio ? `${latestCardio.tempoMin} min` : ""}</span></div></div>
+          <div class="student-quick-card"><span class="student-summary-icon">${renderProfileIcon("calendar")}</span><div><small>Treinos na semana</small><strong>${week.trainingSessionsCompleted} / ${week.trainingSessionsTotal}</strong><span>concluídos</span></div></div>
+          <div class="student-quick-card student-goal-quick"><span class="student-summary-icon">${renderProfileIcon("target")}</span><div><small>Meta semanal</small><strong>${week.cardioMinutes} / ${week.cardioGoal} min</strong><span>de cardio</span></div><span class="student-goal-ring" style="--student-goal-percent:${cardioPercent}%"><b>${cardioPercent >= 100 ? "✓" : `${cardioPercent}%`}</b></span></div>
+        </div>
+      </article>
+
+      <div class="student-profile-bottom-grid">
+        <article class="student-dashboard-card student-week-card">
+          <div class="student-section-heading"><span>${renderProfileIcon("calendar")}</span><h3>Progresso da semana</h3></div>
+          <div class="student-week-scroll" role="region" aria-label="Progresso semanal" tabindex="0">
+            <div class="student-week-matrix">
+              <span></span>${week.days.map((day) => `<strong>${day.label}</strong>`).join("")}
+              <b>Treino</b>${week.days.map((day) => renderWeekCell(day.treino, "Treino")).join("")}
+              <b>Cardio</b>${week.days.map((day) => renderWeekCell(day.cardio, "Cardio")).join("")}
+            </div>
+          </div>
+          <div class="student-week-legend"><span><i class="is-done">✓</i> Concluído</span><span><i></i> Não concluído</span></div>
         </article>
-        <article class="student-summary-card">
-          <span class="student-summary-icon">♡</span>
-          <div><small>Último cardio</small><strong>${latestCardio ? `${escapeHtml(latestCardio.atividade)} · ${latestCardio.tempoMin}min` : "Sem registros"}</strong></div>
-          <span class="student-summary-arrow">›</span>
+
+        <article class="student-dashboard-card student-updates-card">
+          <div class="student-section-heading"><span>${renderProfileIcon("bell")}</span><div><h3>Atualizações do treinador${unreadCount ? ` (${unreadCount})` : ""}</h3><p>Fique por dentro das orientações e feedbacks do seu treinador.</p></div></div>
+          <div class="student-updates-list">
+            ${latestMessages.length ? latestMessages.map((item) => `<div class="student-update-row"><i class="${item.read ? "is-read" : ""}"></i><span>${escapeHtml(item.message)}</span><time>${formatNotificationDate(item.createdAt)}</time></div>`).join("") : '<div class="student-update-empty">Sem novas atualizações</div>'}
+          </div>
+          <button class="student-mark-read-button" type="button" data-student-action="mark-notifications" ${unreadCount ? "" : "disabled"}>✓ Marcar como lidas</button>
         </article>
       </div>
-
-      <article class="student-dashboard-card student-week-card">
-        <div class="student-week-head">
-          <span class="student-card-icon">▮</span>
-          <h3 class="student-week-title">Progresso da Semana</h3>
-          <div class="student-training-summary-pill">✓ ${week.trainingDaysCount} de 7 dias com treino concluído</div>
-          ${renderCardioGoalCompact(week.cardioMinutes, week.cardioGoal)}
-        </div>
-        <div class="student-week-days">
-          ${week.days.map(renderWeekDay).join("")}
-        </div>
-      </article>
-
-      <article class="student-dashboard-card student-updates-card">
-        <span class="student-card-icon">♧</span>
-        <div class="student-updates-list">
-          <strong>Atualizações do treinador (${unreadCount})</strong>
-          ${unreadMessages.length ? unreadMessages.map((item) => `<p>${escapeHtml(item.message)}</p>`).join("") : "<small>Sem novas atualizações</small>"}
-        </div>
-        <button class="student-mark-read-button" type="button" data-student-action="mark-notifications">✓ Marcar como lidas</button>
-      </article>
     </div>
   `;
 }
 
-function renderCardioGoalCompact(done: number, goal: number) {
-  const remaining = Math.max(goal - done, 0);
-  const percent = goal > 0 ? Math.min(100, Math.round((done / goal) * 100)) : 0;
-  return `
-    <div class="student-cardio-goal-compact">
-      <header><strong>Meta semanal de cardio</strong><span>${done} de ${goal} min</span></header>
-      <div class="student-progress-line" style="--student-progress: ${percent}%"><span></span></div>
-      <div class="student-cardio-goal-footer">${remaining > 0 ? `Faltam ${remaining} min` : "Meta concluída"}</div>
-    </div>
-  `;
-}
-
-function renderWeekDay(day: { label: string; treino: boolean; cardio: boolean }) {
-  return `
-    <div class="student-week-day">
-      <div class="student-day-label">${day.label}</div>
-      <div class="student-day-dots">
-        <div class="student-dot-block"><span class="student-dot training ${day.treino ? "is-done" : ""}">${day.treino ? "✓" : ""}</span><span>Treino</span></div>
-        <div class="student-dot-block"><span class="student-dot cardio ${day.cardio ? "is-done" : ""}">${day.cardio ? "✓" : ""}</span><span>Cardio</span></div>
-      </div>
-    </div>
-  `;
+function renderWeekCell(done: boolean, label: string) {
+  return `<span class="student-week-cell ${done ? "is-done" : ""}" aria-label="${label}: ${done ? "concluído" : "não concluído"}">${done ? "✓" : ""}</span>`;
 }
 
 function renderCardioGoalPanel() {
@@ -1097,12 +1718,18 @@ function buildWeeklyProgress(goal: number) {
   });
 
   const dayMap = new Map(days.map((day) => [day.key, day]));
+  let trainingSessionsTotal = 0;
+  let trainingSessionsCompleted = 0;
 
-  records.filter((item) => item.completo).forEach((item) => {
+  records.forEach((item) => {
     const date = dateFromRecord(item.createdAt, item.dataHora);
     if (!date || !isInCurrentWeek(date, weekStart)) return;
-    const day = dayMap.get(dateKey(date));
-    if (day) day.treino = true;
+    trainingSessionsTotal += 1;
+    if (item.completo) {
+      trainingSessionsCompleted += 1;
+      const day = dayMap.get(dateKey(date));
+      if (day) day.treino = true;
+    }
   });
 
   let cardioMinutes = 0;
@@ -1117,6 +1744,8 @@ function buildWeeklyProgress(goal: number) {
   return {
     days,
     trainingDaysCount: days.filter((day) => day.treino).length,
+    trainingSessionsTotal,
+    trainingSessionsCompleted,
     cardioMinutes,
     cardioGoal: goal || DEFAULT_CARDIO_GOAL
   };
@@ -1160,13 +1789,14 @@ async function saveProfileData(form: HTMLFormElement) {
 
   const idade = Number((form.querySelector<HTMLInputElement>('[data-student-input="idade"]')?.value ?? "").trim());
   const alturaCm = Number((form.querySelector<HTMLInputElement>('[data-student-input="altura"]')?.value ?? "").trim());
+  const pesoKg = Number((form.querySelector<HTMLInputElement>('[data-student-input="peso"]')?.value ?? "").trim().replace(",", "."));
 
-  if (!idade || idade < 10 || idade > 100 || !alturaCm || alturaCm < 100 || alturaCm > 250) {
-    window.alert("Preencha idade e altura válidas.");
+  if (!idade || idade < 10 || idade > 100 || !alturaCm || alturaCm < 100 || alturaCm > 250 || !pesoKg || pesoKg <= 0 || pesoKg > 500) {
+    window.alert("Preencha idade, altura e peso válidos.");
     return;
   }
 
-  await updateDoc(doc(currentServices.db, "users", target.uid), { idade, alturaCm });
+  await updateDoc(doc(currentServices.db, "users", target.uid), { idade, alturaCm, pesoKg });
   window.alert("Dados do aluno salvos.");
 }
 
