@@ -42,8 +42,15 @@
     <color name="ex_border_started">#4AB88E</color>
     <color name="ex_border_error">#EA7886</color>
     <color name="ex_input_neutral">#425A5B</color>
-    <color name="ex_input_good">#4EF0AE</color>
-    <color name="ex_input_bad">#EA7886</color>
+    <color name="ex_input_in_range">#6AA8FF</color>
+    <color name="ex_input_in_range_bg">#12273A</color>
+    <color name="ex_input_in_range_text">#E6F1FF</color>
+    <color name="ex_input_high">#F5B84C</color>
+    <color name="ex_input_high_bg">#332715</color>
+    <color name="ex_input_high_text">#FFE8B2</color>
+    <color name="ex_input_low">#FF6B7A</color>
+    <color name="ex_input_low_bg">#351A20</color>
+    <color name="ex_input_low_text">#FFE0E4</color>
 
     <color name="treino_card_default_bg">#FF0E2022</color>
     <color name="treino_card_active_bg">#FF12342E</color>

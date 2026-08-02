@@ -4,7 +4,6 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.content.DialogInterface
-import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -551,15 +550,15 @@ class TreinoDiaAdapter(
 
     private fun aplicarFeedbackReps(etRep: EditText, repsMin: Int, repsMax: Int) {
         val reps = etRep.text.toString().trim().toIntOrNull()
-        val colorRes = when {
-            reps == null -> R.color.ex_input_neutral
-            reps > repsMax -> R.color.ex_input_good
-            reps < repsMin -> R.color.ex_input_bad
-            else -> R.color.ex_input_neutral
+        val (backgroundRes, textColorRes) = when {
+            reps == null -> R.drawable.bg_neon_input to R.color.text_primary
+            reps < repsMin -> R.drawable.bg_rep_input_low to R.color.ex_input_low_text
+            reps > repsMax -> R.drawable.bg_rep_input_high to R.color.ex_input_high_text
+            else -> R.drawable.bg_rep_input_in_range to R.color.ex_input_in_range_text
         }
 
-        val color = ContextCompat.getColor(etRep.context, colorRes)
-        etRep.backgroundTintList = ColorStateList.valueOf(color)
+        etRep.setBackgroundResource(backgroundRes)
+        etRep.setTextColor(ContextCompat.getColor(etRep.context, textColorRes))
     }
 
     private fun cancelarTreinoEmAndamento(treino: TreinoPlan) {
