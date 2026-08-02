@@ -871,7 +871,7 @@ function AppShell({
             <span className="eyebrow">{target && target.uid !== profile.uid ? `Acompanhando ${target.name}` : profile.name}</span>
             <h2>{selectedLabel}</h2>
           </div>
-          <button className="mobile-menu" type="button" aria-label="Menu">
+          <button className="mobile-menu" type="button" aria-label="Abrir menu lateral">
             <Menu size={20} />
           </button>
         </header>
