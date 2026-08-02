@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_marker_rounded"
+    android:orientation="vertical"
+    android:padding="11dp">
+
+    <TextView
+        android:id="@+id/tvMarkerPerformanceDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="12/02/2026"
+        android:textColor="@color/green_primary"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvMarkerPerformanceWorkout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Treino Push"
+        android:textColor="@color/text_primary"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvMarkerPerformanceLoad"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="Carga: 30 kg"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/tvMarkerPerformanceRepetitions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Repetições: 10"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/tvMarkerPerformanceVolume"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Volume: 600 kg·rep"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp" />
+</LinearLayout>
