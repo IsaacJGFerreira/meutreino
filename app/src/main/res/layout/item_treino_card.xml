@@ -1,95 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cardTreino"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    android:layout_marginHorizontal="8dp"
-    app:cardBackgroundColor="#FEFEFE"
-    app:cardCornerRadius="10dp"
-    app:cardElevation="3dp"
-    app:strokeWidth="0dp">
+    android:layout_marginBottom="14dp"
+    app:cardBackgroundColor="@color/treino_card_default_bg"
+    app:cardCornerRadius="22dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/neon_outline"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="16dp">
 
-        <!-- Cabeçalho do Treino -->
         <LinearLayout
             android:id="@+id/headerTreino"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:padding="6dp">
+            android:minHeight="66dp"
+            android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/tvNomeTreino"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_neon_pill"
+                android:gravity="center"
+                android:text="◆"
+                android:textColor="@color/green_primary"
+                android:textSize="20sp" />
+
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
                 android:layout_weight="1"
-                android:text="LEGS A"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#64898A"
-                android:fontFamily="sans-serif-medium"/>
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PLANO DE TREINO"
+                    android:textColor="@color/green_primary"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvNomeTreino"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Push"
+                    android:textColor="@color/text_primary"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvSetaTreino"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_neon_pill"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
                 android:text="⌄"
-                android:textSize="18sp"
-                android:textColor="#64898A"
-                android:fontFamily="sans-serif-medium"/>
+                android:textColor="@color/green_primary"
+                android:textSize="19sp" />
         </LinearLayout>
 
-        <!-- Container expansível -->
         <LinearLayout
             android:id="@+id/containerExercicios"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone"
-            android:paddingTop="8dp"/>
+            android:paddingTop="8dp"
+            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnIniciarTreino"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="54dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_neon_button"
             android:text="Iniciar treino"
+            android:textColor="@color/background_deep"
+            android:textStyle="bold"
             android:visibility="gone"
-            android:layout_marginTop="10dp"
-            android:backgroundTint="@color/green_primary"
-            android:textColor="@android:color/white"
-            app:cornerRadius="12dp"/>
+            app:backgroundTint="@null"
+            app:cornerRadius="20dp" />
 
-        <!-- Botão salvar -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSalvarTreino"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="54dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_neon_button"
             android:text="Salvar treino"
+            android:textColor="@color/background_deep"
+            android:textStyle="bold"
             android:visibility="gone"
-            android:layout_marginTop="10dp"
-            android:backgroundTint="@color/green_primary"
-            android:textColor="@android:color/white"
-            app:cornerRadius="12dp"/>
+            app:backgroundTint="@null"
+            app:cornerRadius="20dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCancelarTreino"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="9dp"
+            android:background="@drawable/bg_neon_outline_button"
             android:text="Cancelar treino"
+            android:textColor="@color/text_secondary"
+            android:textStyle="bold"
             android:visibility="gone"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#9E9E9E"
-            android:textColor="@android:color/white"
-            app:cornerRadius="12dp"/>
+            app:backgroundTint="@null"
+            app:cornerRadius="20dp" />
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView>

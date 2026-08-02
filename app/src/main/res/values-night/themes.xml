@@ -1,13 +1,20 @@
 <resources>
     <style name="Theme.MeuTreino" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/green_primary</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimary">@color/background_deep</item>
         <item name="colorSecondary">@color/green_secondary</item>
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/surface_elevated</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorOutline">@color/neon_outline</item>
+        <item name="android:colorAccent">@color/green_primary</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowBackground">@color/background</item>
-        <item name="android:statusBarColor">@color/background</item>
-        <item name="android:navigationBarColor">@color/surface</item>
+        <item name="android:statusBarColor">@color/background_deep</item>
+        <item name="android:navigationBarColor">@color/background_deep</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.MeuTreino.AlertDialog</item>
         <item name="android:alertDialogTheme">@style/ThemeOverlay.MeuTreino.AlertDialog</item>
     </style>

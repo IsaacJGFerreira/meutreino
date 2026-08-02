@@ -7,7 +7,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="18dp"
-    android:background="@drawable/bg_dialog_dark_round">
+    android:background="@drawable/bg_neon_card">
 
     <!-- Topo: Título + X -->
     <RelativeLayout
@@ -22,7 +22,7 @@
             android:text="Adicionar exercício"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:fontFamily="sans-serif-medium"/>
 
         <ImageView
@@ -31,7 +31,7 @@
             android:layout_height="26dp"
             android:layout_alignParentEnd="true"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="#BFC7C9"/>
+            android:tint="@color/text_secondary"/>
     </RelativeLayout>
 
     <!-- 🔥 FUNÇÃO: padrão de cores para inputs -->
@@ -256,8 +256,8 @@
         android:text="Salvar"
         android:textAllCaps="false"
         android:textStyle="bold"
-        android:textColor="#FFFFFF"
-        app:cornerRadius="16dp"
-        android:background="@drawable/bg_button_green"
+        android:textColor="@color/background_deep"
+        app:cornerRadius="20dp"
+        android:background="@drawable/bg_neon_button"
         app:backgroundTint="@null"/>
 </LinearLayout>

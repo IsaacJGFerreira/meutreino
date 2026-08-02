@@ -1,45 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Neon Performance: palette única para manter o visual escuro em qualquer modo do aparelho. -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="green_primary">#5AAB8A</color>
-    <color name="green_secondary">#A5D6A7</color>
-    <color name="green_light">#C8E6C9</color>
+    <color name="green_primary">#4EF0AE</color>
+    <color name="green_primary_pressed">#2BD493</color>
+    <color name="green_secondary">#237B60</color>
+    <color name="green_light">#163E34</color>
 
-    <color name="background">#DEEFE4</color>
-    <color name="surface">#FFFFFF</color>
+    <color name="background">#071315</color>
+    <color name="background_deep">#040B0D</color>
+    <color name="surface">#0E2022</color>
+    <color name="surface_elevated">#142A2C</color>
+    <color name="surface_glass">#D91A3031</color>
+    <color name="surface_soft">#132426</color>
 
-    <color name="text_primary">#2F3E3F</color>
-    <color name="text_secondary">#5B6B62</color>
+    <color name="text_primary">#F3F8F6</color>
+    <color name="text_secondary">#9EB2AD</color>
+    <color name="text_muted">#718681</color>
+    <color name="neon_outline">#664EF0AE</color>
+    <color name="neon_outline_strong">#B34EF0AE</color>
+    <color name="divider_dark">#263D3E</color>
 
-    <!-- Exercício: borda quando falta completar -->
-    <color name="ex_border_pending">#B0B7B5</color>
+    <!-- Exercícios e feedbacks. -->
+    <color name="ex_border_pending">#3A5050</color>
+    <color name="ex_border_done">#4EF0AE</color>
+    <color name="ex_title">#F3F8F6</color>
+    <color name="ex_subtitle">#9EB2AD</color>
 
-    <!-- Exercício: borda quando completou -->
-    <color name="ex_border_done">#5AAB8A</color>
+    <!-- Tokens para gráficos. -->
+    <color name="chart_grid">#203537</color>
+    <color name="chart_axis">#2C4546</color>
+    <color name="chart_label">#92A7A2</color>
+    <color name="ex_card_bg_neutral">#FF0E2022</color>
+    <color name="ex_card_bg_done">#FF123A30</color>
+    <color name="ex_card_bg_started">#FF122D2A</color>
+    <color name="ex_card_bg_warning">#FF302919</color>
+    <color name="ex_card_bg_error">#FF321D22</color>
+    <color name="ex_border_warning">#E8C564</color>
+    <color name="ex_border_started">#4AB88E</color>
+    <color name="ex_border_error">#EA7886</color>
+    <color name="ex_input_neutral">#425A5B</color>
+    <color name="ex_input_good">#4EF0AE</color>
+    <color name="ex_input_bad">#EA7886</color>
 
-    <!-- Texto do exercício: mais escuro -->
-    <color name="ex_title">#2F3E3F</color>
-    <color name="ex_subtitle">#5E6F70</color>
-
-    <!-- Tokens para gráficos -->
-    <color name="chart_grid">#E3ECE7</color>
-    <color name="chart_axis">#D6E4DD</color>
-    <color name="chart_label">#7C8F88</color>
-    <color name="ex_card_bg_neutral">#FFFFFFFF</color>
-    <color name="ex_card_bg_done">#E8F6EE</color>
-    <color name="ex_card_bg_started">#EEF8F2</color>
-    <color name="ex_card_bg_warning">#FFF8E1</color>
-    <color name="ex_card_bg_error">#FDECEC</color>
-    <color name="ex_border_warning">#E0B300</color>
-    <color name="ex_border_started">#8FBFA7</color>
-    <color name="ex_border_error">#E58A8A</color>
-    <color name="ex_input_neutral">#D0D6D4</color>
-    <color name="ex_input_good">#7BC79F</color>
-    <color name="ex_input_bad">#E58A8A</color>
-
-    <color name="treino_card_default_bg">#FEFEFE</color>
-    <color name="treino_card_active_bg">#EEF3FF</color>
-    <color name="treino_card_active_stroke">#5A7AD6</color>
+    <color name="treino_card_default_bg">#FF0E2022</color>
+    <color name="treino_card_active_bg">#FF12342E</color>
+    <color name="treino_card_active_stroke">#FF4EF0AE</color>
 </resources>

@@ -809,6 +809,7 @@ function AppShell({
     { key: "progresso" as const, label: "Progresso", icon: Camera, visible: profile.role !== "ADMIN" },
     { key: "admin" as const, label: "Admin", icon: ShieldCheck, visible: profile.role === "ADMIN" }
   ].filter((item) => item.visible);
+  const selectedLabel = nav.find((item) => item.key === selectedTab)?.label ?? (selectedTab === "admin" ? "Painel admin" : "MeuTreino");
 
   return (
     <div className="app-layout">
@@ -867,8 +868,8 @@ function AppShell({
       <main className="workspace">
         <header className="topbar">
           <div>
-            <span className="eyebrow">{profile.name}</span>
-            <h2>{selectedTab === "admin" ? "Painel admin" : target ? target.name : "MeuTreino"}</h2>
+            <span className="eyebrow">{target && target.uid !== profile.uid ? `Acompanhando ${target.name}` : profile.name}</span>
+            <h2>{selectedLabel}</h2>
           </div>
           <button className="mobile-menu" type="button" aria-label="Menu">
             <Menu size={20} />
@@ -973,7 +974,7 @@ function ProfileView({
   const latestCardio = cardio[0];
 
   return (
-    <section className="screen">
+    <section className="screen profile-screen">
       <div className="grid two">
         <article className="panel">
           <SectionTitle icon={UserRound} title="Perfil" />
@@ -1144,7 +1145,7 @@ function TrainingView({
   if (!selectedWorkout) return <EmptyPage title="Sem treino cadastrado" />;
 
   return (
-    <section className="screen">
+    <section className="screen training-screen">
       <article className="panel">
         <div className="panel-heading split">
           <SectionTitle icon={Dumbbell} title="Treino" />
@@ -1407,7 +1408,7 @@ function WorkoutBuilderView({
   if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
 
   return (
-    <section className="screen">
+    <section className="screen builder-screen">
       <div className="grid builder-grid">
         <article className="panel">
           <div className="panel-heading split">
@@ -1557,7 +1558,7 @@ function PerformanceView({ target, records }: { target: TrainerStudent | { uid: 
   if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
 
   return (
-    <section className="screen">
+    <section className="screen performance-screen">
       <div className="summary-row">
         <Metric label="Treinos" value={String(records.length)} />
         <Metric label="Completos" value={String(completed)} />
@@ -1571,11 +1572,11 @@ function PerformanceView({ target, records }: { target: TrainerStudent | { uid: 
         ) : (
           <ResponsiveContainer height={260} width="100%">
             <BarChart data={chartData}>
-              <CartesianGrid stroke="#D6E4DD" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <CartesianGrid stroke="#203537" vertical={false} />
+              <XAxis dataKey="name" stroke="#718681" tick={{ fill: "#9EB2AD", fontSize: 12 }} />
+              <YAxis stroke="#718681" tick={{ fill: "#9EB2AD", fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="volume" fill="#5AAB8A" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="volume" fill="#4EF0AE" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -1639,7 +1640,7 @@ function CardioView({
   if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
 
   return (
-    <section className="screen">
+    <section className="screen cardio-screen">
       {profile.role === "ALUNO" && (
         <article className="panel">
           <SectionTitle icon={Activity} title="Registrar cardio" />
@@ -1748,7 +1749,7 @@ function ProgressView({
   if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
 
   return (
-    <section className="screen">
+    <section className="screen progress-screen">
       {profile.role === "ALUNO" && (
         <article className="panel">
           <SectionTitle icon={Camera} title="Registrar progresso" />

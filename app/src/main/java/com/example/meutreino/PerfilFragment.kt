@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -19,6 +18,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
@@ -427,8 +427,10 @@ class PerfilFragment : Fragment() {
         layoutSemanaDots.orientation = LinearLayout.VERTICAL
         layoutSemanaDots.setPadding(0, dp(2), 0, 0)
         layoutSemanaDots.addView(criarLinhaDias(labels))
-        layoutSemanaDots.addView(criarLinhaIndicadores("Treino", treinoDias, Color.parseColor("#15945F")))
-        layoutSemanaDots.addView(criarLinhaIndicadores("Cardio", cardioDias, Color.parseColor("#0EA8AA")))
+        val neon = ContextCompat.getColor(requireContext(), R.color.green_primary)
+        val teal = ContextCompat.getColor(requireContext(), R.color.ex_border_started)
+        layoutSemanaDots.addView(criarLinhaIndicadores("Treino", treinoDias, neon))
+        layoutSemanaDots.addView(criarLinhaIndicadores("Cardio", cardioDias, teal))
 
         val metaSegura = if (metaCardio > 0) metaCardio else DEFAULT_CARDIO_GOAL
         val progresso = min(100, ((minutosCardioSemana.toDouble() / metaSegura.toDouble()) * 100.0).toInt())
@@ -460,7 +462,7 @@ class PerfilFragment : Fragment() {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 text = label
                 textSize = 11f
-                setTextColor(Color.parseColor("#2F3E3F"))
+                setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
                 typeface = Typeface.DEFAULT_BOLD
                 gravity = android.view.Gravity.CENTER
                 includeFontPadding = false
@@ -507,7 +509,7 @@ class PerfilFragment : Fragment() {
     private fun criarDot(done: Boolean, color: Int): TextView {
         val bg = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
-            setColor(if (done) color else Color.WHITE)
+            setColor(if (done) color else ContextCompat.getColor(requireContext(), R.color.surface_elevated))
             setStroke(dp(1), color)
         }
         return TextView(requireContext()).apply {
@@ -517,7 +519,7 @@ class PerfilFragment : Fragment() {
             text = if (done) "✓" else ""
             textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.background_deep))
             includeFontPadding = false
         }
     }

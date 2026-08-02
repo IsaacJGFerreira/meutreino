@@ -13,7 +13,7 @@ object AppUiFeedback {
         val toast = Toast.makeText(context.applicationContext, message, duration)
         val textView = TextView(context).apply {
             text = message
-            setTextColor(context.getColor(R.color.white))
+            setTextColor(context.getColor(R.color.background_deep))
             textSize = 14f
             setPadding(32, 20, 32, 20)
             background = context.getDrawable(R.drawable.bg_toast_app)

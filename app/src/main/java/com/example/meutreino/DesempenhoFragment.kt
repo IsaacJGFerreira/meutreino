@@ -289,7 +289,7 @@ class DesempenhoFragment : Fragment() {
         val ultimoPeso = pesos.last()
         val melhorPeso = pesos.maxOrNull() ?: ultimoPeso
 
-        tvResumo.setTextColor(android.graphics.Color.BLACK)
+        tvResumo.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
         tvResumo.alpha = 0.85f
         tvResumo.text = """
 Exercício: $nomeExercicio
@@ -324,7 +324,7 @@ Melhor: ${String.format("%.1f", melhorPeso)} kg
         chart.xAxis.position = XAxis.XAxisPosition.BOTTOM
         chart.xAxis.granularity = 1f
         chart.xAxis.valueFormatter = IndexAxisValueFormatter(pontos.labels)
-        chart.xAxis.textColor = android.graphics.Color.DKGRAY
+        chart.xAxis.textColor = ContextCompat.getColor(requireContext(), R.color.chart_label)
         chart.xAxis.textSize = 10f
         chart.xAxis.setDrawAxisLine(false)
         chart.xAxis.setDrawGridLines(true)
@@ -333,7 +333,7 @@ Melhor: ${String.format("%.1f", melhorPeso)} kg
         chart.xAxis.setAvoidFirstLastClipping(true)
 
         chart.axisRight.isEnabled = false
-        chart.axisLeft.textColor = android.graphics.Color.DKGRAY
+        chart.axisLeft.textColor = ContextCompat.getColor(requireContext(), R.color.chart_label)
         chart.axisLeft.textSize = 10f
         chart.axisLeft.setDrawAxisLine(false)
         chart.axisLeft.setDrawGridLines(true)

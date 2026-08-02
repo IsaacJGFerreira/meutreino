@@ -12,10 +12,11 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="10dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="6dp"
+        android:background="@color/background"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -26,6 +27,8 @@
             android:layout_height="wrap_content"
             android:contentDescription="Menu"
             app:fabCustomSize="46dp"
+            app:backgroundTint="@color/surface_elevated"
+            app:tint="@color/green_primary"
             app:srcCompat="@android:drawable/ic_dialog_dialer" />
 
         <Space
@@ -40,9 +43,10 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:visibility="gone"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="6dp"
-            app:strokeColor="#D6E4DD"
+            app:cardBackgroundColor="@color/surface_elevated"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/neon_outline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -67,7 +71,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:text="Aluno: (nome)"
-                    android:textColor="#1B1B1B"
+                    android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
 

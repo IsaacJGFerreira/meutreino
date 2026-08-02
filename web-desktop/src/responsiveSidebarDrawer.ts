@@ -3,10 +3,12 @@ export {};
 const STYLE_ID = "meutreino-responsive-sidebar-drawer";
 const OPEN_CLASS = "sidebar-drawer-open";
 const MOBILE_QUERY = "(max-width: 1024px)";
+const BOTTOM_NAV_QUERY = "(max-width: 760px)";
 
 let listenersAttached = false;
 let observerAttached = false;
 let mediaQuery: MediaQueryList | null = null;
+let bottomNavQuery: MediaQueryList | null = null;
 
 function injectResponsiveSidebarStyles() {
   if (document.getElementById(STYLE_ID)) return;
@@ -208,6 +210,11 @@ function isMobileLayout() {
   return mediaQuery.matches;
 }
 
+function isBottomNavLayout() {
+  if (!bottomNavQuery) bottomNavQuery = window.matchMedia(BOTTOM_NAV_QUERY);
+  return bottomNavQuery.matches;
+}
+
 function getLayout() {
   return document.querySelector<HTMLElement>(".app-layout");
 }
@@ -221,14 +228,14 @@ function getMenuButton() {
 }
 
 function setSidebarOpen(open: boolean) {
-  const shouldOpen = open && isMobileLayout();
+  const shouldOpen = open && isMobileLayout() && !isBottomNavLayout();
   const layout = getLayout();
   const sidebar = getSidebar();
   const button = getMenuButton();
 
   document.body.classList.toggle(OPEN_CLASS, shouldOpen);
   layout?.classList.toggle(OPEN_CLASS, shouldOpen);
-  sidebar?.setAttribute("aria-hidden", shouldOpen ? "false" : isMobileLayout() ? "true" : "false");
+  sidebar?.setAttribute("aria-hidden", shouldOpen || isBottomNavLayout() ? "false" : isMobileLayout() ? "true" : "false");
   button?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
 }
 
@@ -292,7 +299,7 @@ function syncAccessibility() {
 
   if (sidebar) {
     sidebar.id = "meutreino-sidebar";
-    sidebar.setAttribute("aria-hidden", isMobileLayout() && !isOpen ? "true" : "false");
+    sidebar.setAttribute("aria-hidden", isMobileLayout() && !isOpen && !isBottomNavLayout() ? "true" : "false");
   }
 }
 

@@ -5,13 +5,13 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="18dp"
-    android:background="@drawable/bg_dialog_dark">
+    android:background="@drawable/bg_neon_card">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Registrar Progresso"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/text_primary"
         android:textStyle="bold"
         android:textSize="20sp"
         android:layout_marginBottom="12dp"/>
@@ -22,17 +22,17 @@
         android:layout_height="52dp"
         android:hint="Peso (kg)"
         android:inputType="numberDecimal"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#889095"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_muted"
         android:paddingStart="14dp"
         android:paddingEnd="14dp"
-        android:background="@drawable/bg_input_dark"/>
+        android:background="@drawable/bg_neon_input"/>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Fotos (opcional)"
-        android:textColor="#889095"
+        android:textColor="@color/text_secondary"
         android:layout_marginTop="14dp"
         android:layout_marginBottom="10dp"/>
 
@@ -72,9 +72,11 @@
         android:layout_height="54dp"
         android:text="Salvar"
         android:textAllCaps="false"
-        android:textColor="@android:color/white"
+        android:background="@drawable/bg_neon_button"
+        android:textColor="@color/background_deep"
+        android:textStyle="bold"
         android:layout_marginTop="16dp"
-        app:backgroundTint="@color/green_primary"
+        app:backgroundTint="@null"
         app:cornerRadius="18dp"/>
 
 

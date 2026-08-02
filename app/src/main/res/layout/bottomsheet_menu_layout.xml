@@ -4,4 +4,8 @@
     android:id="@+id/navViewBottomSheet"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/surface_elevated"
+    app:itemIconTint="@color/green_primary"
+    app:itemTextColor="@color/text_primary"
+    app:itemShapeFillColor="@color/surface_elevated"
     app:menu="@menu/bottom_menu" />

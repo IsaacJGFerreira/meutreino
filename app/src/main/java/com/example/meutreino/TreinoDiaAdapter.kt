@@ -213,10 +213,10 @@ class TreinoDiaAdapter(
     private fun aplicarDestaqueCardTreino(holder: TreinoVH, ativo: Boolean) {
         val ctx = holder.itemView.context
         val bgColor = if (ativo) R.color.treino_card_active_bg else R.color.treino_card_default_bg
-        val strokeColor = if (ativo) R.color.treino_card_active_stroke else android.R.color.transparent
+        val strokeColor = if (ativo) R.color.treino_card_active_stroke else R.color.neon_outline
 
         holder.cardTreino.setCardBackgroundColor(ContextCompat.getColor(ctx, bgColor))
-        holder.cardTreino.strokeWidth = if (ativo) dp(ctx, 2) else 0
+        holder.cardTreino.strokeWidth = if (ativo) dp(ctx, 2) else dp(ctx, 1)
         holder.cardTreino.strokeColor = ContextCompat.getColor(ctx, strokeColor)
     }
 
@@ -336,7 +336,7 @@ class TreinoDiaAdapter(
         // Série
         val tvSerie = TextView(ctx)
         tvSerie.text = "S$serieNumero"
-        tvSerie.setTextColor(android.graphics.Color.BLACK)
+        tvSerie.setTextColor(ContextCompat.getColor(ctx, R.color.text_primary))
         tvSerie.gravity = android.view.Gravity.CENTER_VERTICAL
         tvSerie.layoutParams = LinearLayout.LayoutParams(
             dp(ctx, 44),
@@ -346,7 +346,7 @@ class TreinoDiaAdapter(
         // Anterior
         val tvAnterior = TextView(ctx)
         tvAnterior.text = getAnterior(treinoNome, exercicioNome, serieNumero)
-        tvAnterior.setTextColor(android.graphics.Color.parseColor("#6B6B6B"))
+        tvAnterior.setTextColor(ContextCompat.getColor(ctx, R.color.text_secondary))
         tvAnterior.maxLines = 1
         tvAnterior.ellipsize = android.text.TextUtils.TruncateAt.END
         tvAnterior.gravity = android.view.Gravity.CENTER_VERTICAL
@@ -377,12 +377,12 @@ class TreinoDiaAdapter(
         )
 
         // Estilo inputs
-        etKg.setTextColor(android.graphics.Color.BLACK)
-        etRep.setTextColor(android.graphics.Color.BLACK)
-        etKg.setHintTextColor(android.graphics.Color.parseColor("#99000000"))
-        etRep.setHintTextColor(android.graphics.Color.parseColor("#99000000"))
-        etKg.setBackgroundResource(R.drawable.bg_input_rounded)
-        etRep.setBackgroundResource(R.drawable.bg_input_rounded)
+        etKg.setTextColor(ContextCompat.getColor(ctx, R.color.text_primary))
+        etRep.setTextColor(ContextCompat.getColor(ctx, R.color.text_primary))
+        etKg.setHintTextColor(ContextCompat.getColor(ctx, R.color.text_muted))
+        etRep.setHintTextColor(ContextCompat.getColor(ctx, R.color.text_muted))
+        etKg.setBackgroundResource(R.drawable.bg_neon_input)
+        etRep.setBackgroundResource(R.drawable.bg_neon_input)
         etKg.gravity = android.view.Gravity.CENTER
         etRep.gravity = android.view.Gravity.CENTER
         etKg.isEnabled = podeEditar

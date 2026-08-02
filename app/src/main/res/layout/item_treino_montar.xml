@@ -5,12 +5,12 @@
     android:id="@+id/cardTreino"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="8dp"
-    app:cardBackgroundColor="#FEFEFE"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="2dp"
-    app:strokeWidth="0dp">
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="22dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/neon_outline"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:layout_weight="1"
             android:text="Treino A - Pernas"
             android:textSize="20sp"
-            android:textColor="#64898A"
+            android:textColor="@color/text_primary"
             android:fontFamily="sans-serif-medium"
             android:textStyle="bold"/>
 
@@ -41,31 +41,31 @@
                 android:id="@+id/btnMoverTreinoCima"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_neon_pill"
                 android:contentDescription="Mover treino para cima"
                 android:focusable="false"
                 android:src="@android:drawable/arrow_up_float"
-                android:tint="#64898A" />
+                android:tint="@color/green_primary" />
 
             <ImageButton
                 android:id="@+id/btnMoverTreinoBaixo"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_neon_pill"
                 android:contentDescription="Mover treino para baixo"
                 android:focusable="false"
                 android:src="@android:drawable/arrow_down_float"
-                android:tint="#64898A" />
+                android:tint="@color/green_primary" />
 
             <ImageButton
                 android:id="@+id/btnEditarNomeTreino"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_neon_pill"
                 android:contentDescription="Editar nome do treino"
                 android:focusable="false"
                 android:src="@android:drawable/ic_menu_edit"
-                android:tint="#64898A" />
+                android:tint="@color/green_primary" />
         </LinearLayout>
     </LinearLayout>
 

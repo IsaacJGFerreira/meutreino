@@ -3,41 +3,63 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@color/background">
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="14dp">
 
     <TextView
         android:id="@+id/tvTituloMontarTreino"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
         android:text="Montar treino"
-        android:textSize="34sp"
-        android:textColor="@color/green_primary"
-        android:fontFamily="sans-serif-medium"
-        android:gravity="center"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"/>
+        android:textColor="@color/text_primary"
+        android:textSize="30sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="16dp"
+        android:text="Crie, edite e organize os planos do aluno"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAdicionarTreino"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:text="Adicionar treino"
-        android:textColor="@android:color/white"
-        android:textAllCaps="false"
+        android:layout_height="56dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_neon_button"
         android:fontFamily="sans-serif-medium"
-        android:layout_marginBottom="12dp"
-        app:backgroundTint="@color/green_primary"
-        app:cornerRadius="18dp"
-        app:elevation="0dp"/>
+        android:text="+  Adicionar treino"
+        android:textAllCaps="false"
+        android:textColor="@color/background_deep"
+        android:textStyle="bold"
+        app:backgroundTint="@null"
+        app:cornerRadius="20dp"
+        app:elevation="0dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:text="TREINOS SALVOS"
+        android:textColor="@color/green_primary"
+        android:textSize="11sp"
+        android:textStyle="bold" />
 
     <ListView
         android:id="@+id/listTreinos"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:divider="@android:color/transparent"
         android:dividerHeight="10dp"
-        android:layout_marginTop="6dp" />
+        android:listSelector="@android:color/transparent" />
 
 </LinearLayout>

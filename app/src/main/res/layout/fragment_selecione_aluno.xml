@@ -13,6 +13,7 @@
         android:text="Selecione um aluno"
         android:textStyle="bold"
         android:textSize="20sp"
+        android:textColor="@color/text_primary"
         android:gravity="center"
         android:paddingBottom="8dp"/>
 
@@ -22,6 +23,7 @@
         android:text="Vá em Perfil → Meus alunos e toque em um aluno para acompanhar."
         android:gravity="center"
         android:textSize="15sp"
+        android:textColor="@color/text_secondary"
         android:paddingBottom="16dp"/>
 
 </LinearLayout>
