@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_marker_rounded"
+    android:orientation="vertical"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="9dp">
+
+    <TextView
+        android:id="@+id/tvMarkerCardioDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="02/08"
+        android:textColor="@color/text_secondary"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/tvMarkerCardioMinutes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="38 min"
+        android:textColor="@color/green_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+</LinearLayout>

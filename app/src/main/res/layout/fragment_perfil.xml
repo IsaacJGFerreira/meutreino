@@ -16,22 +16,42 @@
         android:paddingBottom="24dp">
 
         <TextView
+            android:id="@+id/tvPerfilKicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ALUNO"
+            android:textAllCaps="true"
+            android:textColor="@color/green_primary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/tvPerfilTitulo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:text="Perfil"
             android:textColor="@color/text_primary"
-            android:textSize="30sp"
+            android:textSize="25sp"
             android:textStyle="bold"
             android:fontFamily="sans-serif-black" />
 
         <TextView
+            android:id="@+id/tvProfileHeroName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Sua conta, seus dados e conexões"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
+            android:text="Aluno"
+            android:textColor="@color/text_primary"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-black" />
+
+        <View
+            android:layout_width="72dp"
+            android:layout_height="3dp"
+            android:layout_marginTop="3dp"
+            android:background="@color/green_primary" />
 
         <TextView
             android:id="@+id/tvPerfilInfo"
@@ -53,39 +73,22 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:padding="18dp">
 
-                <FrameLayout
-                    android:layout_width="104dp"
-                    android:layout_height="118dp"
-                    android:layout_marginEnd="14dp">
-
-                    <TextView
-                        android:layout_width="96dp"
-                        android:layout_height="96dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/bg_neon_pill"
-                        android:gravity="center"
-                        android:text="♡"
-                        android:textColor="@color/green_primary"
-                        android:textSize="54sp" />
-
-                    <TextView
-                        android:layout_width="34dp"
-                        android:layout_height="34dp"
-                        android:layout_gravity="bottom|end"
-                        android:background="@color/green_primary"
-                        android:gravity="center"
-                        android:text="✓"
-                        android:textColor="@color/background_deep"
-                        android:textStyle="bold" />
-                </FrameLayout>
+                <TextView
+                    android:id="@+id/tvProfileCardTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="♙  Perfil do aluno"
+                    android:textColor="@color/text_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:orientation="vertical">
 
                     <LinearLayout
@@ -203,6 +206,66 @@
                             android:paddingVertical="6dp"
                             android:text="✓ Liberado"
                             android:textColor="@color/green_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/chart_grid" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="7dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Plano"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvProfilePlan"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="★ Ativo"
+                            android:textColor="@color/green_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/chart_grid" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:paddingVertical="7dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Desde"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvProfileSince"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.25"
+                            android:text="—"
+                            android:textColor="@color/text_primary"
                             android:textSize="14sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -345,6 +408,25 @@
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:boxBackgroundColor="@color/surface_soft"
+                    app:boxBackgroundMode="outline"
+                    app:boxStrokeColor="@color/neon_outline_strong"
+                    app:hintTextColor="@color/text_secondary">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPeso"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Peso (kg)"
+                        android:inputType="numberDecimal"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_secondary" />
+                </com.google.android.material.textfield.TextInputLayout>
+
                 <Button
                     android:id="@+id/btnSalvarDadosAluno"
                     android:layout_width="match_parent"
@@ -380,33 +462,76 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Resumo recente"
+                    android:text="⚡  Resumo rápido"
                     android:textColor="@color/text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/tvUltimoTreino"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="Último treino\nSem registros"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="15sp" />
+                    android:orientation="horizontal">
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginVertical="10dp"
-                    android:background="@color/chart_grid" />
+                    <TextView
+                        android:id="@+id/tvUltimoTreino"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_neon_pill"
+                        android:gravity="center_vertical"
+                        android:padding="13dp"
+                        android:text="Último treino\nSem registros"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
 
-                <TextView
-                    android:id="@+id/tvUltimoCardio"
+                    <TextView
+                        android:id="@+id/tvUltimoCardio"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_neon_pill"
+                        android:gravity="center_vertical"
+                        android:padding="13dp"
+                        android:text="Último cardio\nSem registros"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Último cardio\nSem registros"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="15sp" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvTreinosSemana"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_neon_pill"
+                        android:gravity="center_vertical"
+                        android:padding="13dp"
+                        android:text="Treinos na semana\n0 / 0 concluídos"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tvResumoMetaCardio"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_neon_pill"
+                        android:gravity="center_vertical"
+                        android:padding="13dp"
+                        android:text="Meta semanal\n0 / 180 min de cardio"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvUltimoPeso"
@@ -476,13 +601,23 @@
                     android:orientation="horizontal"
                     android:weightSum="7" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center"
+                    android:text="●  Concluído     ○  Não concluído"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
                     android:background="@color/ex_card_bg_neutral"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="12dp"
+                    android:visibility="gone">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -558,13 +693,31 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Fique por dentro das orientações e feedbacks do seu treinador."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:id="@+id/layoutNotificacoes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_neon_pill"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="12dp" />
+
+                <TextView
                     android:id="@+id/tvNotificacaoMensagem"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:text="Sem novas atualizações"
                     android:textColor="@color/text_secondary"
-                    android:textSize="15sp" />
+                    android:textSize="15sp"
+                    android:visibility="gone" />
 
                 <Button
                     android:id="@+id/btnMarcarNotificacaoLida"
