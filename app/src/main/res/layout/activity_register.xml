@@ -9,13 +9,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="24dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Criar conta"
-            android:textSize="22sp"
+            android:fontFamily="sans-serif-black"
+            android:textColor="@color/text_primary"
+            android:textSize="30sp"
             android:textStyle="bold"
             android:paddingBottom="16dp"/>
 
@@ -92,16 +94,24 @@
         <Button
             android:id="@+id/btnCriarConta"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_neon_button"
             android:text="Criar conta"
-            android:layout_marginTop="18dp"/>
+            android:textAllCaps="false"
+            android:textColor="@color/background_deep"
+            android:textStyle="bold"/>
 
         <Button
             android:id="@+id/btnVoltarLogin"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="54dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_neon_outline_button"
             android:text="Voltar para login"
-            android:layout_marginTop="10dp"/>
+            android:textAllCaps="false"
+            android:textColor="@color/green_primary"
+            android:textStyle="bold"/>
 
     </LinearLayout>
 </ScrollView>

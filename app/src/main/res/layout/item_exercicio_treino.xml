@@ -4,12 +4,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="8dp"
-    app:cardBackgroundColor="#FEFEFE"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="2dp"
-    app:strokeWidth="0dp">
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/neon_outline"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
                 android:text="Agachamento"
                 android:textSize="17sp"
                 android:textStyle="bold"
-                android:textColor="#2F6F73"
+                android:textColor="@color/text_primary"
                 android:fontFamily="sans-serif-medium" />
 
             <!-- ⚠️ NÃO REMOVER: usado pelo ExerciciosListAdapter -->
@@ -42,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:text="Séries: 3 | Reps: 8-10 | Desc: 90s | RIR: 1-2 | Técnica: —"
                 android:textSize="13sp"
-                android:textColor="#6B6B6B"
+                android:textColor="@color/text_secondary"
                 android:layout_marginTop="6dp" />
 
         </LinearLayout>
@@ -58,7 +58,7 @@
                 android:id="@+id/btnMoverCima"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_neon_pill"
                 android:contentDescription="Mover para cima"
                 android:src="@android:drawable/arrow_up_float" />
 
@@ -67,7 +67,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginTop="6dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_neon_pill"
                 android:contentDescription="Mover para baixo"
                 android:src="@android:drawable/arrow_down_float" />
 
@@ -77,7 +77,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginTop="6dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_neon_pill"
                 android:contentDescription="Mais opções"
                 android:src="@android:drawable/ic_menu_more" />
 

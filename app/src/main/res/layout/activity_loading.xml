@@ -14,7 +14,7 @@
         android:text="MeuTreino"
         android:textStyle="bold"
         android:textSize="32sp"
-        android:textColor="#2F6F73"
+        android:textColor="@color/text_primary"
         android:fontFamily="sans-serif-medium"/>
 
     <TextView
@@ -24,14 +24,14 @@
         android:layout_marginTop="10dp"
         android:text="Sincronizando seus dados…"
         android:textSize="14sp"
-        android:textColor="#3F4B4E"/>
+        android:textColor="@color/text_secondary"/>
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="18dp"
         app:indicatorColor="@color/green_primary"
-        app:trackColor="#BFE7D5"
+        app:trackColor="@color/surface_elevated"
         app:indicatorSize="46dp"
         app:trackThickness="6dp"
         android:indeterminate="true"/>

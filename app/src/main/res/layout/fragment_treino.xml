@@ -2,27 +2,37 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@color/background">
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp">
 
     <TextView
         android:id="@+id/tvTitulo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Treino"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:textColor="@color/green_primary"
-        android:gravity="center"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="16dp"
-        android:fontFamily="sans-serif-medium"/>
+        android:fontFamily="sans-serif-black"
+        android:text="Treinos"
+        android:textColor="@color/text_primary"
+        android:textSize="30sp"
+        android:textStyle="bold" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="18dp"
+        android:text="Seu plano, suas séries e seu histórico em um só lugar"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvTreinosDia"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="28dp" />
 
 </LinearLayout>

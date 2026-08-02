@@ -226,7 +226,7 @@ class ProgressoFragment : Fragment() {
 
         dataSet.color = verdeApp
         dataSet.setCircleColor(verdeApp)
-        dataSet.circleHoleColor = android.graphics.Color.WHITE
+        dataSet.circleHoleColor = ContextCompat.getColor(requireContext(), R.color.surface)
         dataSet.circleRadius = 4.5f
         dataSet.lineWidth = 2.5f
         dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER

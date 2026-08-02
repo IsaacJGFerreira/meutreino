@@ -10,6 +10,7 @@ import "./desktopPerformanceLayout";
 import "./responsiveSidebarDrawer";
 import "./studentProfileCardioGoalFix";
 import "./studentProfileDashboard";
+import "./neonTheme";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

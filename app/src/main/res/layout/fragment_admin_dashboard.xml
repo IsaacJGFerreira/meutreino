@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -10,7 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Painel do Admin"
-        android:textSize="22sp"
+        android:textColor="@color/text_primary"
+        android:textSize="30sp"
         android:textStyle="bold"
         android:paddingBottom="12dp"/>
 
@@ -19,6 +21,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Gerar código de TREINADOR"
+        android:backgroundTint="@color/green_primary"
+        android:textColor="@color/background_deep"
         android:layout_marginBottom="12dp"/>
 
     <!-- Cards de resumo -->
@@ -32,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:padding="12dp"
-            android:background="@android:drawable/dialog_holo_light_frame"
+            android:background="@drawable/bg_neon_card"
             android:orientation="vertical">
 
             <TextView
@@ -59,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:padding="12dp"
-            android:background="@android:drawable/dialog_holo_light_frame"
+            android:background="@drawable/bg_neon_card"
             android:orientation="vertical">
 
             <TextView
@@ -119,6 +123,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Sair"
+        android:backgroundTint="@color/surface_elevated"
+        android:textColor="@color/ex_border_error"
         android:layout_marginBottom="12dp"/>
 
 </LinearLayout>

@@ -5,13 +5,14 @@
     android:orientation="vertical"
     android:padding="12dp"
     android:layout_marginBottom="10dp"
-    android:background="@android:drawable/dialog_holo_light_frame">
+    android:background="@drawable/bg_neon_card">
 
     <TextView
         android:id="@+id/tvAlunoNome"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Aluno"
+        android:textColor="@color/text_primary"
         android:textStyle="bold"
         android:textSize="15sp"/>
 
@@ -20,6 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="email"
+        android:textColor="@color/text_secondary"
         android:paddingTop="2dp"/>
 
     <TextView
@@ -27,6 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Status"
+        android:textColor="@color/green_primary"
         android:paddingTop="6dp"/>
 
     <LinearLayout
@@ -40,6 +43,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:backgroundTint="@color/surface_elevated"
+            android:textColor="@color/ex_border_error"
             android:text="Remover vínculo" />
 
         <LinearLayout
@@ -51,6 +56,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:backgroundTint="@color/surface_elevated"
+            android:textColor="@color/text_primary"
             android:text="Desativar" />
     </LinearLayout>
 

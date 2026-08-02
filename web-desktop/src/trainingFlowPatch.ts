@@ -561,17 +561,56 @@ function renderMobileTraining() {
 }
 
 function renderTrainingHtml() {
+  const focusWorkout = workouts.find((workout) => workout.id === activeWorkoutId) ?? workouts[0] ?? null;
+  const progress = focusWorkout ? getWorkoutProgress(focusWorkout) : { filled: 0, total: 0, percent: 0 };
   const workoutCards = workouts.length
     ? workouts.map((workout) => renderWorkoutCard(workout)).join("")
     : `<p class="mobile-empty">Nenhum treino recebido ainda.</p>`;
 
   return `
     <div class="mobile-training-app">
-      <h1 class="mobile-training-title">Treino</h1>
+      <div class="neon-training-heading">
+        <div>
+          <span class="neon-kicker">CENTRAL DE TREINOS</span>
+          <h1 class="mobile-training-title">${activeWorkoutId ? "Treino em andamento" : "Seus treinos"}</h1>
+        </div>
+        <span class="neon-heading-icon" aria-hidden="true">◆</span>
+      </div>
+      ${focusWorkout ? `
+        <section class="neon-training-hero">
+          <div class="neon-training-hero-icon" aria-hidden="true">◆</div>
+          <div class="neon-training-hero-copy">
+            <span>${activeWorkoutId ? "PLANO ATIVO" : "PRÓXIMO PLANO"}</span>
+            <strong>${escapeHtml(focusWorkout.nome)}</strong>
+            <small>${focusWorkout.exercicios.length} exercício(s) · séries, repetições e descanso</small>
+          </div>
+          <span class="neon-training-state">${activeWorkoutId ? "EM ANDAMENTO" : "PRONTO"}</span>
+          <div class="neon-training-progress-copy">
+            <span>${progress.filled} de ${progress.total} séries preenchidas</span>
+            <strong>${progress.percent}%</strong>
+          </div>
+          <div class="neon-training-progress"><span style="width:${progress.percent}%"></span></div>
+        </section>
+      ` : ""}
       <div class="mobile-training-list">${workoutCards}</div>
       ${renderRecentHistory()}
     </div>
   `;
+}
+
+function getWorkoutProgress(workout: WorkoutPlan) {
+  let total = 0;
+  let filled = 0;
+
+  workout.exercicios.forEach((exercise, exerciseIndex) => {
+    for (let serieNumero = 1; serieNumero <= exercise.series; serieNumero += 1) {
+      total += 1;
+      const value = getDraftValue(workout.id, exerciseIndex, serieNumero);
+      if (value.kg.trim() && value.reps.trim()) filled += 1;
+    }
+  });
+
+  return { filled, total, percent: total ? Math.round((filled / total) * 100) : 0 };
 }
 
 function renderWorkoutCard(workout: WorkoutPlan) {

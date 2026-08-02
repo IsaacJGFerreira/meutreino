@@ -3,55 +3,95 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical"
-    android:padding="12dp"
-    android:background="@color/background">
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
 
-    <!-- TÍTULO NO TOPO -->
     <TextView
         android:id="@+id/tvTituloDesempenho"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
         android:text="Desempenho"
-        android:textSize="32sp"
-        android:textColor="@color/green_primary"
-        android:textStyle="bold"
-        android:fontFamily="sans-serif-medium"
-        android:gravity="center"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="14dp"/>
+        android:textColor="@color/text_primary"
+        android:textSize="30sp"
+        android:textStyle="bold" />
 
-    <!-- BARRA DE BUSCA (CAIXINHA) -->
-    <EditText
-        android:id="@+id/etBuscarExercicio"
+    <TextView
         android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="12dp"
-        android:hint="Buscar exercício (ex: remada, supino...)"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:background="@drawable/bg_input_rounded"
-        android:textColor="#000000"
-        android:textColorHint="#99000000"
-        android:fontFamily="sans-serif"
-        android:singleLine="true"/>
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="18dp"
+        android:text="Visualize seus registros e a evolução por exercício"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp" />
 
-    <!-- BOTÃO -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGrafico"
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:text="Ver gráfico do exercício"
-        android:layout_marginBottom="14dp"
-        android:textColor="#FFFFFF"
-        android:textAllCaps="false"
-        android:fontFamily="sans-serif-medium"
-        android:background="@drawable/bg_button_green"
-        app:backgroundTint="@null"
-        app:cornerRadius="18dp"/>
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/surface"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/neon_outline"
+        app:strokeWidth="1dp">
 
-    <!-- CONTEÚDO (lista + loading + vazio) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="ANÁLISE POR EXERCÍCIO"
+                android:textColor="@color/green_primary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etBuscarExercicio"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_neon_input"
+                android:fontFamily="sans-serif"
+                android:hint="Buscar exercício"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:singleLine="true"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_muted" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGrafico"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_neon_button"
+                android:fontFamily="sans-serif-medium"
+                android:text="Ver gráfico do exercício"
+                android:textAllCaps="false"
+                android:textColor="@color/background_deep"
+                android:textStyle="bold"
+                app:backgroundTint="@null"
+                app:cornerRadius="20dp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="10dp"
+        android:text="Histórico de treinos"
+        android:textColor="@color/text_primary"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -60,41 +100,39 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvTreinosSalvos"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="18dp" />
 
-        <!-- Loading central -->
         <ProgressBar
             android:id="@+id/progressDesempenho"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="center"
-            android:indeterminate="true"
+            android:indeterminateTint="@color/green_primary"
             android:visibility="gone" />
 
-        <!-- Card vazio (clean) -->
         <LinearLayout
             android:id="@+id/boxVazioDesempenho"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:orientation="vertical"
-            android:padding="16dp"
             android:layout_margin="12dp"
-            android:visibility="gone"
-            android:background="@drawable/bg_card_light">
+            android:background="@drawable/bg_neon_card"
+            android:orientation="vertical"
+            android:padding="22dp"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/tvVazioDesempenho"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nenhum treino registrado ainda."
-                android:textColor="#2B2B2B"
-                android:textSize="15sp"
+                android:fontFamily="sans-serif"
                 android:gravity="center"
-                android:fontFamily="sans-serif" />
-
+                android:text="Nenhum treino registrado ainda."
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
         </LinearLayout>
-
     </FrameLayout>
 
 </LinearLayout>

@@ -38,7 +38,7 @@ class SerieAdapter(
         if (texto.startsWith("📆")) {
             holder.tvSerie.textSize = 18f
             holder.tvSerie.setTypeface(null, android.graphics.Typeface.BOLD)
-            holder.tvSerie.setBackgroundColor(android.graphics.Color.LTGRAY)
+            holder.tvSerie.setBackgroundColor(androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.surface_elevated))
             holder.tvSerie.setPadding(16, 16, 16, 16)
 
             // 🔹 Torna a data clicável
