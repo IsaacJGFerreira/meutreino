@@ -16,6 +16,6 @@ data class TreinoRegistro(
     val dataHora: String,
     val nomeTreino: String,
     val completo: Boolean, // ✅ novo
-    val exercicios: List<ExercicioRegistro>
+    val exercicios: List<ExercicioRegistro>,
+    val duracaoSegundos: Long = 0L
 )
-

@@ -504,6 +504,14 @@ if (!document.getElementById(STYLE_ID)) {
       letter-spacing: -0.04em;
     }
 
+    .neon-training-hero-copy .neon-training-timer-value {
+      font-size: clamp(34px, 5vw, 54px);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 22px rgba(78, 240, 174, 0.34);
+    }
+
     .neon-training-hero-copy small {
       display: block;
       margin-top: 5px;
@@ -1122,6 +1130,10 @@ if (!document.getElementById(STYLE_ID)) {
 
       .neon-training-hero-copy strong {
         font-size: 23px;
+      }
+
+      .neon-training-hero-copy .neon-training-timer-value {
+        font-size: clamp(31px, 10vw, 44px);
       }
 
       .mobile-workout-card,

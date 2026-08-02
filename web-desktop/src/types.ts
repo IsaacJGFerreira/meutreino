@@ -48,6 +48,7 @@ export type WorkoutRecord = {
   nomeTreino: string;
   completo: boolean;
   createdAt: number;
+  duracaoSegundos: number;
   exercicios: ExerciseRecord[];
 };
 

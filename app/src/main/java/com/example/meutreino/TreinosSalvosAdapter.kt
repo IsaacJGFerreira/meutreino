@@ -32,7 +32,10 @@ class TreinosSalvosAdapter(
         holder.tvStatus.text = if (item.completo) "✅ Completo" else "Em andamento"
         holder.tvNomeTreino.text = item.nomeTreino
         holder.tvDataHora.text = item.dataHora
-        holder.tvExerciseCount.text = "${item.exercicios.size} exercício(s)"
+        holder.tvExerciseCount.text = buildString {
+            append("${item.exercicios.size} exercício(s)")
+            if (item.duracaoSegundos > 0L) append(" • ${formatarDuracao(item.duracaoSegundos)}")
+        }
         holder.tvCompletion.text = if (item.completo) "100%" else "—"
         holder.tvStatus.setTextColor(
             holder.itemView.context.getColor(
@@ -46,5 +49,16 @@ class TreinosSalvosAdapter(
     fun atualizarLista(nova: List<TreinoRegistro>) {
         itens = nova
         notifyDataSetChanged()
+    }
+
+    private fun formatarDuracao(totalSegundos: Long): String {
+        val horas = totalSegundos / 3600L
+        val minutos = (totalSegundos % 3600L) / 60L
+        val segundos = totalSegundos % 60L
+        return when {
+            horas > 0L -> "${horas}h ${minutos}min ${segundos}s"
+            minutos > 0L -> "${minutos}min ${segundos}s"
+            else -> "${segundos}s"
+        }
     }
 }

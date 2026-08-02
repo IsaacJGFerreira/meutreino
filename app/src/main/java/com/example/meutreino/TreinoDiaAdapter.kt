@@ -18,7 +18,8 @@ class TreinoDiaAdapter(
     private val contarRealizacoes: (String) -> Int,
     private val getAnterior: (String, String, Int) -> String, // (treinoNome, exercicioNome, serieNumero) -> "30kg x 11"
     private val draftVM: TreinoDraftViewModel,        // ✅ salva rascunho para não perder ao trocar de aba
-    private val onSalvarTreino: (TreinoPlan, Map<String, Pair<String, String>>, Boolean) -> Unit
+    private val onTreinoAtivoAlterado: (String?, Long?) -> Unit,
+    private val onSalvarTreino: (TreinoPlan, Map<String, Pair<String, String>>, Boolean, Long) -> Unit
 ) : RecyclerView.Adapter<TreinoDiaAdapter.TreinoVH>() {
 
     private enum class ExercicioStatusCard {
@@ -92,6 +93,7 @@ class TreinoDiaAdapter(
         if (position == 0 && treinoAtivo != null && treinos.none { it.nome == treinoAtivo }) {
             treinoAtivo = null
             draftVM.definirTreinoAtivo(null)
+            onTreinoAtivoAlterado(null, null)
         }
 
         val esteTreinoAtivo = treinoAtivo == treino.nome
@@ -107,7 +109,8 @@ class TreinoDiaAdapter(
         holder.btnIniciarTreino.setOnClickListener {
             if (treinoAtivo == null || treinoAtivo == treino.nome) {
                 treinoAtivo = treino.nome
-                draftVM.definirTreinoAtivo(treino.nome)
+                draftVM.iniciarTreino(treino.nome)
+                onTreinoAtivoAlterado(treino.nome, draftVM.inicioTreinoMs())
                 notifyDataSetChanged()
                 AppUiFeedback.showToast(
                     holder.itemView.context,
@@ -138,6 +141,7 @@ class TreinoDiaAdapter(
             cancelDialog.setMessage("Deseja cancelar este treino?\n\nNada será salvo e os dados preenchidos serão descartados.")
             cancelDialog.setPositiveButton("Cancelar treino") { _: DialogInterface, _: Int ->
                 cancelarTreinoEmAndamento(treino)
+                onTreinoAtivoAlterado(null, null)
                 notifyDataSetChanged()
                 AppUiFeedback.showToast(
                     holder.itemView.context,
@@ -164,10 +168,12 @@ class TreinoDiaAdapter(
 
             fun salvarAgora(completoFlag: Boolean) {
                 atualizarStatusCardsDepoisSalvar(treino, completoFlag)
-                onSalvarTreino(treino, doTreino, completoFlag)
+                val duracaoSegundos = draftVM.duracaoTreinoSegundos()
+                onSalvarTreino(treino, doTreino, completoFlag, duracaoSegundos)
                 draftVM.limparTreino(treino.nome)
                 treinoAtivo = null
                 draftVM.definirTreinoAtivo(null)
+                onTreinoAtivoAlterado(null, null)
                 notifyDataSetChanged()
                 AppUiFeedback.showToast(
                     holder.itemView.context,

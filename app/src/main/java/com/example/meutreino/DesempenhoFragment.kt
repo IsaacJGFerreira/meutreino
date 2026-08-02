@@ -458,10 +458,22 @@ class DesempenhoFragment : Fragment() {
         return "${numberFormat.format(value / 1000f)}k"
     }
 
+    private fun formatWorkoutDuration(totalSeconds: Long): String {
+        val hours = totalSeconds / 3600L
+        val minutes = (totalSeconds % 3600L) / 60L
+        val seconds = totalSeconds % 60L
+        return when {
+            hours > 0L -> "${hours}h ${minutes}min ${seconds}s"
+            minutes > 0L -> "${minutes}min ${seconds}s"
+            else -> "${seconds}s"
+        }
+    }
+
     private fun showWorkoutDetails(record: TreinoRegistro) {
         val details = buildString {
             append("Data: ${record.dataHora}\n")
-            append("Status: ${if (record.completo) "Completo" else "Incompleto"}\n\n")
+            append("Status: ${if (record.completo) "Completo" else "Incompleto"}\n")
+            append("Duração: ${if (record.duracaoSegundos > 0L) formatWorkoutDuration(record.duracaoSegundos) else "não registrada"}\n\n")
             record.exercicios.forEach { exercise ->
                 append("• ${exercise.nomeExercicio}\n")
                 exercise.series.forEach { series ->

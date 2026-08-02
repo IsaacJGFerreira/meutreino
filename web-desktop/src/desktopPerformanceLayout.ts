@@ -212,6 +212,7 @@ function workoutRecordFromDoc(id: string, data: DocumentData): WorkoutRecord {
     nomeTreino: String(data.nomeTreino ?? "Treino"),
     completo: Boolean(data.completo ?? false),
     createdAt: Number.isFinite(createdAt) ? createdAt : 0,
+    duracaoSegundos: Number(data.duracaoSegundos ?? 0),
     exercicios: rawExercises.map((item: unknown): ExerciseRecord => {
       const exercise = item as Record<string, unknown>;
       const rawSeries = Array.isArray(exercise.series) ? exercise.series : [];
@@ -1157,6 +1158,7 @@ function renderRecordCard(record: WorkoutRecord) {
         <span class="performance-workout-meta">
           <span>▣ ${escapeHtml(record.dataHora)}</span>
           <span>${record.exercicios.length} exercício(s)</span>
+          ${record.duracaoSegundos > 0 ? `<span>◷ ${formatWorkoutDuration(record.duracaoSegundos)}</span>` : ""}
         </span>
       </span>
       <span class="performance-progress-ring" style="--progress:${progress}%"><span>${complete ? "100%" : "—"}</span></span>
@@ -1226,7 +1228,7 @@ function renderDetailDialog() {
           <h2>${escapeHtml(record.nomeTreino)}</h2>
           <button class="performance-dialog-close" type="button" data-action="close-details" aria-label="Fechar">×</button>
         </header>
-        <p>${escapeHtml(record.dataHora)} · ${record.completo ? "Treino completo" : "Treino incompleto"}</p>
+        <p>${escapeHtml(record.dataHora)} · ${record.completo ? "Treino completo" : "Treino incompleto"} · Duração: ${record.duracaoSegundos > 0 ? formatWorkoutDuration(record.duracaoSegundos) : "não registrada"}</p>
         <div class="performance-detail-list">${record.exercicios.map(renderExerciseDetail).join("")}</div>
       </article>
     </div>
@@ -1573,6 +1575,16 @@ function finiteNumber(value: number) {
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(value);
+}
+
+function formatWorkoutDuration(totalSeconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(Number.isFinite(totalSeconds) ? totalSeconds : 0));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}min ${seconds}s`;
+  if (minutes > 0) return `${minutes}min ${seconds}s`;
+  return `${seconds}s`;
 }
 
 function formatCompactNumber(value: number) {
