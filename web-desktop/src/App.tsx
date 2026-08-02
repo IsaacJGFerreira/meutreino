@@ -871,7 +871,7 @@ function AppShell({
             <span className="eyebrow">{target && target.uid !== profile.uid ? `Acompanhando ${target.name}` : profile.name}</span>
             <h2>{selectedLabel}</h2>
           </div>
-          <button className="mobile-menu" type="button" aria-label="Menu">
+          <button className="mobile-menu" type="button" aria-label="Abrir menu lateral">
             <Menu size={20} />
           </button>
         </header>
@@ -1427,621 +1427,89 @@ function WorkoutBuilderView({
                   <strong>Editando exercÃ­cio</strong>
                   <button className="ghost-btn" onClick={cancelExerciseEdit} type="button">
                     <X size={16} />
-                    Cancelar ediÃ§Ã£o
-                  </button>
-                </div>
-              )}
-              <TextInput
-                disabled={editingExerciseIndex !== null}
-                label="ExercÃ­cio"
-                value={draftExercise.nome}
-                onChange={(nome) => setDraftExercise((current) => ({ ...current, nome }))}
-              />
-              <TextInput
-                label="SÃ©ries"
-                value={String(draftExercise.series)}
-                onChange={(series) => setDraftExercise((current) => ({ ...current, series: Number(series) }))}
-                type="number"
-              />
-              <TextInput
-                label="Rep. mÃ­n."
-                value={String(draftExercise.repsMin)}
-                onChange={(repsMin) => setDraftExercise((current) => ({ ...current, repsMin: Number(repsMin) }))}
-                type="number"
-              />
-              <TextInput
-                label="Rep. mÃ¡x."
-                value={String(draftExercise.repsMax)}
-                onChange={(repsMax) => setDraftExercise((current) => ({ ...current, repsMax: Number(repsMax) }))}
-                type="number"
-              />
-              <TextInput label="Descanso" value={draftExercise.descanso} onChange={(descanso) => setDraftExercise((current) => ({ ...current, descanso }))} />
-              <TextInput label="TÃ©cnica" value={draftExercise.tecnica} onChange={(tecnica) => setDraftExercise((current) => ({ ...current, tecnica }))} />
-              <TextInput label="RIR" value={draftExercise.rir} onChange={(rir) => setDraftExercise((current) => ({ ...current, rir }))} />
-              <button className="secondary-btn" onClick={saveExerciseDraft} type="button">
-                {editingExerciseIndex === null ? <Plus size={17} /> : <Save size={17} />}
-                {editingExerciseIndex === null ? "Adicionar" : "Salvar ediÃ§Ã£o"}
-              </button>
-              {editingExerciseIndex !== null && (
-                <p className="form-helper">O nome do exercÃ­cio fica bloqueado durante a ediÃ§Ã£o.</p>
-              )}
-            </div>
+   8ó^m¢G§²ÚîÆ­yØ[™^
+HO‚ˆÜ˜ÈÈ[YÈ[^Ø›ÙÜ™\ÜÛÈ	Ú[™^
+È_XHÙ^O^ÜÜ˜ßHÜ˜Ï^ÜÜ˜ßHÏˆˆ]ˆÛ\ÜÓ˜[YOHœİËY[\HˆÙ^O^Ú[™^O‘›İÏÙ]‚ˆ
+_BˆÙ]‚ˆÜ›Ùš[Kœ›ÛHOOHSS“Èˆ	‰ˆ
+ˆ]ÛˆÛ\ÜÓ˜[YOH™ÚÜİXˆ[™Ù\ˆˆÛÛXÚÏ^Ê
+HOˆ[]QØÊØÊÙ\šXÙ\Ë™‹\Ù\œÈ‹\™Ù]ZYœ›ÙÜ™\ÜÛÈ‹][KšY
+J_H\OH˜]Ûˆ‚ˆ˜\ÚˆÚ^™O^ÌMŸHÏ‚ˆ\YØ\‚ˆØ]Û‚ˆ
+_BˆÙ]‚ˆ
+J_BˆÙ]‚ˆØ\XÛO‚ˆÜÙXİ[Û‚ˆ
+NÂŸB‚™[˜İ[ÛˆYZ[‘\Ú›Ø\™
+ÂˆÙ\šXÙ\Ëˆ›Ùš[Kˆ[\Ù\œËˆ[š]T™\]Y\İËˆ›İYBŸNˆÂˆÙ\šXÙ\Îˆš\™X˜\ÙTÙ\šXÙ\ÎÂˆ›Ùš[Nˆ\Ù\”›Ùš[NÂˆ[\Ù\œÎˆ\Ù\”›Ùš[V×NÂˆ[š]T™\]Y\İÎˆ[š]T™\]Y\İ×NÂˆ›İYNˆ
+Ú[™ˆ›İXÙVÈšÚ[™—K^ˆİš[™ÊHOˆ›ÚYÂŸJHÂˆÛÛœİÛ\İÛÙ\ËÙ]\İÛÙ\×HH\ÙTİ]Oİš[™Ö×OŠ×JNÂˆÛÛœİ˜Z[™\œÈH[\Ù\œË™š[\Š
+\Ù\ŠHOˆ\Ù\‹œ›ÛHOOH•‘RSQÔˆŠNÂˆÛÛœİİY[ÈH[\Ù\œË™š[\Š
+\Ù\ŠHOˆ\Ù\‹œ›ÛHOOHSS“ÈŠNÂ‚ˆ\Ş[˜È[˜İ[ÛˆÙ[™\˜]U˜Z[™\ÛÙJ
+HÂˆHÂˆÛÛœİÛÙHH]ØZ]Ü™X]R[š]PÛÙJÙ\šXÙ\Ë•‘RSQÔˆ‹›Ùš[KZY[
+NÂˆÙ]\İÛÙ\ÊØÛÙWJNÂˆ›İYJ›ÚÈ‹ğìÙYÛÈH™Z[˜YÜˆÙ\˜YËˆŠNÂˆHØ]Ú
+\œ›ÜŠHÂˆ›İYJ™\œ›Üˆ‹
+\œ›Üˆ\È\œ›ÜŠK›Y\ÜØYÙJNÂˆBˆB‚ˆ\Ş[˜È[˜İ[Ûˆ\›İ™J™\]Y\İˆ[š]T™\]Y\İ
+HÂˆHÂˆÛÛœİÛÙ\ÈH]ØZ]\›İ™R[š]T™\]Y\İ
+Ù\šXÙ\Ë™\]Y\İšY™\]Y\İ˜Z[™\•ZY™\]Y\İœ]K›Ùš[KZY
+NÂˆÙ]\İÛÙ\ÊÛÙ\ÊNÂˆ›İYJ›ÚÈ‹”YYÈ\›İ˜YËˆŠNÂˆHØ]Ú
+\œ›ÜŠHÂˆ›İYJ™\œ›Üˆ‹
+\œ›Üˆ\È\œ›ÜŠK›Y\ÜØYÙJNÂˆBˆB‚ˆ\Ş[˜È[˜İ[Ûˆ™Z™Xİ
+™\]Y\İˆ[š]T™\]Y\İ
+HÂˆ]ØZ]™Z™Xİ[š]T™\]Y\İ
+Ù\šXÙ\Ë™\]Y\İšY›Ùš[KZY
+NÂˆ›İYJ›ÚÈ‹”YYÈ™Z™Z]YËˆŠNÂˆB‚ˆ™]\›ˆ
+ˆÙXİ[ÛˆÛ\ÜÓ˜[YOHœØÜ™Y[ˆ‚ˆ]ˆÛ\ÜÓ˜[YOHœİ[[X\K\›İÈ‚ˆY]šXÈX™[H•™Z[˜YÜ™\Èˆ˜[YO^Ôİš[™Ê˜Z[™\œË›[™İ
+_HÏ‚ˆY]šXÈX™[H[[›ÜÈˆ˜[YO^Ôİš[™ÊİY[Ë›[™İ
+_HÏ‚ˆY]šXÈX™[H”YYÜÈ[™[\Èˆ˜[YO^Ôİš[™Ê[š]T™\]Y\İË›[™İ
+_HÏ‚ˆÙ]‚‚ˆ]ˆÛ\ÜÓ˜[YOH™ÜšYÛÈ‚ˆ\XÛHÛ\ÜÓ˜[YOHœ[™[‚ˆ]ˆÛ\ÜÓ˜[YOHœ[™[ZXY[™ÈÜ]‚ˆÙXİ[Û•]HXÛÛ^ÔÚY[ÚXÚßH]OHğìÙYÛÜÈˆÏ‚ˆ]ÛˆÛ\ÜÓ˜[YOHœš[X\KXˆˆÛÛXÚÏ^ÙÙ[™\˜]U˜Z[™\ÛÙ_H\OH˜]Ûˆ‚ˆ\ÈÚ^™O^ÌNHÏ‚ˆ™Z[˜YÜ‚ˆØ]Û‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH˜ÛÙKYÜšY‚ˆÛ\İÛÙ\Ë›[™İOOH	‰ˆ[\Tİ]H]OH“™[š[HğìÙYÛÈÙ\˜YÈ™\İHÙ\ÜğèÛÈˆÏŸBˆÛ\İÛÙ\Ë›X\
 
-            <div className="exercise-stack compact">
-              {exercises.map((exercise, index) => (
-                <div className={`list-row ${editingExerciseIndex === index ? "selected" : ""}`} key={`${exercise.nome}-${index}`}>
-                  <div>
-                    <strong>{exercise.nome}</strong>
-                    <small>
-                      {exercise.series} sÃ©ries Â· {exercise.repsMin}-{exercise.repsMax} reps Â· {exercise.descanso}
-                    </small>
-                  </div>
-                  <div className="row-actions">
-                    <button aria-label="Editar exercÃ­cio" onClick={() => editExercise(index)} type="button">
-                      <SquarePen size={16} />
-                    </button>
-                    <button aria-label="Subir exercÃ­cio" disabled={index === 0} onClick={() => moveExercise(index, -1)} type="button">
-                      <ArrowUp size={16} />
-                    </button>
-                    <button aria-label="Descer exercÃ­cio" disabled={index === exercises.length - 1} onClick={() => moveExercise(index, 1)} type="button">
-                      <ArrowDown size={16} />
-                    </button>
-                    <button aria-label="Remover" onClick={() => removeExercise(index)} type="button">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+ÛÙJHOˆ
+ˆ]ÛˆÛ\ÜÓ˜[YOH˜ÛÙK\[ˆÙ^O^ØÛÙ_HÛÛXÚÏ^Ê
+HOˆ˜]šYØ]Ü‹˜Û\›Ø\™ËÜš]U^
+ÛÙJ_H\OH˜]Ûˆ‚ˆÛ\›Ø\™Ú^™O^ÌM_HÏ‚ˆØÛÙ_BˆØ]Û‚ˆ
+J_BˆÙ]‚ˆØ\XÛO‚‚ˆ\XÛHÛ\ÜÓ˜[YOHœ[™[‚ˆÙXİ[Û•]HXÛÛ^ĞÛ\›Ø\™H]OH”YYÜÈˆÏ‚ˆ]ˆÛ\ÜÓ˜[YOH›\İ‚ˆÚ[š]T™\]Y\İË›[™İOOH	‰ˆ[\Tİ]H]OH”Ù[HYYÜÈ[™[\ÈˆÏŸBˆÚ[š]T™\]Y\İË›X\
 
-            <button className="primary-btn" disabled={savingPlan} type="submit">
-              <Save size={18} />
-              {savingPlan ? "Salvando..." : editingId ? "Atualizar treino" : "Salvar treino"}
-            </button>
-          </form>
-        </article>
+™\]Y\İ
+HOˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›\İ\›İÈˆÙ^O^Ü™\]Y\İšYO‚ˆ]‚ˆİ›Û™ÏÜ™\]Y\İ˜Z[™\“˜[Y_OÜİ›Û™Ï‚ˆÛX[Ü™\]Y\İœ]_HğìÙYÛÊÊOÜÛX[‚ˆÙ]‚ˆ]ˆÛ\ÜÓ˜[YOH˜Xİ[Û‹\›İÈYÚ‚ˆ]ÛˆÛ\ÜÓ˜[YOHœÙXÛÛ™\KXˆˆÛÛXÚÏ^Ê
+HOˆ™Z™Xİ
+™\]Y\İ
+_H\OH˜]Ûˆ‚ˆ™Z™Z]\‚ˆØ]Û‚ˆ]ÛˆÛ\ÜÓ˜[YOHœš[X\KXˆˆÛÛXÚÏ^Ê
+HOˆ\›İ™J™\]Y\İ
+_H\OH˜]Ûˆ‚ˆ\›İ˜\‚ˆØ]Û‚ˆÙ]‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆØ\XÛO‚ˆÙ]‚‚ˆ\XÛHÛ\ÜÓ˜[YOHœ[™[‚ˆÙXİ[Û•]HXÛÛ^Õ\Ù\œßH]OH•™Z[˜YÜ™\ÈˆÏ‚ˆ]ˆÛ\ÜÓ˜[YOH›\İ‚ˆİ˜Z[™\œË›X\
 
-        <article className="panel">
-          <SectionTitle icon={Dumbbell} title="Treinos salvos" />
-          <div className="list">
-            {workouts.length === 0 && <EmptyState title="Nenhum treino salvo" />}
-            {workouts.map((workout, index) => (
-              <div className="list-row workout-list-row" key={workout.id}>
-                <div>
-                  <strong>{workout.nome}</strong>
-                  <small>{workout.exercicios.length} exercÃ­cio(s)</small>
-                </div>
-                <div className="row-actions">
-                  <button
-                    aria-label={`Mover ${workout.nome} para cima`}
-                    disabled={index === 0 || Boolean(movingWorkoutId)}
-                    onClick={() => movePlan(index, -1)}
-                    type="button"
-                  >
-                    <ArrowUp size={16} />
-                  </button>
-                  <button
-                    aria-label={`Mover ${workout.nome} para baixo`}
-                    disabled={index === workouts.length - 1 || Boolean(movingWorkoutId)}
-                    onClick={() => movePlan(index, 1)}
-                    type="button"
-                  >
-                    <ArrowDown size={16} />
-                  </button>
-                  <button aria-label="Editar" onClick={() => setEditingId(workout.id)} type="button">
-                    <SquarePen size={16} />
-                  </button>
-                  <button aria-label="Apagar" onClick={() => removePlan(workout)} type="button">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
-      </div>
-    </section>
-  );
-}
+˜Z[™\ŠHOˆ
+ˆ]ˆÛ\ÜÓ˜[YOH›\İ\›İÈˆÙ^O^İ˜Z[™\‹ZYO‚ˆ]‚ˆİ›Û™Ïİ˜Z[™\‹›˜[Y_OÜİ›Û™Ï‚ˆÛX[İ˜Z[™\‹™[XZ[OÜÛX[‚ˆÙ]‚ˆÜ[ˆÛ\ÜÓ˜[YO^İ˜Z[™\‹˜Xİ]™HÈ˜˜YÙHˆˆ˜˜YÙH]]YŸOİ˜Z[™\‹˜Xİ]™HÈ]]›Èˆˆ’[˜]]›ÈŸOÜÜ[‚ˆÙ]‚ˆ
+J_BˆÙ]‚ˆØ\XÛO‚ˆÜÙXİ[Û‚ˆ
+NÂŸB‚™[˜İ[Ûˆ™YY[PÛÙQ›Ü›JÈ\ŞKÛ”™YY[HNˆÈ\ŞNˆ›ÛÛX[ÈÛ”™YY[Nˆ
+ÛÙNˆİš[™ÊHOˆ›ÚYJHÂˆÛÛœİØÛÙKÙ]ÛÙWHH\ÙTİ]JˆŠNÂˆ™]\›ˆ
+ˆ›Ü›BˆÛ\ÜÓ˜[YOHœ™YY[KY›Ü›H‚ˆÛ”İX›Z]^Ê]™[
+HOˆÂˆ]™[œ™]™[Y˜][
 
-function PerformanceView({ target, records }: { target: TrainerStudent | { uid: string; name: string } | null; records: WorkoutRecord[] }) {
-  const chartData = records
-    .slice(0, 10)
-    .reverse()
-    .map((record) => ({
-      name: record.nomeTreino,
-      volume: Math.round(volumeForRecord(record))
-    }));
-  const completed = records.filter((item) => item.completo).length;
-  const totalVolume = records.reduce((total, item) => total + volumeForRecord(item), 0);
+NÂˆYˆ
+ÛÙKš[J
+JHÛ”™YY[JÛÙJNÂˆ_Bˆ‚ˆ^[œ]X™[HğìÙYÛÈˆ˜[YO^ØÛÙ_HÛÚ[™ÙO^Ê˜[YJHOˆÙ]ÛÙJ˜[YKÕ\\Ø\ÙJ
+J_HÏ‚ˆ]ÛˆÛ\ÜÓ˜[YOHœš[X\KXˆˆ\ØX›Y^Ø\Ş_H\OHœİX›Z]‚ˆÚXÚÈÚ^™O^ÌNHÏ‚ˆX™\˜\‚ˆØ]Û‚ˆÙ›Ü›O‚ˆ
+NÂŸB‚™[˜İ[Ûˆ›ØÚÙYÚ[
+Âˆ]KˆY\ÜØYÙKˆÚ[™[‹ˆÛ“ÙÛİ]ŸNˆÂˆ]Nˆİš[™ÎÂˆY\ÜØYÙNˆİš[™ÎÂˆÚ[™[Îˆ™XXİ”™XXİ›ÙNÂˆÛ“ÙÛİ]ˆ
 
-  if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
-
-  return (
-    <section className="screen performance-screen">
-      <div className="summary-row">
-        <Metric label="Treinos" value={String(records.length)} />
-        <Metric label="Completos" value={String(completed)} />
-        <Metric label="Volume total" value={`${Math.round(totalVolume).toLocaleString("pt-BR")} kg`} />
-      </div>
-
-      <article className="panel chart-panel">
-        <SectionTitle icon={BarChart3} title="Desempenho" />
-        {chartData.length === 0 ? (
-          <EmptyState title="Sem registros" />
-        ) : (
-          <ResponsiveContainer height={260} width="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid stroke="#203537" vertical={false} />
-              <XAxis dataKey="name" stroke="#718681" tick={{ fill: "#9EB2AD", fontSize: 12 }} />
-              <YAxis stroke="#718681" tick={{ fill: "#9EB2AD", fontSize: 12 }} />
-              <Tooltip />
-              <Bar dataKey="volume" fill="#4EF0AE" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </article>
-
-      <article className="panel">
-        <SectionTitle icon={Clipboard} title="HistÃ³rico" />
-        <div className="list">
-          {records.length === 0 && <EmptyState title="Sem histÃ³rico" />}
-          {records.map((record) => (
-            <div className="list-row" key={record.id}>
-              <div>
-                <strong>{record.nomeTreino}</strong>
-                <small>
-                  {record.dataHora} Â· {record.completo ? "Completo" : "Incompleto"}
-                </small>
-              </div>
-              <span className="badge">{Math.round(volumeForRecord(record)).toLocaleString("pt-BR")} kg</span>
-            </div>
-          ))}
-        </div>
-      </article>
-    </section>
-  );
-}
-
-function CardioView({
-  services,
-  profile,
-  target,
-  cardio,
-  notify
-}: {
-  services: FirebaseServices;
-  profile: UserProfile;
-  target: TrainerStudent | { uid: string; name: string } | null;
-  cardio: CardioRecord[];
-  notify: (kind: Notice["kind"], text: string) => void;
-}) {
-  const [atividade, setAtividade] = useState("Esteira");
-  const [tempoMin, setTempoMin] = useState("30");
-  const [ritmo, setRitmo] = useState("-");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 16));
-
-  async function saveCardio(event: FormEvent) {
-    event.preventDefault();
-    if (!target) return;
-    const id = newId("cardio-");
-    await setDoc(doc(services.db, "users", target.uid, "cardio", id), {
-      id,
-      dataHora: formatDateTime(new Date(date)),
-      dataChave: formatDate(new Date(date)),
-      atividade,
-      tempoMin: Number(tempoMin),
-      ritmo,
-      createdAt: Date.now()
-    });
-    notify("ok", "Cardio salvo.");
-  }
-
-  if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
-
-  return (
-    <section className="screen cardio-screen">
-      {profile.role === "ALUNO" && (
-        <article className="panel">
-          <SectionTitle icon={Activity} title="Registrar cardio" />
-          <form className="inline-form wide" onSubmit={saveCardio}>
-            <TextInput label="Atividade" value={atividade} onChange={setAtividade} />
-            <TextInput label="Tempo min" value={tempoMin} onChange={setTempoMin} type="number" />
-            <TextInput label="Ritmo" value={ritmo} onChange={setRitmo} />
-            <label className="field">
-              <span>Data</span>
-              <input value={date} onChange={(event) => setDate(event.target.value)} type="datetime-local" />
-            </label>
-            <button className="primary-btn" type="submit">
-              <Save size={18} />
-              Salvar
-            </button>
-          </form>
-        </article>
-      )}
-
-      <article className="panel">
-        <SectionTitle icon={Clipboard} title="Cardio" />
-        <div className="list">
-          {cardio.length === 0 && <EmptyState title="Sem cardio registrado" />}
-          {cardio.map((item) => (
-            <div className="list-row" key={item.id}>
-              <div>
-                <strong>{item.atividade}</strong>
-                <small>
-                  {item.dataHora} Â· {item.tempoMin}min Â· {item.ritmo}
-                </small>
-              </div>
-              {profile.role === "ALUNO" && (
-                <button aria-label="Apagar" onClick={() => deleteDoc(doc(services.db, "users", target.uid, "cardio", item.id))} type="button">
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </article>
-    </section>
-  );
-}
-
-function ProgressView({
-  services,
-  profile,
-  target,
-  progress,
-  notify
-}: {
-  services: FirebaseServices;
-  profile: UserProfile;
-  target: TrainerStudent | { uid: string; name: string } | null;
-  progress: ProgressRecord[];
-  notify: (kind: Notice["kind"], text: string) => void;
-}) {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [pesoKg, setPesoKg] = useState("");
-  const [files, setFiles] = useState<Record<string, File | null>>({ frente: null, lado: null, costas: null });
-  const [busy, setBusy] = useState(false);
-
-  async function uploadPhoto(uid: string, id: string, name: string, file: File | null) {
-    if (!file) return null;
-    const storageRef = ref(services.storage, `users/${uid}/progresso/${id}/${name}.jpg`);
-    await uploadBytes(storageRef, file);
-    return getDownloadURL(storageRef);
-  }
-
-  async function saveProgress(event: FormEvent) {
-    event.preventDefault();
-    if (!target) return;
-    const parsedWeight = parseNumber(pesoKg);
-    if (!parsedWeight) {
-      notify("warn", "Informe o peso.");
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const id = newId("prog-");
-      const [fotoFrenteUri, fotoLadoUri, fotoCostasUri] = await Promise.all([
-        uploadPhoto(target.uid, id, "frente", files.frente),
-        uploadPhoto(target.uid, id, "lado", files.lado),
-        uploadPhoto(target.uid, id, "costas", files.costas)
-      ]);
-      await setDoc(doc(services.db, "users", target.uid, "progresso", id), {
-        id,
-        data: formatDate(new Date(`${date}T12:00:00`)),
-        pesoKg: parsedWeight,
-        fotoFrenteUri,
-        fotoLadoUri,
-        fotoCostasUri,
-        createdAt: Date.now()
-      });
-      setPesoKg("");
-      setFiles({ frente: null, lado: null, costas: null });
-      notify("ok", "Progresso salvo.");
-    } catch (error) {
-      notify("error", (error as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
-
-  return (
-    <section className="screen progress-screen">
-      {profile.role === "ALUNO" && (
-        <article className="panel">
-          <SectionTitle icon={Camera} title="Registrar progresso" />
-          <form className="inline-form wide" onSubmit={saveProgress}>
-            <label className="field">
-              <span>Data</span>
-              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
-            </label>
-            <TextInput label="Peso kg" value={pesoKg} onChange={setPesoKg} />
-            <FileInput label="Frente" onChange={(file) => setFiles((current) => ({ ...current, frente: file }))} />
-            <FileInput label="Lado" onChange={(file) => setFiles((current) => ({ ...current, lado: file }))} />
-            <FileInput label="Costas" onChange={(file) => setFiles((current) => ({ ...current, costas: file }))} />
-            <button className="primary-btn" disabled={busy} type="submit">
-              <Save size={18} />
-              Salvar
-            </button>
-          </form>
-        </article>
-      )}
-
-      <article className="panel">
-        <SectionTitle icon={Clipboard} title="Progresso" />
-        <div className="progress-grid">
-          {progress.length === 0 && <EmptyState title="Sem progresso registrado" />}
-          {progress.map((item) => (
-            <div className="progress-card" key={item.id}>
-              <div className="progress-meta">
-                <strong>{item.data}</strong>
-                <span>{item.pesoKg.toFixed(1)} kg</span>
-              </div>
-              <div className="photo-row">
-                {[item.fotoFrenteUri, item.fotoLadoUri, item.fotoCostasUri].map((src, index) =>
-                  src ? <img alt={`Progresso ${index + 1}`} key={src} src={src} /> : <div className="photo-empty" key={index}>Foto</div>
-                )}
-              </div>
-              {profile.role === "ALUNO" && (
-                <button className="ghost-btn danger" onClick={() => deleteDoc(doc(services.db, "users", target.uid, "progresso", item.id))} type="button">
-                  <Trash2 size={16} />
-                  Apagar
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </article>
-    </section>
-  );
-}
-
-function AdminDashboard({
-  services,
-  profile,
-  allUsers,
-  inviteRequests,
-  notify
-}: {
-  services: FirebaseServices;
-  profile: UserProfile;
-  allUsers: UserProfile[];
-  inviteRequests: InviteRequest[];
-  notify: (kind: Notice["kind"], text: string) => void;
-}) {
-  const [lastCodes, setLastCodes] = useState<string[]>([]);
-  const trainers = allUsers.filter((user) => user.role === "TREINADOR");
-  const students = allUsers.filter((user) => user.role === "ALUNO");
-
-  async function generateTrainerCode() {
-    try {
-      const code = await createInviteCode(services, "TREINADOR", profile.uid, null);
-      setLastCodes([code]);
-      notify("ok", "CÃ³digo de treinador gerado.");
-    } catch (error) {
-      notify("error", (error as Error).message);
-    }
-  }
-
-  async function approve(request: InviteRequest) {
-    try {
-      const codes = await approveInviteRequest(services, request.id, request.trainerUid, request.qty, profile.uid);
-      setLastCodes(codes);
-      notify("ok", "Pedido aprovado.");
-    } catch (error) {
-      notify("error", (error as Error).message);
-    }
-  }
-
-  async function reject(request: InviteRequest) {
-    await rejectInviteRequest(services, request.id, profile.uid);
-    notify("ok", "Pedido rejeitado.");
-  }
-
-  return (
-    <section className="screen">
-      <div className="summary-row">
-        <Metric label="Treinadores" value={String(trainers.length)} />
-        <Metric label="Alunos" value={String(students.length)} />
-        <Metric label="Pedidos pendentes" value={String(inviteRequests.length)} />
-      </div>
-
-      <div className="grid two">
-        <article className="panel">
-          <div className="panel-heading split">
-            <SectionTitle icon={ShieldCheck} title="CÃ³digos" />
-            <button className="primary-btn" onClick={generateTrainerCode} type="button">
-              <Plus size={18} />
-              Treinador
-            </button>
-          </div>
-          <div className="code-grid">
-            {lastCodes.length === 0 && <EmptyState title="Nenhum cÃ³digo gerado nesta sessÃ£o" />}
-            {lastCodes.map((code) => (
-              <button className="code-pill" key={code} onClick={() => navigator.clipboard?.writeText(code)} type="button">
-                <Clipboard size={15} />
-                {code}
-              </button>
-            ))}
-          </div>
-        </article>
-
-        <article className="panel">
-          <SectionTitle icon={Clipboard} title="Pedidos" />
-          <div className="list">
-            {inviteRequests.length === 0 && <EmptyState title="Sem pedidos pendentes" />}
-            {inviteRequests.map((request) => (
-              <div className="list-row" key={request.id}>
-                <div>
-                  <strong>{request.trainerName}</strong>
-                  <small>{request.qty} cÃ³digo(s)</small>
-                </div>
-                <div className="action-row tight">
-                  <button className="secondary-btn" onClick={() => reject(request)} type="button">
-                    Rejeitar
-                  </button>
-                  <button className="primary-btn" onClick={() => approve(request)} type="button">
-                    Aprovar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </article>
-      </div>
-
-      <article className="panel">
-        <SectionTitle icon={Users} title="Treinadores" />
-        <div className="list">
-          {trainers.map((trainer) => (
-            <div className="list-row" key={trainer.uid}>
-              <div>
-                <strong>{trainer.name}</strong>
-                <small>{trainer.email}</small>
-              </div>
-              <span className={trainer.active ? "badge" : "badge muted"}>{trainer.active ? "Ativo" : "Inativo"}</span>
-            </div>
-          ))}
-        </div>
-      </article>
-    </section>
-  );
-}
-
-function RedeemCodeForm({ busy, onRedeem }: { busy: boolean; onRedeem: (code: string) => void }) {
-  const [code, setCode] = useState("");
-  return (
-    <form
-      className="redeem-form"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (code.trim()) onRedeem(code);
-      }}
-    >
-      <TextInput label="CÃ³digo" value={code} onChange={(value) => setCode(value.toUpperCase())} />
-      <button className="primary-btn" disabled={busy} type="submit">
-        <Check size={18} />
-        Liberar
-      </button>
-    </form>
-  );
-}
-
-function BlockedShell({
-  title,
-  message,
-  children,
-  onLogout
-}: {
-  title: string;
-  message: string;
-  children?: React.ReactNode;
-  onLogout: () => void;
-}) {
-  return (
-    <main className="auth-page">
-      <section className="auth-panel">
-        <div className="brand-block">
-          <span className="brand-mark">
-            <ShieldCheck size={28} />
-          </span>
-          <div>
-            <h1>{title}</h1>
-            <p>{message}</p>
-          </div>
-        </div>
-        {children}
-        <button className="ghost-btn danger" onClick={onLogout} type="button">
-          <LogOut size={16} />
-          Sair
-        </button>
-      </section>
-    </main>
-  );
-}
-
-function TextInput({
-  label,
-  value,
-  onChange,
-  type = "text",
-  autoComplete,
-  disabled = false
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  type?: string;
-  autoComplete?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <input
-        autoComplete={autoComplete}
-        disabled={disabled}
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
-  );
-}
-
-function FileInput({ label, onChange }: { label: string; onChange: (file: File | null) => void }) {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <input accept="image/*" type="file" onChange={(event) => onChange(event.target.files?.[0] ?? null)} />
-    </label>
-  );
-}
-
-function SectionTitle({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
-  return (
-    <div className="section-title">
-      <Icon size={19} />
-      <h3>{title}</h3>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
-  );
-}
-
-function EmptyState({ title }: { title: string }) {
-  return <p className="empty-state">{title}</p>;
-}
-
-function EmptyPage({ title }: { title: string }) {
-  return (
-    <section className="screen">
-      <article className="panel center-panel">
-        <EmptyState title={title} />
-      </article>
-    </section>
-  );
-}
-
-function LoadingScreen({ text }: { text: string }) {
-  return (
-    <main className="auth-page">
-      <section className="auth-panel loading-card">
-        <span className="loader" />
-        <h1>{text}</h1>
-      </section>
-    </main>
-  );
-}
-
-export default App;
+HOˆ›ÚYÂŸJHÂˆ™]\›ˆ
+ˆXZ[ˆÛ\ÜÓ˜[YOH˜]]\YÙH‚ˆÙXİ[ÛˆÛ\ÜÓ˜[YOH˜]]\[™[‚ˆ]ˆÛ\ÜÓ˜[YOH˜œ˜[™X›ØÚÈ‚ˆÜ[ˆÛ\ÜÓ˜[YOH˜œ˜[™[X\šÈ‚ˆÚY[ÚXÚÈÚ^™O^ÌHÏ‚ˆÜÜ[‚ˆ]‚ˆOİ]_OÚO‚ˆÛY\ÜØYÙ_OÜ‚ˆÙ]‚ˆÙ]‚ˆØÚ[™[ŸBˆ]ÛˆÛ\ÜÓ˜[YOH™ÚÜİXˆ[™Ù\ˆˆÛÛXÚÏ^ÛÛ“ÙÛİ]H\OH˜]Ûˆ‚ˆÙÓİ]Ú^™O^ÌMŸHÏ‚ˆØZ\‚ˆØ]Û‚ˆÜÙXİ[Û‚ˆÛXZ[‚ˆ
+NÂŸB‚™[˜İ[Ûˆ^[œ]
+ÂˆX™[ˆ˜[YKˆÛÚ[™ÙKˆ\HH^‹ˆ]]ĞÛÛ\]Kˆ\ØX›YH˜[ÙBŸNˆÂˆX™[ˆİš[™ÎÂˆ˜[YNˆİš[™ÎÂˆÛÚ[™ÙNˆ
+˜[YNˆİš[™ÊHOˆ›ÚYÂˆ\OÎˆİš[™ÎÂˆ]]ĞÛÛ\]OÎˆİš[™ÎÂˆ\ØX›YÎˆ›ÛÛX[ÂŸJHÂˆ™]\›ˆ
+ˆX™[Û\ÜÓ˜[YOH™šY[‚ˆÜ[ÛX™[OÜÜ[‚ˆ[œ]ˆ]]ĞÛÛ\]O^Ø]]ĞÛÛ\]_Bˆ\ØX›Y^Ù\ØX›YBˆ\O^İ\_Bˆ˜[YO^İ˜[Y_BˆÛÚ[™ÙO^Ê]™[
+HOˆÛÚ[™ÙJ]™[\™Ù]˜[YJ_BˆÏ‚ˆÛX™[‚ˆ
+NÂŸB‚™[˜İ[Ûˆš[R[œ]
+ÈX™[ÛÚ[™ÙHNˆÈX™[ˆİš[™ÎÈÛÚ[™ÙNˆ
+š[Nˆš[H[
+HOˆ›ÚYJHÂˆ™]\›ˆ
+ˆX™[Û\ÜÓ˜[YOH™šY[‚ˆÜ[ÛX™[OÜÜ[‚ˆ[œ]XØÙ\Hš[XYÙKÊˆˆ\OH™š[HˆÛÚ[™ÙO^Ê]™[
+HOˆÛÚ[™ÙJ]™[\™Ù]™š[\ÏË–ÌHÏÈ[
+_HÏ‚ˆÛX™[‚ˆ
+NÂŸB‚™[˜İ[ÛˆÙXİ[Û•]JÈXÛÛˆXÛÛ‹]HNˆÈXÛÛˆ™XXİ‘[[Y[\NÈ]Nˆİš[™ÈJHÂˆ™]\›ˆ
+ˆ]ˆÛ\ÜÓ˜[YOHœÙXİ[Û‹]]H‚ˆXÛÛˆÚ^™O^ÌN_HÏ‚ˆÏİ]_OÚÏ‚ˆÙ]‚ˆ
+NÂŸB‚™[˜İ[ÛˆY]šXÊÈX™[˜[YHNˆÈX™[ˆİš[™ÎÈ˜[YNˆİš[™ÈJHÂˆ™]\›ˆ
+ˆ\XÛHÛ\ÜÓ˜[YOH›Y]šXÈ‚ˆÜ[ÛX™[OÜÜ[‚ˆİ›Û™Ïİ˜[Y_OÜİ›Û™Ï‚ˆØ\XÛO‚ˆ
+NÂŸB‚™[˜İ[Ûˆ[\Tİ]JÈ]HNˆÈ]Nˆİš[™ÈJHÂˆ™]\›ˆÛ\ÜÓ˜[YOH™[\K\İ]Hİ]_OÜÂŸB‚™[˜İ[Ûˆ[\TYÙJÈ]HNˆÈ]Nˆİš[™ÈJHÂˆ™]\›ˆ
+ˆÙXİ[ÛˆÛ\ÜÓ˜[YOHœØÜ™Y[ˆ‚ˆ\XÛHÛ\ÜÓ˜[YOHœ[™[Ù[\‹\[™[‚ˆ[\Tİ]H]O^İ]_HÏ‚ˆØ\XÛO‚ˆÜÙXİ[Û‚ˆ
+NÂŸB‚™[˜İ[ÛˆØY[™ÔØÜ™Y[ŠÈ^NˆÈ^ˆİš[™ÈJHÂˆ™]\›ˆ
+ˆXZ[ˆÛ\ÜÓ˜[YOH˜]]\YÙH‚ˆÙXİ[ÛˆÛ\ÜÓ˜[YOH˜]]\[™[ØY[™ËXØ\™‚ˆÜ[ˆÛ\ÜÓ˜[YOH›ØY\ˆˆÏ‚ˆOİ^OÚO‚ˆÜÙXİ[Û‚ˆÛXZ[‚ˆ
+NÂŸB‚™^ÜY˜][\Â

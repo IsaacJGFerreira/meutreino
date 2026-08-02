@@ -768,11 +768,45 @@ if (!document.getElementById(STYLE_ID)) {
 
     .student-profile-title-icon,
     .student-card-icon,
-    .student-summary-icon,
-    .student-menu-button {
+    .student-summary-icon {
       color: var(--green) !important;
       border: 1px solid var(--line-neon) !important;
       background: rgba(78, 240, 174, 0.08) !important;
+      box-shadow: none !important;
+    }
+
+    .student-field {
+      color: var(--muted) !important;
+    }
+
+    .student-input-wrap {
+      color: var(--text) !important;
+      border-color: var(--line) !important;
+      border-radius: 16px !important;
+      background: rgba(11, 29, 31, 0.9) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+    }
+
+    .student-input-wrap > span {
+      color: var(--green) !important;
+    }
+
+    .student-input-wrap input {
+      min-width: 0;
+      color: var(--text) !important;
+      caret-color: var(--green);
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .student-input-wrap:focus-within {
+      border-color: var(--green) !important;
+      box-shadow: 0 0 0 3px rgba(78, 240, 174, 0.12) !important;
+    }
+
+    .student-input-wrap input:focus {
       box-shadow: none !important;
     }
 
