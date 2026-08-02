@@ -5,5 +5,6 @@ data class CardioRegistro(
     val dataHora: String,
     val atividade: String,
     val tempoMin: Int,
-    val ritmo: String
+    val ritmo: String,
+    val createdAt: Long = 0L
 )

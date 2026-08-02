@@ -1,12 +1,16 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import {
   Activity,
   ArrowDown,
   ArrowUp,
   BarChart3,
+  CalendarDays,
   Camera,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clipboard,
+  Clock3,
   Dumbbell,
   LogOut,
   Menu,
@@ -17,6 +21,7 @@ import {
   ShieldCheck,
   SquarePen,
   Trash2,
+  TrendingUp,
   UserRound,
   Users,
   X
@@ -43,6 +48,8 @@ import {
 } from "firebase/auth";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -158,7 +165,8 @@ function profileFromDoc(uid: string, data: DocumentData | undefined, fallbackEma
     approved: Boolean(data?.approved ?? false),
     trainerId: typeof data?.trainerId === "string" ? data.trainerId : null,
     idade: typeof data?.idade === "number" ? data.idade : undefined,
-    alturaCm: typeof data?.alturaCm === "number" ? data.alturaCm : undefined
+    alturaCm: typeof data?.alturaCm === "number" ? data.alturaCm : undefined,
+    cardioMetaSemanalMin: Number(data?.cardioMetaSemanalMin ?? data?.metaSemanalCardioMin ?? data?.cardioGoalMin ?? 180)
   };
 }
 
@@ -360,7 +368,7 @@ function App() {
         (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar progresso."))
       ),
       onSnapshot(
-        query(collection(services.db, "users", target.uid, "cardio"), orderBy("createdAt", "desc")),
+        collection(services.db, "users", target.uid, "cardio"),
         (snap) => {
           setCardio(snap.docs.map((item) => cardioFromDoc(item.id, item.data())));
         },
@@ -1615,6 +1623,51 @@ function PerformanceView({ target, records }: { target: TrainerStudent | { uid: 
   );
 }
 
+function cardioRecordDate(record: CardioRecord) {
+  const match = record.dataHora.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+  if (match) {
+    const [, day, month, year, hour = "0", minute = "0"] = match;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return record.createdAt > 0 ? new Date(record.createdAt) : null;
+}
+
+function cardioDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function cardioStartOfWeek(date: Date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  return start;
+}
+
+function cardioAddDays(date: Date, amount: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
+}
+
+function cardioInputNow() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function formatCardioWeek(start: Date) {
+  const end = cardioAddDays(start, 6);
+  const short = (date: Date) => date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+  return `${short(start)} – ${short(end)}`;
+}
+
+function formatCardioMonth(date: Date) {
+  const value = date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatCardioRecordTime(record: CardioRecord) {
+  return cardioRecordDate(record)?.getTime() ?? 0;
+}
+
 function CardioView({
   services,
   profile,
@@ -1628,71 +1681,364 @@ function CardioView({
   cardio: CardioRecord[];
   notify: (kind: Notice["kind"], text: string) => void;
 }) {
-  const [atividade, setAtividade] = useState("Esteira");
+  const [atividade, setAtividade] = useState("");
   const [tempoMin, setTempoMin] = useState("30");
-  const [ritmo, setRitmo] = useState("-");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 16));
+  const [ritmo, setRitmo] = useState("");
+  const [date, setDate] = useState(cardioInputNow);
+  const [weekStartMs, setWeekStartMs] = useState(() => cardioStartOfWeek(new Date()).getTime());
+  const [chartDays, setChartDays] = useState(7);
+  const [weeklyGoal, setWeeklyGoal] = useState(180);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarMonthMs, setCalendarMonthMs] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime());
+  const [calendarSelectedKey, setCalendarSelectedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setWeekStartMs(cardioStartOfWeek(new Date()).getTime());
+    setCalendarMonthMs(new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime());
+    setCalendarSelectedKey(null);
+    setHistoryOpen(false);
+    setCalendarOpen(false);
+  }, [target?.uid]);
+
+  useEffect(() => {
+    if (!target?.uid) return;
+    let userGoal = 0;
+    let configGoal = 0;
+    const applyGoal = () => setWeeklyGoal(configGoal || userGoal || 180);
+    const readGoal = (data: DocumentData | undefined) => {
+      const value = Number(data?.cardioMetaSemanalMin ?? data?.metaSemanalCardioMin ?? data?.cardioGoalMin ?? 0);
+      return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+    };
+
+    const unsubscribeUser = onSnapshot(
+      doc(services.db, "users", target.uid),
+      (snap) => {
+        userGoal = readGoal(snap.data());
+        applyGoal();
+      },
+      () => applyGoal()
+    );
+    const unsubscribeConfig = onSnapshot(
+      doc(services.db, "users", target.uid, "cardio_meta", "current"),
+      (snap) => {
+        configGoal = readGoal(snap.data());
+        applyGoal();
+      },
+      () => applyGoal()
+    );
+
+    return () => {
+      unsubscribeUser();
+      unsubscribeConfig();
+    };
+  }, [services, target?.uid]);
+
+  const sortedCardio = useMemo(
+    () => cardio.slice().sort((a, b) => formatCardioRecordTime(b) - formatCardioRecordTime(a)),
+    [cardio]
+  );
+
+  const recordsByDay = useMemo(() => {
+    const grouped = new Map<string, CardioRecord[]>();
+    sortedCardio.forEach((record) => {
+      const recordDate = cardioRecordDate(record);
+      if (!recordDate) return;
+      const key = cardioDateKey(recordDate);
+      grouped.set(key, [...(grouped.get(key) ?? []), record]);
+    });
+    return grouped;
+  }, [sortedCardio]);
+
+  const weekStart = new Date(weekStartMs);
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, index) => {
+    const day = cardioAddDays(new Date(weekStartMs), index);
+    const key = cardioDateKey(day);
+    const dayRecords = recordsByDay.get(key) ?? [];
+    return {
+      date: day,
+      key,
+      label: day.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""),
+      total: dayRecords.reduce((sum, item) => sum + item.tempoMin, 0),
+      sessions: dayRecords.length
+    };
+  }), [weekStartMs, recordsByDay]);
+  const weekTotal = weekDays.reduce((sum, day) => sum + day.total, 0);
+  const weekSessions = weekDays.reduce((sum, day) => sum + day.sessions, 0);
+  const goalPercent = weeklyGoal > 0 ? Math.min(100, Math.round((weekTotal / weeklyGoal) * 100)) : 0;
+  const remaining = Math.max(weeklyGoal - weekTotal, 0);
+  const currentWeekMs = cardioStartOfWeek(new Date()).getTime();
+
+  const chartData = useMemo(() => Array.from({ length: chartDays }, (_, index) => {
+    const day = cardioAddDays(new Date(), index - chartDays + 1);
+    const dayRecords = recordsByDay.get(cardioDateKey(day)) ?? [];
+    return {
+      label: day.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" }).replace(".", ""),
+      minutes: dayRecords.reduce((sum, item) => sum + item.tempoMin, 0)
+    };
+  }), [chartDays, recordsByDay]);
+
+  const calendarMonth = new Date(calendarMonthMs);
+  const calendarCells = useMemo(() => {
+    const first = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+    const offset = (first.getDay() + 6) % 7;
+    const start = cardioAddDays(first, -offset);
+    return Array.from({ length: 42 }, (_, index) => {
+      const day = cardioAddDays(start, index);
+      const key = cardioDateKey(day);
+      const dayRecords = recordsByDay.get(key) ?? [];
+      return {
+        date: day,
+        key,
+        currentMonth: day.getMonth() === calendarMonth.getMonth(),
+        total: dayRecords.reduce((sum, item) => sum + item.tempoMin, 0),
+        sessions: dayRecords.length
+      };
+    });
+  }, [calendarMonthMs, recordsByDay]);
+  const calendarDayRecords = calendarSelectedKey ? recordsByDay.get(calendarSelectedKey) ?? [] : [];
 
   async function saveCardio(event: FormEvent) {
     event.preventDefault();
-    if (!target) return;
+    if (!target || profile.role !== "ALUNO") return;
+    const activityName = atividade.trim();
+    const minutes = Number(tempoMin);
+    const selectedDate = new Date(date);
+    if (!activityName) {
+      notify("warn", "Informe a atividade.");
+      return;
+    }
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+      notify("warn", "Informe um tempo válido em minutos.");
+      return;
+    }
+    if (Number.isNaN(selectedDate.getTime())) {
+      notify("warn", "Informe uma data válida.");
+      return;
+    }
+
     const id = newId("cardio-");
-    await setDoc(doc(services.db, "users", target.uid, "cardio", id), {
-      id,
-      dataHora: formatDateTime(new Date(date)),
-      dataChave: formatDate(new Date(date)),
-      atividade,
-      tempoMin: Number(tempoMin),
-      ritmo,
-      createdAt: Date.now()
-    });
-    notify("ok", "Cardio salvo.");
+    try {
+      await setDoc(doc(services.db, "users", target.uid, "cardio", id), {
+        id,
+        dataHora: formatDateTime(selectedDate),
+        dataChave: formatDate(selectedDate),
+        atividade: activityName,
+        tempoMin: Math.round(minutes),
+        ritmo: ritmo.trim() || "—",
+        createdAt: selectedDate.getTime()
+      });
+      setAtividade("");
+      setRitmo("");
+      setDate(cardioInputNow());
+      notify("ok", "Cardio salvo.");
+    } catch (error) {
+      notify("error", firebaseErrorMessage(error, "Erro ao salvar cardio."));
+    }
+  }
+
+  async function removeCardio(item: CardioRecord) {
+    if (!target || profile.role !== "ALUNO") return;
+    if (!window.confirm(`Apagar o registro de ${item.atividade} em ${item.dataHora}?`)) return;
+    try {
+      await deleteDoc(doc(services.db, "users", target.uid, "cardio", item.id));
+      notify("ok", "Registro de cardio apagado.");
+    } catch (error) {
+      notify("error", firebaseErrorMessage(error, "Erro ao apagar cardio."));
+    }
   }
 
   if (!target) return <EmptyPage title="Selecione um aluno no Perfil" />;
 
   return (
-    <section className="screen cardio-screen">
-      {profile.role === "ALUNO" && (
-        <article className="panel">
-          <SectionTitle icon={Activity} title="Registrar cardio" />
-          <form className="inline-form wide" onSubmit={saveCardio}>
-            <TextInput label="Atividade" value={atividade} onChange={setAtividade} />
-            <TextInput label="Tempo min" value={tempoMin} onChange={setTempoMin} type="number" />
-            <TextInput label="Ritmo" value={ritmo} onChange={setRitmo} />
-            <label className="field">
-              <span>Data</span>
-              <input value={date} onChange={(event) => setDate(event.target.value)} type="datetime-local" />
-            </label>
-            <button className="primary-btn" type="submit">
-              <Save size={18} />
-              Salvar
-            </button>
-          </form>
+    <section className="screen cardio-screen cardio-dashboard">
+      <article className="cardio-goal-card">
+        <div
+          className="cardio-goal-ring"
+          style={{ "--cardio-goal-percent": `${goalPercent}%` } as CSSProperties}
+          aria-label={`${goalPercent}% da meta semanal`}
+        >
+          <span><strong>{goalPercent}%</strong><small>da meta</small></span>
+        </div>
+        <div className="cardio-goal-main">
+          <h3>Meta semanal de cardio</h3>
+          <p>{remaining > 0 ? "Mantenha o ritmo! Você está no caminho certo." : "Meta semanal concluída."}</p>
+          <div className="cardio-goal-track"><span style={{ width: `${goalPercent}%` }} /></div>
+        </div>
+        <div className="cardio-goal-numbers">
+          <strong>{weekTotal}</strong><span> de {weeklyGoal} min</span>
+          <small>{remaining > 0 ? `Faltam ${remaining} min` : "Meta concluída"}</small>
+        </div>
+        <img className="cardio-runner" src="/cardio-runner.png" alt="Pessoa correndo" />
+      </article>
+
+      <div className="cardio-dashboard-grid cardio-dashboard-grid-top">
+        <article className="cardio-dashboard-card cardio-register-card">
+          <header className="cardio-card-heading"><Activity size={23} /><h3>Registrar cardio</h3></header>
+          {profile.role === "ALUNO" ? (
+            <form className="cardio-register-form" onSubmit={saveCardio}>
+              <label className="cardio-field cardio-field-activity">
+                <span>Atividade</span>
+                <input value={atividade} onChange={(event) => setAtividade(event.target.value)} placeholder="Ex.: Esteira, Corrida, Bike..." />
+              </label>
+              <label className="cardio-field">
+                <span>Tempo min</span>
+                <span className="cardio-input-with-icon"><Clock3 size={17} /><input min="1" inputMode="numeric" type="number" value={tempoMin} onChange={(event) => setTempoMin(event.target.value)} /></span>
+              </label>
+              <label className="cardio-field">
+                <span>Ritmo</span>
+                <span className="cardio-input-with-icon"><Activity size={17} /><input value={ritmo} onChange={(event) => setRitmo(event.target.value)} placeholder="—" /></span>
+              </label>
+              <label className="cardio-field cardio-field-date">
+                <span>Data</span>
+                <span className="cardio-input-with-icon"><CalendarDays size={17} /><input value={date} onChange={(event) => setDate(event.target.value)} type="datetime-local" /></span>
+              </label>
+              <button className="cardio-save-button" type="submit"><Save size={18} /> Salvar</button>
+            </form>
+          ) : (
+            <div className="cardio-readonly-message">
+              <Activity size={28} />
+              <div><strong>Acompanhamento do aluno</strong><span>Os registros são feitos pelo aluno e aparecem aqui automaticamente.</span></div>
+            </div>
+          )}
         </article>
+
+        <article className="cardio-dashboard-card cardio-chart-card">
+          <header className="cardio-card-heading cardio-card-heading-split">
+            <span><TrendingUp size={22} /><h3>Evolução de cardio (min)</h3></span>
+            <select aria-label="Período do gráfico" value={chartDays} onChange={(event) => setChartDays(Number(event.target.value))}>
+              <option value={7}>Últimos 7 dias</option>
+              <option value={14}>Últimos 14 dias</option>
+              <option value={30}>Últimos 30 dias</option>
+            </select>
+          </header>
+          <div className="cardio-chart-wrap">
+            <ResponsiveContainer height="100%" width="100%">
+              <AreaChart data={chartData} margin={{ top: 18, right: 12, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="cardioAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#20efb2" stopOpacity={0.48} />
+                    <stop offset="100%" stopColor="#20efb2" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#173638" strokeDasharray="3 5" vertical />
+                <XAxis dataKey="label" stroke="#77928d" tick={{ fill: "#9eb2ad", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis allowDecimals={false} stroke="#77928d" tick={{ fill: "#9eb2ad", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{ background: "#0d2224", border: "1px solid rgba(78,240,174,.55)", borderRadius: 12, color: "#f3f8f6" }}
+                  formatter={(value) => [`${Number(value)} min`, "Cardio"]}
+                />
+                <Area activeDot={{ r: 6, fill: "#f3f8f6", stroke: "#20efb2", strokeWidth: 3 }} dataKey="minutes" fill="url(#cardioAreaGradient)" stroke="#20efb2" strokeWidth={3} type="monotone" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+      </div>
+
+      <div className="cardio-dashboard-grid cardio-dashboard-grid-bottom">
+        <article className="cardio-dashboard-card cardio-week-card">
+          <header className="cardio-card-heading cardio-card-heading-split">
+            <span><CalendarDays size={22} /><h3>Calendário semanal</h3></span>
+            <div className="cardio-week-controls">
+              <button type="button" onClick={() => setWeekStartMs((current) => cardioAddDays(new Date(current), -7).getTime())} aria-label="Semana anterior"><ChevronLeft size={18} /></button>
+              <strong>{formatCardioWeek(weekStart)}</strong>
+              <button disabled={weekStartMs >= currentWeekMs} type="button" onClick={() => setWeekStartMs((current) => cardioAddDays(new Date(current), 7).getTime())} aria-label="Próxima semana"><ChevronRight size={18} /></button>
+            </div>
+            <button className="cardio-text-button" type="button" onClick={() => setCalendarOpen(true)}>Ver calendário completo <CalendarDays size={17} /></button>
+          </header>
+          <div className="cardio-week-days">
+            {weekDays.map((day) => (
+              <button
+                className={`cardio-week-day ${day.total > 0 ? "has-cardio" : ""} ${day.key === cardioDateKey(new Date()) ? "is-today" : ""}`}
+                key={day.key}
+                onClick={() => {
+                  setCalendarMonthMs(new Date(day.date.getFullYear(), day.date.getMonth(), 1).getTime());
+                  setCalendarSelectedKey(day.key);
+                  setCalendarOpen(true);
+                }}
+                type="button"
+              >
+                <strong>{day.label}</strong>
+                <span>{day.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                <i><b>{day.total > 0 ? day.total : "—"}</b><small>min</small></i>
+                <em>{day.sessions > 0 ? "✓" : ""}</em>
+              </button>
+            ))}
+          </div>
+          <div className="cardio-week-summary">
+            <span><Clock3 size={22} /><small>Total da semana</small><strong>{weekTotal} min</strong></span>
+            <span><Activity size={22} /><small>Total de sessões</small><strong>{weekSessions} {weekSessions === 1 ? "sessão" : "sessões"}</strong></span>
+          </div>
+        </article>
+
+        <article className="cardio-dashboard-card cardio-history-card">
+          <header className="cardio-card-heading cardio-card-heading-split">
+            <span><Clipboard size={22} /><h3>Registros anteriores</h3></span>
+            <button className="cardio-text-button" type="button" onClick={() => setHistoryOpen(true)}>Ver todos <ChevronRight size={17} /></button>
+          </header>
+          <div className="cardio-history-head"><span>Atividade</span><span>Data</span><span>Tempo</span><span>Ritmo</span><span /></div>
+          <div className="cardio-history-list">
+            {sortedCardio.length === 0 && <p className="cardio-empty">Sem cardio registrado.</p>}
+            {sortedCardio.slice(0, 4).map((item) => (
+              <div className="cardio-history-row" key={item.id}>
+                <strong><Activity size={18} />{item.atividade}</strong>
+                <span>{item.dataHora}</span>
+                <span><Clock3 size={16} />{item.tempoMin} min</span>
+                <span><Activity size={16} />{item.ritmo}</span>
+                {profile.role === "ALUNO" ? <button type="button" aria-label={`Apagar ${item.atividade}`} onClick={() => void removeCardio(item)}><Trash2 size={17} /></button> : <i />}
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+
+      {historyOpen && (
+        <div className="cardio-dialog-backdrop" onMouseDown={() => setHistoryOpen(false)}>
+          <article className="cardio-dialog" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Todos os registros de cardio">
+            <header><div><small>HISTÓRICO COMPLETO</small><h2>Todos os registros de cardio</h2></div><button type="button" onClick={() => setHistoryOpen(false)} aria-label="Fechar"><X size={22} /></button></header>
+            <div className="cardio-dialog-records">
+              {sortedCardio.length === 0 && <p className="cardio-empty">Sem cardio registrado.</p>}
+              {sortedCardio.map((item) => (
+                <div className="cardio-history-row" key={item.id}>
+                  <strong><Activity size={18} />{item.atividade}</strong><span>{item.dataHora}</span><span><Clock3 size={16} />{item.tempoMin} min</span><span><Activity size={16} />{item.ritmo}</span>
+                  {profile.role === "ALUNO" ? <button type="button" aria-label={`Apagar ${item.atividade}`} onClick={() => void removeCardio(item)}><Trash2 size={17} /></button> : <i />}
+                </div>
+              ))}
+            </div>
+          </article>
+        </div>
       )}
 
-      <article className="panel">
-        <SectionTitle icon={Clipboard} title="Cardio" />
-        <div className="list">
-          {cardio.length === 0 && <EmptyState title="Sem cardio registrado" />}
-          {cardio.map((item) => (
-            <div className="list-row" key={item.id}>
-              <div>
-                <strong>{item.atividade}</strong>
-                <small>
-                  {item.dataHora} · {item.tempoMin}min · {item.ritmo}
-                </small>
-              </div>
-              {profile.role === "ALUNO" && (
-                <button aria-label="Apagar" onClick={() => deleteDoc(doc(services.db, "users", target.uid, "cardio", item.id))} type="button">
-                  <Trash2 size={16} />
-                </button>
-              )}
+      {calendarOpen && (
+        <div className="cardio-dialog-backdrop" onMouseDown={() => setCalendarOpen(false)}>
+          <article className="cardio-dialog cardio-calendar-dialog" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label="Calendário completo de cardio">
+            <header><div><small>CALENDÁRIO COMPLETO</small><h2>Histórico de cardio</h2></div><button type="button" onClick={() => setCalendarOpen(false)} aria-label="Fechar"><X size={22} /></button></header>
+            <div className="cardio-calendar-toolbar">
+              <button type="button" onClick={() => setCalendarMonthMs(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1).getTime())}><ChevronLeft size={20} /></button>
+              <strong>{formatCardioMonth(calendarMonth)}</strong>
+              <button type="button" onClick={() => setCalendarMonthMs(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1).getTime())}><ChevronRight size={20} /></button>
             </div>
-          ))}
+            <div className="cardio-full-calendar">
+              {['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'].map((label) => <span className="cardio-calendar-weekday" key={label}>{label}</span>)}
+              {calendarCells.map((day) => (
+                <button
+                  className={`${day.currentMonth ? "" : "is-outside"} ${day.total > 0 ? "has-cardio" : ""} ${calendarSelectedKey === day.key ? "is-selected" : ""}`}
+                  key={day.key}
+                  onClick={() => setCalendarSelectedKey(day.key)}
+                  type="button"
+                >
+                  <span>{day.date.getDate()}</span>{day.total > 0 && <small>{day.total} min</small>}
+                </button>
+              ))}
+            </div>
+            <div className="cardio-calendar-detail">
+              <h3>{calendarSelectedKey ? `Registros de ${calendarSelectedKey.split('-').reverse().join('/')}` : "Selecione um dia"}</h3>
+              {calendarSelectedKey && calendarDayRecords.length === 0 && <p>Sem cardio registrado neste dia.</p>}
+              {calendarDayRecords.map((item) => <p key={item.id}><strong>{item.atividade}</strong><span>{item.tempoMin} min · {item.ritmo} · {item.dataHora.slice(11)}</span></p>)}
+            </div>
+          </article>
         </div>
-      </article>
+      )}
     </section>
   );
 }
