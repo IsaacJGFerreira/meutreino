@@ -86,14 +86,15 @@ object CardioFirestoreRepository {
         onOk: (() -> Unit)? = null,
         onErro: ((Exception) -> Unit)? = null
     ) {
-        val data = hashMapOf(
+        val createdAt = registro.createdAt.takeIf { it > 0L } ?: System.currentTimeMillis()
+        val data = hashMapOf<String, Any?>(
             "id" to registro.id,
             "dataHora" to registro.dataHora,
             "dataChave" to registro.dataHora.trim().split(" ").firstOrNull(),
             "atividade" to registro.atividade,
             "tempoMin" to registro.tempoMin,
             "ritmo" to registro.ritmo,
-            "createdAt" to registro.createdAt.takeIf { it > 0L } ?: System.currentTimeMillis()
+            "createdAt" to createdAt
         )
 
         Firebase.firestore.collection("users")
