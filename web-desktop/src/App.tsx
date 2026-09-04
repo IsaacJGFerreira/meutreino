@@ -14,6 +14,7 @@ import {
   Dumbbell,
   LogOut,
   Menu,
+  MessageSquare,
   Plus,
   RefreshCcw,
   Save,
@@ -72,6 +73,7 @@ import {
   deleteWorkoutPlan,
   formatDate,
   formatDateTime,
+  MAX_TRAINER_MESSAGE_LENGTH,
   mapWorkoutDoc,
   newId,
   parsePositiveWholeMinutes,
@@ -82,6 +84,7 @@ import {
   safeDocId,
   saveCardioGoal as saveCardioGoalInFirestore,
   saveWorkoutPlan,
+  sendTrainerMessage,
   updateWorkoutOrder
 } from "./firebaseApi";
 import type {
@@ -230,10 +233,20 @@ function cardioFromDoc(id: string, data: DocumentData): CardioRecord {
 function notificationFromDoc(id: string, data: DocumentData): NotificationItem {
   return {
     id,
+    type: typeof data.type === "string" ? data.type : undefined,
+    title: typeof data.title === "string" ? data.title : undefined,
     message: String(data.message ?? "Seu treino foi atualizado."),
     read: Boolean(data.read ?? false),
-    createdAt: Number(data.createdAt ?? 0)
+    createdAt: Number(data.createdAt ?? 0),
+    fromUid: typeof data.fromUid === "string" ? data.fromUid : undefined
   };
+}
+
+function notificationTitle(item: Pick<NotificationItem, "type" | "title">) {
+  if (item.title) return item.title;
+  if (item.type === "CARDIO_META_ATUALIZADA") return "Meta semanal de cardio";
+  if (item.type === "MENSAGEM_TREINADOR") return "Mensagem do professor";
+  return "Atualização do treino";
 }
 
 function inviteRequestFromDoc(id: string, data: DocumentData): InviteRequest {
@@ -963,6 +976,12 @@ function ProfileView({
   const [height, setHeight] = useState(profile.alturaCm?.toString() ?? "");
   const [weight, setWeight] = useState(profile.pesoKg?.toString() ?? progress[0]?.pesoKg?.toString() ?? "");
   const [requestQty, setRequestQty] = useState("5");
+  const [trainerMessage, setTrainerMessage] = useState("");
+  const [sendingTrainerMessage, setSendingTrainerMessage] = useState(false);
+
+  useEffect(() => {
+    setTrainerMessage("");
+  }, [selectedStudent?.uid]);
 
   async function saveStudentData(event: FormEvent) {
     event.preventDefault();
@@ -1014,6 +1033,35 @@ function ProfileView({
 
     await Promise.all(unread.map((item) => updateDoc(doc(services.db, "users", profile.uid, "notifications", item.id), { read: true })));
     notify("ok", "Notificações marcadas como lidas.");
+  }
+
+  async function sendMessage(event: FormEvent) {
+    event.preventDefault();
+    if (!selectedStudent) {
+      notify("warn", "Selecione um aluno para enviar a mensagem.");
+      return;
+    }
+
+    const message = trainerMessage.replace(/\s+/g, " ").trim();
+    if (!message) {
+      notify("warn", "Digite uma mensagem.");
+      return;
+    }
+    if (message.length > MAX_TRAINER_MESSAGE_LENGTH) {
+      notify("warn", `A mensagem deve ter no máximo ${MAX_TRAINER_MESSAGE_LENGTH} caracteres.`);
+      return;
+    }
+
+    setSendingTrainerMessage(true);
+    try {
+      await sendTrainerMessage(services, selectedStudent.uid, profile.uid, message);
+      setTrainerMessage("");
+      notify("ok", `Mensagem enviada para ${selectedStudent.name}.`);
+    } catch (error) {
+      notify("error", firebaseErrorMessage(error, "Não foi possível enviar a mensagem."));
+    } finally {
+      setSendingTrainerMessage(false);
+    }
   }
 
   const latestRecord = records[0];
@@ -1084,8 +1132,14 @@ function ProfileView({
               {notifications.length === 0 && <EmptyState title="Sem novas atualizações" />}
               {notifications.slice(0, 4).map((item) => (
                 <div className="list-row" key={item.id}>
-                  <span>{item.message}</span>
-                  <small>{item.read ? "Lida" : "Nova"}</small>
+                  <div>
+                    <strong>{notificationTitle(item)}</strong>
+                    <span>{item.message}</span>
+                  </div>
+                  <small>
+                    {item.read ? "Lida" : "Nova"}
+                    {item.createdAt > 0 ? ` · ${formatDateTime(new Date(item.createdAt))}` : ""}
+                  </small>
                 </div>
               ))}
             </div>
@@ -1098,7 +1152,8 @@ function ProfileView({
       )}
 
       {profile.role === "TREINADOR" && (
-        <div className="grid two">
+        <>
+          <div className="grid two">
           <article className="panel">
             <SectionTitle icon={Users} title="Meus alunos" />
             <div className="list">
@@ -1137,7 +1192,32 @@ function ProfileView({
               </button>
             </form>
           </article>
-        </div>
+          </div>
+
+          {selectedStudent && (
+            <article className="panel trainer-message-panel">
+              <SectionTitle icon={MessageSquare} title="Mensagem para o aluno" />
+              <p className="form-hint">Envie uma orientação rápida para {selectedStudent.name}.</p>
+              <form className="trainer-message-form" onSubmit={sendMessage}>
+                <textarea
+                  aria-label="Mensagem para o aluno"
+                  maxLength={MAX_TRAINER_MESSAGE_LENGTH}
+                  onChange={(event) => setTrainerMessage(event.target.value)}
+                  placeholder="Ex.: Tudo bem? Notei que você faltou ao treino."
+                  rows={3}
+                  value={trainerMessage}
+                />
+                <div className="trainer-message-footer">
+                  <small>{trainerMessage.length}/{MAX_TRAINER_MESSAGE_LENGTH}</small>
+                  <button className="primary-btn" disabled={sendingTrainerMessage} type="submit">
+                    <MessageSquare size={17} />
+                    {sendingTrainerMessage ? "Enviando..." : "Enviar mensagem"}
+                  </button>
+                </div>
+              </form>
+            </article>
+          )}
+        </>
       )}
     </section>
   );

@@ -147,7 +147,7 @@ class ExerciciosTreinoFragment : Fragment() {
 
     private fun salvarTreinoAtual(
         uidDestino: String,
-        mensagemNotificacao: String,
+        mensagemNotificacao: String? = null,
         onOk: (() -> Unit)? = null
     ) {
         val t = treinoAtual ?: return
@@ -197,10 +197,10 @@ class ExerciciosTreinoFragment : Fragment() {
             return
         }
 
-        val mensagem = if (isNewTreinoFlow) {
+        val mensagem: String? = if (isNewTreinoFlow) {
             "Novo treino \"${treino.nome}\" com $totalExercicios exercício(s) foi adicionado pelo seu professor."
         } else {
-            "Seu treinador atualizou o treino \"${treino.nome}\". Confira as mudanças."
+            null
         }
 
         val tinhaAlteracao = treinoAlterado || isNewTreinoFlow

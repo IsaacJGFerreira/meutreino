@@ -427,6 +427,48 @@ select:focus {
   grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
 }
 
+.form-hint {
+  margin: -4px 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.trainer-message-form {
+  display: grid;
+  gap: 10px;
+}
+
+.trainer-message-form textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  border: 1px solid #cbd8d2;
+  border-radius: 8px;
+  background: #fbfdfc;
+  color: var(--text);
+  padding: 12px;
+  outline: none;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.trainer-message-form textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(90, 171, 138, 0.16);
+}
+
+.trainer-message-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trainer-message-footer small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .redeem-form {
   display: grid;
   grid-template-columns: 1fr auto;

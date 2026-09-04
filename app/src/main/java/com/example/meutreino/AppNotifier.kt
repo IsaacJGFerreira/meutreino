@@ -13,7 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 object AppNotifier {
 
     private const val CHANNEL_ID = "treino_updates"
-    private const val CHANNEL_NAME = "Atualizações de treino"
+    private const val CHANNEL_NAME = "Atualizações do treinador"
 
     fun showWorkoutUpdate(context: Context, title: String, message: String) {
         ensureChannel(context)
@@ -45,7 +45,7 @@ object AppNotifier {
             CHANNEL_NAME,
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Notificações quando o treinador atualizar seu treino"
+            description = "Mensagens e atualizações enviadas pelo treinador"
         }
         manager.createNotificationChannel(channel)
     }

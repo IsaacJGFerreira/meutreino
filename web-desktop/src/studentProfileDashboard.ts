@@ -54,6 +54,8 @@ type CardioRecordState = {
 
 type NotificationState = {
   id: string;
+  type?: string;
+  title?: string;
   message: string;
   read: boolean;
   createdAt: number;
@@ -171,10 +173,19 @@ function cardioFromDoc(id: string, data: DocumentData): CardioRecordState {
 function notificationFromDoc(id: string, data: DocumentData): NotificationState {
   return {
     id,
+    type: typeof data.type === "string" ? data.type : undefined,
+    title: typeof data.title === "string" ? data.title : undefined,
     message: String(data.message ?? "Seu treino foi atualizado."),
     read: Boolean(data.read ?? false),
     createdAt: Number(data.createdAt ?? 0)
   };
+}
+
+function notificationTitle(item: Pick<NotificationState, "type" | "title">) {
+  if (item.title) return item.title;
+  if (item.type === "CARDIO_META_ATUALIZADA") return "Meta semanal de cardio";
+  if (item.type === "MENSAGEM_TREINADOR") return "Mensagem do professor";
+  return "Atualização do treino";
 }
 
 function readSelectedStudent(): TargetState | null {
@@ -1704,7 +1715,7 @@ function renderProfileHtml(profile: StudentProfileState) {
         <article class="student-dashboard-card student-updates-card">
           <div class="student-section-heading"><span>${renderProfileIcon("bell")}</span><div><h3>Atualizações do treinador${unreadCount ? ` (${unreadCount})` : ""}</h3><p>Fique por dentro das orientações e feedbacks do seu treinador.</p></div></div>
           <div class="student-updates-list">
-            ${latestMessages.length ? latestMessages.map((item) => `<div class="student-update-row"><i class="${item.read ? "is-read" : ""}"></i><span>${escapeHtml(item.message)}</span><time>${formatNotificationDate(item.createdAt)}</time></div>`).join("") : '<div class="student-update-empty">Sem novas atualizações</div>'}
+            ${latestMessages.length ? latestMessages.map((item) => `<div class="student-update-row"><i class="${item.read ? "is-read" : ""}"></i><span><strong>${escapeHtml(notificationTitle(item))}</strong>${escapeHtml(item.message)}</span><time>${formatNotificationDate(item.createdAt)}</time></div>`).join("") : '<div class="student-update-empty">Sem novas atualizações</div>'}
           </div>
           <button class="student-mark-read-button" type="button" data-student-action="mark-notifications" ${unreadCount ? "" : "disabled"}>✓ Marcar como lidas</button>
         </article>
