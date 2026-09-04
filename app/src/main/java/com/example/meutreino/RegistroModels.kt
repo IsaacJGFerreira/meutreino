@@ -17,5 +17,7 @@ data class TreinoRegistro(
     val nomeTreino: String,
     val completo: Boolean, // ✅ novo
     val exercicios: List<ExercicioRegistro>,
-    val duracaoSegundos: Long = 0L
+    val duracaoSegundos: Long = 0L,
+    /** Timestamp do evento no Firestore/Android, em milissegundos. */
+    val createdAt: Long = 0L
 )

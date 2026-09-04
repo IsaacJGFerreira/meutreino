@@ -58,6 +58,8 @@ class CardioFragment : Fragment() {
     private var targetUid: String? = null
     private var userGoal = DEFAULT_CARDIO_GOAL
     private var metaGoal: Int? = null
+    private var userGoalUpdatedAt = 0L
+    private var metaGoalUpdatedAt = 0L
 
     private var cardioListener: ListenerRegistration? = null
     private var userGoalListener: ListenerRegistration? = null
@@ -285,11 +287,14 @@ class CardioFragment : Fragment() {
 
         userGoal = DEFAULT_CARDIO_GOAL
         metaGoal = null
+        userGoalUpdatedAt = 0L
+        metaGoalUpdatedAt = 0L
         userGoalListener = Firebase.firestore.collection("users").document(uid)
             .addSnapshotListener { document, error ->
                 if (!isViewReady() || targetUid != uid) return@addSnapshotListener
                 if (error == null && document != null) {
                     userGoal = readGoal(document) ?: DEFAULT_CARDIO_GOAL
+                    userGoalUpdatedAt = readUpdatedAt(document)
                     renderGoal()
                 }
             }
@@ -298,6 +303,7 @@ class CardioFragment : Fragment() {
             .addSnapshotListener { document, error ->
                 if (!isViewReady() || targetUid != uid) return@addSnapshotListener
                 metaGoal = if (error == null && document != null && document.exists()) readGoal(document) else null
+                metaGoalUpdatedAt = if (error == null && document != null && document.exists()) readUpdatedAt(document) else 0L
                 renderGoal()
             }
     }
@@ -430,7 +436,7 @@ class CardioFragment : Fragment() {
 
     private fun renderGoal(minutesOverride: Int? = null) {
         if (!isViewReady()) return
-        val goal = (metaGoal ?: userGoal).takeIf { it > 0 } ?: DEFAULT_CARDIO_GOAL
+        val goal = resolvedGoal()
         val minutes = minutesOverride ?: minutesForWeek(startOfWeek(weekCursor))
         val remaining = max(0, goal - minutes)
         val percent = if (goal > 0) ((minutes * 100f) / goal).toInt() else 0
@@ -741,6 +747,24 @@ class CardioFragment : Fragment() {
                 }
             }
             ?.takeIf { it > 0 }
+    }
+
+    private fun readUpdatedAt(document: DocumentSnapshot): Long {
+        return document.getLong("updatedAt")
+            ?: document.getDouble("updatedAt")?.toLong()
+            ?: document.getTimestamp("updatedAt")?.toDate()?.time
+            ?: 0L
+    }
+
+    private fun resolvedGoal(): Int {
+        val configGoal = metaGoal?.takeIf { it > 0 }
+        if (configGoal != null) {
+            val configIsLatest = (metaGoalUpdatedAt == 0L && userGoalUpdatedAt == 0L) ||
+                metaGoalUpdatedAt >= userGoalUpdatedAt ||
+                userGoalUpdatedAt == 0L
+            if (configIsLatest) return configGoal
+        }
+        return userGoal.takeIf { it > 0 } ?: configGoal ?: DEFAULT_CARDIO_GOAL
     }
 
     private fun minutesForWeek(start: Calendar): Int {

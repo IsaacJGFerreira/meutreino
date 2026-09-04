@@ -2,8 +2,6 @@ import {
   collection,
   doc,
   onSnapshot,
-  orderBy,
-  query,
   setDoc,
   type DocumentData
 } from "firebase/firestore";
@@ -125,9 +123,11 @@ function startFirebaseListeners(uid: string) {
   );
 
   recordsUnsubscribe = onSnapshot(
-    query(collection(currentServices.db, "users", uid, "treino_registros"), orderBy("createdAt", "desc")),
+    collection(currentServices.db, "users", uid, "treino_registros"),
     (snap) => {
-      records = snap.docs.map((item) => workoutRecordFromDoc(item.id, item.data()));
+      records = snap.docs
+        .map((item) => workoutRecordFromDoc(item.id, item.data()))
+        .sort((a, b) => workoutRecordTime(b) - workoutRecordTime(a));
       scheduleRender();
     },
     () => {
@@ -171,6 +171,15 @@ function workoutRecordFromDoc(id: string, data: DocumentData): WorkoutRecord {
       };
     })
   };
+}
+
+function workoutRecordTime(record: WorkoutRecord) {
+  if (Number.isFinite(record.createdAt) && record.createdAt > 0) return record.createdAt;
+  const match = record.dataHora.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:,?\s+(\d{2}):(\d{2}))?/);
+  if (!match) return 0;
+  const [, day, month, year, hour = "0", minute = "0"] = match;
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
 }
 
 function injectStyles() {
@@ -1059,7 +1068,9 @@ function updateExerciseStatusClass(workoutId: string, exerciseIndex: number) {
 }
 
 function getPreviousSeries(workoutName: string, exerciseName: string, serieNumero: number) {
-  const record = records.find((item) => sameName(item.nomeTreino, workoutName));
+  const record = records
+    .filter((item) => sameName(item.nomeTreino, workoutName))
+    .sort((a, b) => workoutRecordTime(b) - workoutRecordTime(a))[0];
   const exercise = record?.exercicios.find((item) => sameName(item.nomeExercicio, exerciseName));
   const serie = exercise?.series.find((item) => item.serieNumero === serieNumero);
 

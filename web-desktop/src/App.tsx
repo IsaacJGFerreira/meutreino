@@ -79,6 +79,7 @@ import {
   redeemInviteCode,
   rejectInviteRequest,
   safeDocId,
+  saveCardioGoal as saveCardioGoalInFirestore,
   saveWorkoutPlan,
   updateWorkoutOrder
 } from "./firebaseApi";
@@ -207,6 +208,11 @@ function workoutRecordFromDoc(id: string, data: DocumentData): WorkoutRecord {
       };
     })
   };
+}
+
+function workoutRecordTime(record: WorkoutRecord) {
+  if (Number.isFinite(record.createdAt) && record.createdAt > 0) return record.createdAt;
+  return parsePtBrDate(record.dataHora)?.getTime() ?? 0;
 }
 
 function cardioFromDoc(id: string, data: DocumentData): CardioRecord {
@@ -365,9 +371,13 @@ function App() {
         (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar treinos."))
       ),
       onSnapshot(
-        query(collection(services.db, "users", target.uid, "treino_registros"), orderBy("createdAt", "desc")),
+        collection(services.db, "users", target.uid, "treino_registros"),
         (snap) => {
-          setRecords(snap.docs.map((item) => workoutRecordFromDoc(item.id, item.data())));
+          setRecords(
+            snap.docs
+              .map((item) => workoutRecordFromDoc(item.id, item.data()))
+              .sort((a, b) => workoutRecordTime(b) - workoutRecordTime(a))
+          );
         },
         (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar desempenho."))
       ),
@@ -381,7 +391,11 @@ function App() {
       onSnapshot(
         collection(services.db, "users", target.uid, "cardio"),
         (snap) => {
-          setCardio(snap.docs.map((item) => cardioFromDoc(item.id, item.data())));
+          setCardio(
+            snap.docs
+              .map((item) => cardioFromDoc(item.id, item.data()))
+              .sort((a, b) => formatCardioRecordTime(b) - formatCardioRecordTime(a))
+          );
         },
         (error) => notify("error", firebaseErrorMessage(error, "Erro ao carregar cardio."))
       )
@@ -1645,13 +1659,19 @@ function PerformanceView({ target, records }: { target: TrainerStudent | { uid: 
   );
 }
 
-function cardioRecordDate(record: CardioRecord) {
-  const match = record.dataHora.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+function parsePtBrDate(value: string) {
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:,?\s+(\d{2}):(\d{2}))?/);
   if (match) {
     const [, day, month, year, hour = "0", minute = "0"] = match;
     const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
     if (!Number.isNaN(parsed.getTime())) return parsed;
   }
+  return null;
+}
+
+function cardioRecordDate(record: CardioRecord) {
+  const parsed = parsePtBrDate(record.dataHora);
+  if (parsed) return parsed;
   return record.createdAt > 0 ? new Date(record.createdAt) : null;
 }
 
@@ -1710,6 +1730,8 @@ function CardioView({
   const [weekStartMs, setWeekStartMs] = useState(() => cardioStartOfWeek(new Date()).getTime());
   const [chartDays, setChartDays] = useState(7);
   const [weeklyGoal, setWeeklyGoal] = useState(180);
+  const [goalDraft, setGoalDraft] = useState("180");
+  const [savingGoal, setSavingGoal] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarMonthMs, setCalendarMonthMs] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime());
@@ -1721,33 +1743,57 @@ function CardioView({
     setCalendarSelectedKey(null);
     setHistoryOpen(false);
     setCalendarOpen(false);
+    setWeeklyGoal(180);
+    setGoalDraft("180");
   }, [target?.uid]);
+
+  useEffect(() => {
+    setGoalDraft(String(weeklyGoal));
+  }, [weeklyGoal, target?.uid]);
 
   useEffect(() => {
     if (!target?.uid) return;
     let userGoal = 0;
     let configGoal = 0;
-    const applyGoal = () => setWeeklyGoal(configGoal || userGoal || 180);
+    let userGoalUpdatedAt = 0;
+    let configGoalUpdatedAt = 0;
+    const readMillis = (value: unknown) => {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (!value || typeof value !== "object") return 0;
+      const candidate = value as { toMillis?: () => number; seconds?: number };
+      if (typeof candidate.toMillis === "function") return candidate.toMillis();
+      return typeof candidate.seconds === "number" ? candidate.seconds * 1000 : 0;
+    };
     const readGoal = (data: DocumentData | undefined) => {
       const value = Number(data?.cardioMetaSemanalMin ?? data?.metaSemanalCardioMin ?? data?.cardioGoalMin ?? 0);
       return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+    };
+    const applyLatestGoal = () => {
+      const configIsLatest = configGoal > 0 && (
+        (configGoalUpdatedAt === 0 && userGoalUpdatedAt === 0) ||
+        configGoalUpdatedAt >= userGoalUpdatedAt ||
+        userGoalUpdatedAt === 0
+      );
+      setWeeklyGoal(configIsLatest ? configGoal : userGoal || configGoal || 180);
     };
 
     const unsubscribeUser = onSnapshot(
       doc(services.db, "users", target.uid),
       (snap) => {
         userGoal = readGoal(snap.data());
-        applyGoal();
+        userGoalUpdatedAt = readMillis(snap.data()?.updatedAt);
+        applyLatestGoal();
       },
-      () => applyGoal()
+      () => applyLatestGoal()
     );
     const unsubscribeConfig = onSnapshot(
       doc(services.db, "users", target.uid, "cardio_meta", "current"),
       (snap) => {
         configGoal = readGoal(snap.data());
-        applyGoal();
+        configGoalUpdatedAt = readMillis(snap.data()?.updatedAt);
+        applyLatestGoal();
       },
-      () => applyGoal()
+      () => applyLatestGoal()
     );
 
     return () => {
@@ -1859,6 +1905,30 @@ function CardioView({
     }
   }
 
+  async function saveWeeklyGoal(event: FormEvent) {
+    event.preventDefault();
+    if (!target || profile.role !== "TREINADOR") return;
+
+    const value = Number(goalDraft.replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0) {
+      notify("warn", "Informe uma meta semanal válida em minutos.");
+      return;
+    }
+
+    const normalizedValue = Math.round(value);
+    setSavingGoal(true);
+    try {
+      await saveCardioGoalInFirestore(services, target.uid, normalizedValue, profile.uid);
+      setWeeklyGoal(normalizedValue);
+      setGoalDraft(String(normalizedValue));
+      notify("ok", `Meta semanal de cardio atualizada para ${target.name}.`);
+    } catch (error) {
+      notify("error", firebaseErrorMessage(error, "Erro ao atualizar a meta de cardio."));
+    } finally {
+      setSavingGoal(false);
+    }
+  }
+
   async function removeCardio(item: CardioRecord) {
     if (!target || profile.role !== "ALUNO") return;
     if (!window.confirm(`Apagar o registro de ${item.atividade} em ${item.dataHora}?`)) return;
@@ -1893,6 +1963,30 @@ function CardioView({
         </div>
         <img className="cardio-runner" src="/cardio-runner.png" alt="Pessoa correndo" />
       </article>
+
+      {profile.role === "TREINADOR" && (
+        <article className="cardio-dashboard-card cardio-goal-editor-card">
+          <header className="cardio-card-heading"><Settings size={22} /><h3>Editar meta semanal do aluno</h3></header>
+          <p className="cardio-goal-editor-help">Defina quantos minutos de cardio o aluno deve cumprir por semana. A alteração será refletida na web e no aplicativo Android.</p>
+          <form className="cardio-goal-editor-form" onSubmit={saveWeeklyGoal}>
+            <label className="cardio-goal-editor-field">
+              <span>Meta semanal (minutos)</span>
+              <input
+                min="1"
+                step="5"
+                inputMode="numeric"
+                type="number"
+                value={goalDraft}
+                onChange={(event) => setGoalDraft(event.target.value)}
+              />
+            </label>
+            <button className="cardio-save-button" disabled={savingGoal} type="submit">
+              <Save size={18} />
+              {savingGoal ? "Salvando..." : "Salvar meta"}
+            </button>
+          </form>
+        </article>
+      )}
 
       <div className="cardio-dashboard-grid cardio-dashboard-grid-top">
         <article className="cardio-dashboard-card cardio-register-card">

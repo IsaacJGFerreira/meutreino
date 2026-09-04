@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.tasks.Tasks
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -359,13 +360,13 @@ class PerfilFragment : Fragment() {
         val weekStart = inicioDaSemanaAtual()
 
         db.collection("users").document(uid).collection("treino_registros")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(80)
             .get()
             .addOnSuccessListener { treinoSnap ->
                 if (!isAdded) return@addOnSuccessListener
 
                 val treinoDocs = treinoSnap.documents
+                    .sortedByDescending { dataDocumento(it)?.time ?: 0L }
+                    .take(80)
                 val ultimoTreino = treinoDocs.firstOrNull { it.getBoolean("completo") ?: false }
                     ?: treinoDocs.firstOrNull()
                 tvUltimoTreino.text = if (ultimoTreino == null) {
@@ -385,19 +386,19 @@ class PerfilFragment : Fragment() {
                 tvTreinosSemana.text = "Treinos na semana\n$treinosConcluidosSemana / ${treinosSemana.size} concluídos"
 
                 db.collection("users").document(uid).collection("cardio")
-                    .orderBy("createdAt", Query.Direction.DESCENDING)
-                    .limit(80)
                     .get()
                     .addOnSuccessListener { cardioSnap ->
                         if (!isAdded) return@addOnSuccessListener
 
                         val cardioDocs = cardioSnap.documents
+                            .sortedByDescending { dataDocumento(it)?.time ?: 0L }
+                            .take(80)
                         val ultimoCardio = cardioDocs.firstOrNull()
                         tvUltimoCardio.text = if (ultimoCardio == null) {
                             "Último cardio\nSem registros"
                         } else {
                             val atividade = ultimoCardio.getString("atividade") ?: "Cardio"
-                            val tempo = (ultimoCardio.getLong("tempoMin") ?: 0L).toInt()
+                            val tempo = readInt(ultimoCardio, "tempoMin") ?: 0
                             val data = ultimoCardio.getString("dataHora") ?: "sem data"
                             "Último cardio\n$atividade • ${tempo}min • $data"
                         }
@@ -405,7 +406,7 @@ class PerfilFragment : Fragment() {
                         val cardioDias = cardioDocs.mapNotNull { diaSemanaDoDocumento(it, weekStart) }.toSet()
                         val minutosCardioSemana = cardioDocs
                             .filter { diaSemanaDoDocumento(it, weekStart) != null }
-                            .sumOf { (it.getLong("tempoMin") ?: 0L).toInt() }
+                            .sumOf { readInt(it, "tempoMin") ?: 0 }
 
                         carregarMetaCardio(uid, metaInicial) { meta ->
                             if (!isAdded) return@carregarMetaCardio
@@ -441,17 +442,25 @@ class PerfilFragment : Fragment() {
     }
 
     private fun carregarMetaCardio(uid: String, metaInicial: Int, onMeta: (Int) -> Unit) {
-        Firebase.firestore.collection("users")
-            .document(uid)
-            .collection("cardio_meta")
-            .document("current")
-            .get()
-            .addOnSuccessListener { doc ->
-                val meta = readInt(doc, "cardioMetaSemanalMin")
-                    ?: readInt(doc, "metaSemanalCardioMin")
-                    ?: readInt(doc, "cardioGoalMin")
-                    ?: metaInicial
-                onMeta(if (meta > 0) meta else DEFAULT_CARDIO_GOAL)
+        val userRef = Firebase.firestore.collection("users").document(uid)
+        val rootTask = userRef.get()
+        val configTask = userRef.collection("cardio_meta").document("current").get()
+
+        Tasks.whenAllComplete(listOf(rootTask, configTask))
+            .addOnSuccessListener { results ->
+                val root = results.getOrNull(0)?.takeIf { it.isSuccessful }?.result as? DocumentSnapshot
+                val config = results.getOrNull(1)?.takeIf { it.isSuccessful }?.result as? DocumentSnapshot
+                val rootGoal = root?.let(::cardioGoalFromDocument) ?: metaInicial
+                val configGoal = config?.takeIf { it.exists() }?.let(::cardioGoalFromDocument)
+                val rootUpdatedAt = root?.let(::updatedAtOf) ?: 0L
+                val configUpdatedAt = config?.let(::updatedAtOf) ?: 0L
+                val configIsLatest = configGoal != null && (
+                    (rootUpdatedAt == 0L && configUpdatedAt == 0L) ||
+                        configUpdatedAt >= rootUpdatedAt ||
+                        rootUpdatedAt == 0L
+                    )
+                val meta = if (configIsLatest) configGoal else rootGoal.takeIf { it > 0 } ?: configGoal
+                onMeta(meta?.takeIf { it > 0 } ?: DEFAULT_CARDIO_GOAL)
             }
             .addOnFailureListener {
                 onMeta(if (metaInicial > 0) metaInicial else DEFAULT_CARDIO_GOAL)
@@ -594,17 +603,30 @@ class PerfilFragment : Fragment() {
 
     private fun dataDocumento(doc: DocumentSnapshot): Date? {
         val createdAt = doc.getLong("createdAt")
+            ?: doc.getDouble("createdAt")?.toLong()
+            ?: doc.getTimestamp("createdAt")?.toDate()?.time
         if (createdAt != null && createdAt > 0) return Date(createdAt)
 
         val dataHora = doc.getString("dataHora") ?: return null
-        return runCatching {
-            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).parse(dataHora)
-                ?: SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(dataHora)
-        }.getOrNull()
+        return TreinoRegistroUtils.parseDataHora(dataHora).takeIf { it > 0L }?.let(::Date)
     }
 
     private fun readInt(doc: DocumentSnapshot, field: String): Int? {
         return doc.getLong(field)?.toInt() ?: doc.getDouble(field)?.toInt()
+    }
+
+    private fun cardioGoalFromDocument(doc: DocumentSnapshot): Int {
+        return readInt(doc, "cardioMetaSemanalMin")
+            ?: readInt(doc, "metaSemanalCardioMin")
+            ?: readInt(doc, "cardioGoalMin")
+            ?: 0
+    }
+
+    private fun updatedAtOf(doc: DocumentSnapshot): Long {
+        return doc.getLong("updatedAt")
+            ?: doc.getDouble("updatedAt")?.toLong()
+            ?: doc.getTimestamp("updatedAt")?.toDate()?.time
+            ?: 0L
     }
 
     private fun dp(value: Int): Int {
