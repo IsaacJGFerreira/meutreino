@@ -315,7 +315,7 @@ class CardioFragment : Fragment() {
         }
         val uid = Firebase.auth.currentUser?.uid ?: return
         val activity = activityInput.text.toString().trim()
-        val duration = durationInput.text.toString().trim().toIntOrNull()
+        val duration = CardioMinutes.parse(durationInput.text)
         val pace = paceInput.text.toString().trim().ifBlank { "—" }
 
         if (activity.isBlank()) {

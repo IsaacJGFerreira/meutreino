@@ -74,6 +74,7 @@ import {
   formatDateTime,
   mapWorkoutDoc,
   newId,
+  parsePositiveWholeMinutes,
   parseNumber,
   progressFromDoc,
   redeemInviteCode,
@@ -1870,13 +1871,13 @@ function CardioView({
     event.preventDefault();
     if (!target || profile.role !== "ALUNO") return;
     const activityName = atividade.trim();
-    const minutes = Number(tempoMin);
+    const minutes = parsePositiveWholeMinutes(tempoMin);
     const selectedDate = new Date(date);
     if (!activityName) {
       notify("warn", "Informe a atividade.");
       return;
     }
-    if (!Number.isFinite(minutes) || minutes <= 0) {
+    if (minutes === null) {
       notify("warn", "Informe um tempo válido em minutos.");
       return;
     }
@@ -1892,7 +1893,7 @@ function CardioView({
         dataHora: formatDateTime(selectedDate),
         dataChave: formatDate(selectedDate),
         atividade: activityName,
-        tempoMin: Math.round(minutes),
+        tempoMin: minutes,
         ritmo: ritmo.trim() || "—",
         createdAt: selectedDate.getTime()
       });
@@ -1909,18 +1910,17 @@ function CardioView({
     event.preventDefault();
     if (!target || profile.role !== "TREINADOR") return;
 
-    const value = Number(goalDraft.replace(",", "."));
-    if (!Number.isFinite(value) || value <= 0) {
+    const value = parsePositiveWholeMinutes(goalDraft);
+    if (value === null) {
       notify("warn", "Informe uma meta semanal válida em minutos.");
       return;
     }
 
-    const normalizedValue = Math.round(value);
     setSavingGoal(true);
     try {
-      await saveCardioGoalInFirestore(services, target.uid, normalizedValue, profile.uid);
-      setWeeklyGoal(normalizedValue);
-      setGoalDraft(String(normalizedValue));
+      await saveCardioGoalInFirestore(services, target.uid, value, profile.uid);
+      setWeeklyGoal(value);
+      setGoalDraft(String(value));
       notify("ok", `Meta semanal de cardio atualizada para ${target.name}.`);
     } catch (error) {
       notify("error", firebaseErrorMessage(error, "Erro ao atualizar a meta de cardio."));
@@ -1973,11 +1973,15 @@ function CardioView({
               <span>Meta semanal (minutos)</span>
               <input
                 min="1"
-                step="5"
+                step="1"
                 inputMode="numeric"
                 type="number"
                 value={goalDraft}
                 onChange={(event) => setGoalDraft(event.target.value)}
+                onWheel={(event) => {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }}
               />
             </label>
             <button className="cardio-save-button" disabled={savingGoal} type="submit">
@@ -1999,7 +2003,7 @@ function CardioView({
               </label>
               <label className="cardio-field">
                 <span>Tempo min</span>
-                <span className="cardio-input-with-icon"><Clock3 size={17} /><input min="1" inputMode="numeric" type="number" value={tempoMin} onChange={(event) => setTempoMin(event.target.value)} /></span>
+                <span className="cardio-input-with-icon"><Clock3 size={17} /><input min="1" step="1" inputMode="numeric" type="number" value={tempoMin} onChange={(event) => setTempoMin(event.target.value)} onWheel={(event) => { event.preventDefault(); event.currentTarget.blur(); }} /></span>
               </label>
               <label className="cardio-field">
                 <span>Ritmo</span>

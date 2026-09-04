@@ -178,6 +178,7 @@
                             android:layout_height="52dp"
                             android:layout_weight="1"
                             android:background="@drawable/bg_neon_input"
+                            android:digits="0123456789"
                             android:hint="Tempo (min)"
                             android:inputType="number"
                             android:paddingHorizontal="14dp"
