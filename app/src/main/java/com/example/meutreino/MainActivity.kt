@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (!granted && !isFinishing && !isDestroyed) {
-            AppUiFeedback.showToast(this, "Permita notificações para receber atualizações de treino.", Toast.LENGTH_SHORT)
+            AppUiFeedback.showToast(this, "Permita notificações para receber atualizações e mensagens.", Toast.LENGTH_SHORT)
         }
     }
 
@@ -334,22 +334,26 @@ class MainActivity : AppCompatActivity() {
             .document(uid)
             .collection("notifications")
             .orderBy("createdAt", Query.Direction.DESCENDING)
-            .limit(1)
+            .limit(20)
             .addSnapshotListener { snap, err ->
                 if (isFinishing || isDestroyed) return@addSnapshotListener
                 if (err != null) return@addSnapshotListener
 
-                val latest = snap?.documents?.firstOrNull() ?: return@addSnapshotListener
-                val isRead = latest.getBoolean("read") ?: false
-                if (isRead) return@addSnapshotListener
+                val latest = snap?.documents?.firstOrNull { !(it.getBoolean("read") ?: false) }
+                    ?: return@addSnapshotListener
 
                 val latestTs = latest.getLong("createdAt") ?: 0L
                 val latestMsg = latest.getString("message") ?: "Seu treino foi atualizado."
+                val latestTitle = latest.getString("title") ?: when (latest.getString("type")) {
+                    "CARDIO_META_ATUALIZADA" -> "Meta semanal de cardio"
+                    "MENSAGEM_TREINADOR" -> "Mensagem do professor"
+                    else -> "Atualização do treino"
+                }
 
                 val lastSeenTs = prefs.getLong(KEY_LAST_NOTIFICATION_TS, 0L)
                 if (latestTs <= lastSeenTs) return@addSnapshotListener
 
-                AppNotifier.showWorkoutUpdate(this, "MeuTreino", latestMsg)
+                AppNotifier.showWorkoutUpdate(this, latestTitle, latestMsg)
                 prefs.edit().putLong(KEY_LAST_NOTIFICATION_TS, latestTs).apply()
             }
     }

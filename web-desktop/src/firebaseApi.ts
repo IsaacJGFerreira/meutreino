@@ -16,6 +16,7 @@ const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export const MIN_CARDIO_MINUTES = 1;
 export const MAX_CARDIO_MINUTES = 2_147_483_647;
+export const MAX_TRAINER_MESSAGE_LENGTH = 100;
 
 export function safeDocId(name: string) {
   return (
@@ -92,10 +93,39 @@ export async function saveCardioGoal(
     ...rootPayload,
     ...(updatedBy ? { updatedBy } : {})
   };
+  const isTrainerUpdate = Boolean(updatedBy && updatedBy !== targetUid);
+  const notificationMessage = isTrainerUpdate
+    ? `Seu treinador atualizou sua meta semanal de cardio para ${value} min.`
+    : "";
+  const notificationRef = isTrainerUpdate
+    ? doc(collection(services.db, "users", targetUid, "notifications"))
+    : null;
 
   const batch = writeBatch(services.db);
-  batch.set(rootRef, rootPayload, { merge: true });
+  batch.set(
+    rootRef,
+    {
+      ...rootPayload,
+      ...(isTrainerUpdate
+        ? {
+            lastCardioGoalUpdateAt: now,
+            lastCardioGoalUpdateMessage: notificationMessage
+          }
+        : {})
+    },
+    { merge: true }
+  );
   batch.set(configRef, configPayload, { merge: true });
+  if (notificationRef) {
+    batch.set(notificationRef, {
+      type: "CARDIO_META_ATUALIZADA",
+      title: "Meta semanal de cardio",
+      message: notificationMessage,
+      read: false,
+      createdAt: now,
+      fromUid: updatedBy as string
+    });
+  }
 
   try {
     await batch.commit();
@@ -108,7 +138,15 @@ export async function saveCardioGoal(
     let persisted = false;
 
     try {
-      await updateDoc(rootRef, rootPayload);
+      await updateDoc(rootRef, {
+        ...rootPayload,
+        ...(isTrainerUpdate
+          ? {
+              lastCardioGoalUpdateAt: now,
+              lastCardioGoalUpdateMessage: notificationMessage
+            }
+          : {})
+      });
       persisted = true;
     } catch (error) {
       errors.push(error);
@@ -119,6 +157,23 @@ export async function saveCardioGoal(
       persisted = true;
     } catch (error) {
       errors.push(error);
+    }
+
+    if (notificationRef) {
+      try {
+        await setDoc(notificationRef, {
+          type: "CARDIO_META_ATUALIZADA",
+          title: "Meta semanal de cardio",
+          message: notificationMessage,
+          read: false,
+          createdAt: now,
+          fromUid: updatedBy as string
+        });
+      } catch (error) {
+        // A legacy ruleset can reject the optional notification write. The
+        // goal itself must remain saved in that case.
+        errors.push(error);
+      }
     }
 
     if (persisted) return value;
@@ -191,6 +246,7 @@ function addWorkoutNotificationToTransaction(
 
   tx.set(noteRef, {
     type: "TREINO_ATUALIZADO",
+    title: "Atualização do treino",
     message,
     read: false,
     createdAt: now,
@@ -207,6 +263,91 @@ function addWorkoutNotificationToTransaction(
   );
 }
 
+function normalizedExerciseName(value: unknown) {
+  return String(value ?? "").trim().toLocaleLowerCase();
+}
+
+function exerciseName(value: unknown) {
+  const data = value as Record<string, unknown>;
+  return String(data.nome ?? "Exercício").trim() || "Exercício";
+}
+
+function exerciseContentSignature(value: unknown) {
+  const data = value as Record<string, unknown>;
+  return [
+    Number(data.series ?? 0),
+    Number(data.repsMin ?? 0),
+    Number(data.repsMax ?? 0),
+    String(data.descanso ?? "-"),
+    String(data.tecnica ?? "-"),
+    String(data.rir ?? "-")
+  ].join("\u001f");
+}
+
+function quotedExerciseNames(names: string[]) {
+  return names.map((name) => `"${name}"`).join(", ");
+}
+
+function describeExerciseChanges(previousExercises: unknown, nextExercises: ExercisePlan[]) {
+  const previous = Array.isArray(previousExercises) ? previousExercises : [];
+  const next = nextExercises as unknown[];
+  const previousByName = new Map(previous.map((item) => [normalizedExerciseName(exerciseName(item)), item]));
+  const nextByName = new Map(next.map((item) => [normalizedExerciseName(exerciseName(item)), item]));
+
+  const added = next
+    .filter((item) => !previousByName.has(normalizedExerciseName(exerciseName(item))))
+    .map(exerciseName);
+  const removed = previous
+    .filter((item) => !nextByName.has(normalizedExerciseName(exerciseName(item))))
+    .map(exerciseName);
+  const changed = next
+    .filter((item) => {
+      const key = normalizedExerciseName(exerciseName(item));
+      const oldItem = previousByName.get(key);
+      return oldItem !== undefined && exerciseContentSignature(oldItem) !== exerciseContentSignature(item);
+    })
+    .map(exerciseName);
+
+  const changes: string[] = [];
+  if (added.length) changes.push(`adicionou ${quotedExerciseNames(added)}`);
+  if (removed.length) changes.push(`removeu ${quotedExerciseNames(removed)}`);
+  if (changed.length) changes.push(`alterou ${quotedExerciseNames(changed)}`);
+
+  const previousOrder = previous
+    .map((item) => normalizedExerciseName(exerciseName(item)))
+    .filter((name) => nextByName.has(name));
+  const nextOrder = next
+    .map((item) => normalizedExerciseName(exerciseName(item)))
+    .filter((name) => previousByName.has(name));
+  if (previousOrder.length > 1 && previousOrder.join("|") !== nextOrder.join("|")) {
+    changes.push("reorganizou a ordem dos exercícios");
+  }
+
+  return changes.join("; ");
+}
+
+function workoutUpdateMessage(
+  previousId: string | null,
+  previousName: string | null,
+  previousData: Record<string, unknown> | undefined,
+  plan: WorkoutPlan
+) {
+  if (!previousId) {
+    return `Seu treinador adicionou o treino "${plan.nome}" com ${plan.exercicios.length} exercício(s).`;
+  }
+
+  const detail = describeExerciseChanges(previousData?.exercicios, plan.exercicios);
+  if (previousName && previousName !== plan.nome) {
+    return detail
+      ? `Seu treinador renomeou o treino "${previousName}" para "${plan.nome}" e ${detail}. Confira as mudanças.`
+      : `Seu treinador renomeou o treino "${previousName}" para "${plan.nome}".`;
+  }
+
+  return detail
+    ? `Seu treinador atualizou o treino "${plan.nome}": ${detail}. Confira as mudanças.`
+    : `Seu treinador atualizou o treino "${plan.nome}". Confira as mudanças.`;
+}
+
 export async function saveWorkoutPlan(
   services: FirebaseServices,
   targetUid: string,
@@ -221,6 +362,7 @@ export async function saveWorkoutPlan(
 
   await runTransaction(services.db, async (tx) => {
     let previousName: string | null = null;
+    let previousData: Record<string, unknown> | undefined;
     let createdAt = now;
 
     if (previousId) {
@@ -228,7 +370,7 @@ export async function saveWorkoutPlan(
       const previousSnap = await tx.get(previousRef);
       if (!previousSnap.exists()) throw new Error("O treino original não foi encontrado.");
 
-      const previousData = previousSnap.data();
+      previousData = previousSnap.data() as Record<string, unknown>;
       previousName = String(previousData.nome ?? plan.nome);
       const storedCreatedAt = Number(previousData.createdAt);
       if (Number.isFinite(storedCreatedAt) && storedCreatedAt > 0) createdAt = storedCreatedAt;
@@ -254,11 +396,7 @@ export async function saveWorkoutPlan(
     }
 
     if (targetUid !== currentUid) {
-      const message = !previousId
-        ? `Seu treinador adicionou o treino "${plan.nome}".`
-        : previousName && previousName !== plan.nome
-          ? `Seu treinador renomeou o treino "${previousName}" para "${plan.nome}".`
-          : `Seu treinador atualizou o treino "${plan.nome}". Confira as mudanças.`;
+      const message = workoutUpdateMessage(previousId, previousName, previousData, plan);
       addWorkoutNotificationToTransaction(tx, services, targetUid, currentUid, message, now);
     }
   });
@@ -289,6 +427,7 @@ export async function updateWorkoutOrder(
     const noteRef = doc(collection(services.db, "users", targetUid, "notifications"));
     batch.set(noteRef, {
       type: "TREINO_ATUALIZADO",
+      title: "Atualização do treino",
       message,
       read: false,
       createdAt: now,
@@ -339,6 +478,7 @@ export async function registerWorkoutNotification(
   const batch = writeBatch(services.db);
   batch.set(noteRef, {
     type: "TREINO_ATUALIZADO",
+    title: "Atualização do treino",
     message,
     read: false,
     createdAt: now,
@@ -353,6 +493,54 @@ export async function registerWorkoutNotification(
     },
     { merge: true }
   );
+  await batch.commit();
+}
+
+export async function sendTrainerMessage(
+  services: FirebaseServices,
+  targetUid: string,
+  currentUid: string,
+  message: string
+) {
+  if (!targetUid || targetUid === currentUid) {
+    throw new Error("Selecione um aluno válido para enviar a mensagem.");
+  }
+
+  const normalizedMessage = message.replace(/\s+/g, " ").trim();
+  if (!normalizedMessage) throw new Error("Digite uma mensagem.");
+  if (normalizedMessage.length > MAX_TRAINER_MESSAGE_LENGTH) {
+    throw new Error(`A mensagem deve ter no máximo ${MAX_TRAINER_MESSAGE_LENGTH} caracteres.`);
+  }
+
+  const now = Date.now();
+  const noteRef = doc(collection(services.db, "users", targetUid, "notifications"));
+  const profileRef = doc(services.db, "users", targetUid);
+  const targetProfile = await getDoc(profileRef);
+  const linkedTrainerUid = String(targetProfile.data()?.trainerId ?? targetProfile.data()?.trainerUid ?? "");
+  if (!targetProfile.exists() || linkedTrainerUid !== currentUid) {
+    throw new Error("Este aluno não está vinculado ao treinador atual.");
+  }
+
+  const batch = writeBatch(services.db);
+
+  batch.set(noteRef, {
+    type: "MENSAGEM_TREINADOR",
+    title: "Mensagem do professor",
+    message: normalizedMessage,
+    read: false,
+    createdAt: now,
+    fromUid: currentUid
+  });
+  batch.set(
+    profileRef,
+    {
+      lastTrainerMessageAt: now,
+      lastTrainerMessage: normalizedMessage,
+      updatedAt: now
+    },
+    { merge: true }
+  );
+
   await batch.commit();
 }
 

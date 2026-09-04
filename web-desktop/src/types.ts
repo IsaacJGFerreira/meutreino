@@ -90,7 +90,10 @@ export type InviteRequest = {
 
 export type NotificationItem = {
   id: string;
+  type?: string;
+  title?: string;
   message: string;
   read: boolean;
   createdAt: number;
+  fromUid?: string;
 };

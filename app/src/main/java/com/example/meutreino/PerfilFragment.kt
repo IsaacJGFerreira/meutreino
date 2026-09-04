@@ -7,7 +7,9 @@ import android.content.Context
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -110,6 +112,12 @@ class PerfilFragment : Fragment() {
         val layoutNotificacoes = view.findViewById<LinearLayout>(R.id.layoutNotificacoes)
         val btnMarcarNotificacaoLida = view.findViewById<Button>(R.id.btnMarcarNotificacaoLida)
 
+        val cardTeacherMessage = view.findViewById<View>(R.id.cardTeacherMessage)
+        val tvMensagemAlunoDestino = view.findViewById<TextView>(R.id.tvMensagemAlunoDestino)
+        val etMensagemAluno = view.findViewById<EditText>(R.id.etMensagemAluno)
+        val tvContadorMensagemAluno = view.findViewById<TextView>(R.id.tvContadorMensagemAluno)
+        val btnEnviarMensagemAluno = view.findViewById<Button>(R.id.btnEnviarMensagemAluno)
+
         tvTitulo.text = "Perfil"
         tvUltimoPeso.visibility = View.GONE
         tvUltimoProgresso.visibility = View.GONE
@@ -121,6 +129,7 @@ class PerfilFragment : Fragment() {
         val studentsAdapter = TrainerStudentsAdapter(mutableListOf()) { aluno ->
             salvarAlunoSelecionado(aluno.uid, aluno.name)
             atualizarBannerAlunoSelecionado(boxAcompanhando, tvAcompanhando)
+            atualizarComposerMensagem(cardTeacherMessage, tvMensagemAlunoDestino, aluno.uid, aluno.name)
             AppUiFeedback.showToast(requireContext(), "Agora acompanhando: ${aluno.name}", Toast.LENGTH_SHORT)
         }
         rvAlunos.layoutManager = LinearLayoutManager(requireContext())
@@ -129,6 +138,8 @@ class PerfilFragment : Fragment() {
         btnTrocarAluno.setOnClickListener {
             limparAlunoSelecionado()
             boxAcompanhando.visibility = View.GONE
+            cardTeacherMessage.visibility = View.GONE
+            etMensagemAluno.setText("")
             AppUiFeedback.showToast(requireContext(), "Seleção de aluno limpa.", Toast.LENGTH_SHORT)
         }
 
@@ -136,6 +147,42 @@ class PerfilFragment : Fragment() {
         cardStudentStatus.visibility = View.GONE
         cardWeeklyProgress.visibility = View.GONE
         cardNotification.visibility = View.GONE
+        cardTeacherMessage.visibility = View.GONE
+
+        etMensagemAluno.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(text: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(text: CharSequence?, start: Int, before: Int, count: Int) {
+                tvContadorMensagemAluno.text = "${text?.length ?: 0}/100"
+            }
+            override fun afterTextChanged(editable: Editable?) = Unit
+        })
+
+        btnEnviarMensagemAluno.setOnClickListener {
+            val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val alunoUid = prefs.getString(KEY_SELECTED_STUDENT, null).orEmpty()
+            val mensagem = etMensagemAluno.text?.toString().orEmpty()
+            if (alunoUid.isBlank()) {
+                AppUiFeedback.showToast(requireContext(), "Selecione um aluno primeiro.", Toast.LENGTH_SHORT)
+                return@setOnClickListener
+            }
+
+            btnEnviarMensagemAluno.isEnabled = false
+            TrainerMessageRepository.enviarParaAluno(
+                alunoUid = alunoUid,
+                mensagemRaw = mensagem,
+                onOk = {
+                    if (!isAdded) return@enviarParaAluno
+                    etMensagemAluno.setText("")
+                    btnEnviarMensagemAluno.isEnabled = true
+                    AppUiFeedback.showToast(requireContext(), "Mensagem enviada.", Toast.LENGTH_SHORT)
+                },
+                onErro = { error ->
+                    if (!isAdded) return@enviarParaAluno
+                    btnEnviarMensagemAluno.isEnabled = true
+                    AppUiFeedback.showToast(requireContext(), error.message ?: "Não foi possível enviar.", Toast.LENGTH_LONG)
+                }
+            )
+        }
 
         tvTituloCodigos.visibility = View.GONE
         rvCodigos.visibility = View.GONE
@@ -199,6 +246,13 @@ class PerfilFragment : Fragment() {
                     rvAlunos.visibility = View.VISIBLE
 
                     atualizarBannerAlunoSelecionado(boxAcompanhando, tvAcompanhando)
+                    val prefs = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    atualizarComposerMensagem(
+                        cardTeacherMessage,
+                        tvMensagemAlunoDestino,
+                        prefs.getString(KEY_SELECTED_STUDENT, null),
+                        prefs.getString(KEY_SELECTED_STUDENT_NAME, null)
+                    )
                     carregarCodigosDisponiveis(codeAdapter)
                     carregarMeusAlunos(studentsAdapter)
 
@@ -210,6 +264,7 @@ class PerfilFragment : Fragment() {
                     tvTituloAlunos.visibility = View.GONE
                     rvAlunos.visibility = View.GONE
                     boxAcompanhando.visibility = View.GONE
+                    cardTeacherMessage.visibility = View.GONE
                     btnSolicitar.visibility = View.GONE
                 }
 
@@ -669,6 +724,7 @@ class PerfilFragment : Fragment() {
 
                 val latest = unreadDocs.first()
                 val latestMsg = latest.getString("message") ?: "Seu treino foi atualizado."
+                val latestTitle = tituloNotificacao(latest)
                 val latestTs = latest.getLong("createdAt") ?: 0L
 
                 tvTitulo.text = "Atualizações do treinador (${unreadDocs.size})"
@@ -679,10 +735,10 @@ class PerfilFragment : Fragment() {
 
                 if (latestTs > lastSeenTs) {
                     AppUiFeedback.showToast(requireContext(), latestMsg, Toast.LENGTH_LONG)
-                    AppNotifier.showWorkoutUpdate(requireContext(), "MeuTreino", latestMsg)
+                    AppNotifier.showWorkoutUpdate(requireContext(), latestTitle, latestMsg)
 
                     AppUiFeedback.dialogBuilder(requireContext())
-                        .setTitle("Novo treino atualizado")
+                        .setTitle(latestTitle)
                         .setMessage(latestMsg)
                         .setPositiveButton("OK", null)
                         .show()
@@ -739,6 +795,12 @@ class PerfilFragment : Fragment() {
                 orientation = LinearLayout.VERTICAL
             }
             copy.addView(TextView(ctx).apply {
+                text = tituloNotificacao(doc)
+                textSize = 12f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(ContextCompat.getColor(ctx, R.color.green_primary))
+            })
+            copy.addView(TextView(ctx).apply {
                 text = doc.getString("message") ?: "Seu treino foi atualizado."
                 textSize = 13f
                 setTextColor(ContextCompat.getColor(ctx, R.color.text_primary))
@@ -760,6 +822,14 @@ class PerfilFragment : Fragment() {
                     setBackgroundColor(ContextCompat.getColor(ctx, R.color.chart_grid))
                 })
             }
+        }
+    }
+
+    private fun tituloNotificacao(doc: DocumentSnapshot): String {
+        return doc.getString("title") ?: when (doc.getString("type")) {
+            "CARDIO_META_ATUALIZADA" -> "Meta semanal de cardio"
+            "MENSAGEM_TREINADOR" -> "Mensagem do professor"
+            else -> "Atualização do treino"
         }
     }
 
@@ -916,6 +986,21 @@ class PerfilFragment : Fragment() {
         } else {
             box.visibility = View.GONE
         }
+    }
+
+    private fun atualizarComposerMensagem(
+        card: View,
+        destino: TextView,
+        uid: String?,
+        name: String?
+    ) {
+        if (uid.isNullOrBlank() || name.isNullOrBlank()) {
+            card.visibility = View.GONE
+            return
+        }
+
+        card.visibility = View.VISIBLE
+        destino.text = "Para: $name"
     }
 
     private fun carregarCodigosDisponiveis(adapter: InviteCodeAdapter) {

@@ -2,6 +2,7 @@ package com.example.meutreino
 
 import android.util.Log
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
@@ -48,14 +49,101 @@ object PlanoTreinoFirestoreRepository {
         )
     }
 
-    private fun notificationPayload(fromUid: String, mensagem: String, now: Long): Map<String, Any> {
+    private fun notificationPayload(
+        fromUid: String,
+        mensagem: String,
+        now: Long,
+        type: String = "TREINO_ATUALIZADO",
+        title: String = "Atualização do treino"
+    ): Map<String, Any> {
         return mapOf(
-            "type" to "TREINO_ATUALIZADO",
+            "type" to type,
+            "title" to title,
             "message" to mensagem,
             "read" to false,
             "createdAt" to now,
             "fromUid" to fromUid
         )
+    }
+
+    private fun nomeExercicioNormalizado(value: String): String {
+        return value.trim().lowercase()
+    }
+
+    private fun nomeExercicio(item: Map<*, *>): String {
+        return (item["nome"] as? String)?.trim()?.ifBlank { "Exercício" } ?: "Exercício"
+    }
+
+    private fun assinaturaExercicio(item: Map<*, *>): String {
+        return listOf(
+            (item["series"] as? Number)?.toInt() ?: 0,
+            (item["repsMin"] as? Number)?.toInt() ?: 0,
+            (item["repsMax"] as? Number)?.toInt() ?: 0,
+            item["descanso"] as? String ?: "-",
+            item["tecnica"] as? String ?: "-",
+            item["rir"] as? String ?: "-"
+        ).joinToString("\u001f")
+    }
+
+    private fun assinaturaExercicio(exercicio: ExercicioPlan): String {
+        return listOf(
+            exercicio.series,
+            exercicio.repsMin,
+            exercicio.repsMax,
+            exercicio.descanso,
+            exercicio.tecnica,
+            exercicio.rir
+        ).joinToString("\u001f")
+    }
+
+    private fun nomesEntreAspas(nomes: List<String>): String {
+        return nomes.joinToString(", ") { "\"$it\"" }
+    }
+
+    private fun detalharAlteracoesExercicios(
+        snapshot: DocumentSnapshot,
+        treino: TreinoPlan
+    ): String {
+        val antigos = (snapshot.get("exercicios") as? List<*>)
+            ?.mapNotNull { it as? Map<*, *> }
+            .orEmpty()
+        val antigosPorNome = antigos.associateBy { nomeExercicioNormalizado(nomeExercicio(it)) }
+        val novosPorNome = treino.exercicios.associateBy { nomeExercicioNormalizado(it.nome) }
+
+        val adicionados = treino.exercicios
+            .filter { !antigosPorNome.containsKey(nomeExercicioNormalizado(it.nome)) }
+            .map { it.nome.trim().ifBlank { "Exercício" } }
+        val removidos = antigos
+            .filter { !novosPorNome.containsKey(nomeExercicioNormalizado(nomeExercicio(it))) }
+            .map(::nomeExercicio)
+        val alterados = treino.exercicios
+            .filter { exercicio ->
+                val antigo = antigosPorNome[nomeExercicioNormalizado(exercicio.nome)]
+                antigo != null && assinaturaExercicio(antigo) != assinaturaExercicio(exercicio)
+            }
+            .map { it.nome.trim().ifBlank { "Exercício" } }
+
+        val partes = mutableListOf<String>()
+        if (adicionados.isNotEmpty()) partes += "adicionou ${nomesEntreAspas(adicionados)}"
+        if (removidos.isNotEmpty()) partes += "removeu ${nomesEntreAspas(removidos)}"
+        if (alterados.isNotEmpty()) partes += "alterou ${nomesEntreAspas(alterados)}"
+        return partes.joinToString("; ")
+    }
+
+    private fun mensagemAtualizacaoTreino(
+        snapshot: DocumentSnapshot,
+        treino: TreinoPlan
+    ): String {
+        if (!snapshot.exists()) {
+            return "Seu treinador adicionou o treino \"${treino.nome}\" com ${treino.exercicios.size} exercício(s)."
+        }
+
+        val detalhes = detalharAlteracoesExercicios(snapshot, treino)
+        return if (detalhes.isBlank()) {
+            "Seu treinador atualizou o treino \"${treino.nome}\". Confira as mudanças."
+        } else {
+            "Seu treinador atualizou o treino \"${treino.nome}\": $detalhes. Confira as mudanças."
+        }
     }
 
     private fun profileUpdatePayload(mensagem: String, now: Long): Map<String, Any> {
@@ -135,8 +223,6 @@ object PlanoTreinoFirestoreRepository {
             .document(docIdSeguro(treino.nome))
         val now = System.currentTimeMillis()
         val shouldNotify = notifyStudent && user.uid != alunoUid
-        val mensagem = notificationMessage
-            ?: "Seu treinador atualizou o treino \"${treino.nome}\"."
         val notificationRef = db.collection("users")
             .document(alunoUid)
             .collection("notifications")
@@ -147,6 +233,7 @@ object PlanoTreinoFirestoreRepository {
             val existing = transaction.get(treinoRef)
             val createdAt = existing.get("createdAt") ?: now
             val createdBy = existing.getString("createdBy") ?: user.uid
+            val mensagem = notificationMessage ?: mensagemAtualizacaoTreino(existing, treino)
 
             transaction.set(
                 treinoRef,
@@ -219,6 +306,10 @@ object PlanoTreinoFirestoreRepository {
             val createdAt = oldSnapshot.get("createdAt") ?: now
             val createdBy = oldSnapshot.getString("createdBy") ?: user.uid
             val payload = treinoPayload(treinoRenomeado, alunoUid, createdBy, createdAt, now)
+            val mensagemDetalhada = detalharAlteracoesExercicios(oldSnapshot, treinoRenomeado)
+                .takeIf { it.isNotBlank() }
+                ?.let { "$mensagem Também $it. Confira as mudanças." }
+                ?: mensagem
 
             if (oldId == newId) {
                 transaction.set(newRef, payload, SetOptions.merge())
@@ -228,10 +319,10 @@ object PlanoTreinoFirestoreRepository {
             }
 
             if (shouldNotify) {
-                transaction.set(notificationRef, notificationPayload(user.uid, mensagem, now))
+                transaction.set(notificationRef, notificationPayload(user.uid, mensagemDetalhada, now))
                 transaction.set(
                     profileRef,
-                    profileUpdatePayload(mensagem, now),
+                    profileUpdatePayload(mensagemDetalhada, now),
                     SetOptions.merge()
                 )
             }
@@ -313,6 +404,7 @@ object PlanoTreinoFirestoreRepository {
 
         val payload = hashMapOf(
             "type" to "TREINO_ATUALIZADO",
+            "title" to "Atualização do treino",
             "message" to mensagem,
             "read" to false,
             "createdAt" to now,
