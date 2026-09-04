@@ -981,6 +981,62 @@ select:focus {
   padding: 20px;
 }
 
+.cardio-goal-editor-card {
+  display: grid;
+  gap: 14px;
+}
+
+.cardio-goal-editor-card .cardio-card-heading {
+  margin-bottom: 0;
+}
+
+.cardio-goal-editor-help {
+  margin: -2px 0 0;
+  color: #9eb2ad;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cardio-goal-editor-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 300px) minmax(150px, 220px);
+  gap: 14px;
+  align-items: end;
+}
+
+.cardio-goal-editor-field {
+  display: grid;
+  gap: 8px;
+  color: #9eb2ad;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cardio-goal-editor-field input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(99, 150, 143, 0.25);
+  border-radius: 13px;
+  background: rgba(5, 19, 22, 0.82);
+  color: #f3f8f6;
+  padding: 11px 13px;
+  outline: none;
+}
+
+.cardio-goal-editor-field input:focus {
+  border-color: #20efb2;
+  box-shadow: 0 0 0 3px rgba(32, 239, 178, 0.1), 0 0 20px rgba(32, 239, 178, 0.09);
+}
+
+.cardio-goal-editor-form .cardio-save-button {
+  width: 100%;
+}
+
+.cardio-goal-editor-form .cardio-save-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .cardio-card-heading,
 .cardio-card-heading > span {
   display: flex;
@@ -1603,6 +1659,10 @@ select:focus {
   }
 
   .cardio-register-form {
+    grid-template-columns: 1fr;
+  }
+
+  .cardio-goal-editor-form {
     grid-template-columns: 1fr;
   }
 

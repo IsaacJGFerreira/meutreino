@@ -2,6 +2,7 @@ export {};
 
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { collection, doc, onSnapshot, orderBy, query, updateDoc, type DocumentData } from "firebase/firestore";
+import { saveCardioGoal as persistCardioGoal } from "./firebaseApi";
 import { initFirebase, readInitialConfig, type FirebaseServices } from "./firebase";
 
 const STYLE_ID = "meutreino-student-profile-dashboard";
@@ -63,11 +64,16 @@ let authUser: User | null = null;
 let currentProfile: StudentProfileState | null = null;
 let target: TargetState | null = null;
 let targetProfile: StudentProfileState | null = null;
+let targetRootGoal = 0;
+let targetRootGoalUpdatedAt = 0;
+let targetConfigGoal = 0;
+let targetConfigGoalUpdatedAt = 0;
 let records: WorkoutRecordState[] = [];
 let cardio: CardioRecordState[] = [];
 let notifications: NotificationState[] = [];
 let profileUnsubscribe: (() => void) | null = null;
 let targetProfileUnsubscribe: (() => void) | null = null;
+let targetGoalUnsubscribe: (() => void) | null = null;
 let recordsUnsubscribe: (() => void) | null = null;
 let cardioUnsubscribe: (() => void) | null = null;
 let notificationsUnsubscribe: (() => void) | null = null;
@@ -110,7 +116,7 @@ function readMillis(value: unknown) {
 }
 
 function profileFromDoc(uid: string, data: DocumentData | undefined, fallbackEmail = ""): StudentProfileState {
-  const rawGoal = Number(data?.cardioMetaSemanalMin ?? data?.metaSemanalCardioMin ?? data?.cardioGoalMin ?? DEFAULT_CARDIO_GOAL);
+  const rawGoal = cardioGoalFromData(data) || DEFAULT_CARDIO_GOAL;
 
   return {
     uid,
@@ -125,6 +131,20 @@ function profileFromDoc(uid: string, data: DocumentData | undefined, fallbackEma
     createdAt: readMillis(data?.createdAt),
     cardioMetaSemanalMin: Number.isFinite(rawGoal) && rawGoal > 0 ? rawGoal : DEFAULT_CARDIO_GOAL
   };
+}
+
+function cardioGoalFromData(data: DocumentData | undefined) {
+  const value = Number(data?.cardioMetaSemanalMin ?? data?.metaSemanalCardioMin ?? data?.cardioGoalMin ?? 0);
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+}
+
+function latestCardioGoal(rootGoal = targetRootGoal) {
+  const configIsLatest = targetConfigGoal > 0 && (
+    (targetConfigGoalUpdatedAt === 0 && targetRootGoalUpdatedAt === 0) ||
+    targetConfigGoalUpdatedAt >= targetRootGoalUpdatedAt ||
+    targetRootGoalUpdatedAt === 0
+  );
+  return configIsLatest ? targetConfigGoal : rootGoal || targetConfigGoal || DEFAULT_CARDIO_GOAL;
 }
 
 function workoutFromDoc(id: string, data: DocumentData): WorkoutRecordState {
@@ -187,10 +207,12 @@ function resolveTarget() {
 
 function stopTargetSubscriptions() {
   targetProfileUnsubscribe?.();
+  targetGoalUnsubscribe?.();
   recordsUnsubscribe?.();
   cardioUnsubscribe?.();
   notificationsUnsubscribe?.();
   targetProfileUnsubscribe = null;
+  targetGoalUnsubscribe = null;
   recordsUnsubscribe = null;
   cardioUnsubscribe = null;
   notificationsUnsubscribe = null;
@@ -205,6 +227,10 @@ function syncTargetSubscriptions() {
     stopTargetSubscriptions();
     subscribedTargetUid = null;
     targetProfile = currentProfile?.role === "ALUNO" ? currentProfile : null;
+    targetRootGoal = 0;
+    targetRootGoalUpdatedAt = 0;
+    targetConfigGoal = 0;
+    targetConfigGoalUpdatedAt = 0;
     records = [];
     cardio = [];
     notifications = [];
@@ -212,12 +238,18 @@ function syncTargetSubscriptions() {
     return;
   }
 
-  if (subscribedTargetUid === nextTarget.uid && recordsUnsubscribe && cardioUnsubscribe) {
+  if (subscribedTargetUid === nextTarget.uid && targetGoalUnsubscribe && recordsUnsubscribe && cardioUnsubscribe) {
     return;
   }
 
   stopTargetSubscriptions();
   subscribedTargetUid = nextTarget.uid;
+  targetRootGoal = 0;
+  targetRootGoalUpdatedAt = 0;
+  targetConfigGoal = 0;
+  targetConfigGoalUpdatedAt = 0;
+  cardioGoalDraft = "";
+  lastCardioGoalHtml = "";
   records = [];
   cardio = [];
   notifications = [];
@@ -225,7 +257,10 @@ function syncTargetSubscriptions() {
   targetProfileUnsubscribe = onSnapshot(
     doc(currentServices.db, "users", nextTarget.uid),
     (snap) => {
-      targetProfile = profileFromDoc(nextTarget.uid, snap.data(), nextTarget.email ?? "");
+      const nextProfile = profileFromDoc(nextTarget.uid, snap.data(), nextTarget.email ?? "");
+      targetRootGoal = cardioGoalFromData(snap.data());
+      targetRootGoalUpdatedAt = readMillis(snap.data()?.updatedAt) ?? 0;
+      targetProfile = { ...nextProfile, cardioMetaSemanalMin: latestCardioGoal(targetRootGoal) };
       if (!cardioGoalDraft) cardioGoalDraft = String(targetProfile.cardioMetaSemanalMin);
       scheduleRender();
     },
@@ -235,19 +270,39 @@ function syncTargetSubscriptions() {
     }
   );
 
-  recordsUnsubscribe = onSnapshot(
-    query(collection(currentServices.db, "users", nextTarget.uid, "treino_registros"), orderBy("createdAt", "desc")),
+  targetGoalUnsubscribe = onSnapshot(
+    doc(currentServices.db, "users", nextTarget.uid, "cardio_meta", "current"),
     (snap) => {
-      records = snap.docs.map((item) => workoutFromDoc(item.id, item.data()));
+      const nextGoal = cardioGoalFromData(snap.data());
+      targetConfigGoal = nextGoal;
+      targetConfigGoalUpdatedAt = readMillis(snap.data()?.updatedAt) ?? 0;
+      if (targetProfile) {
+        const resolvedGoal = latestCardioGoal(targetRootGoal || targetProfile.cardioMetaSemanalMin);
+        targetProfile = { ...targetProfile, cardioMetaSemanalMin: resolvedGoal };
+        if (!cardioGoalDraft) cardioGoalDraft = String(resolvedGoal);
+      }
+      scheduleRender();
+    },
+    () => scheduleRender()
+  );
+
+  recordsUnsubscribe = onSnapshot(
+    collection(currentServices.db, "users", nextTarget.uid, "treino_registros"),
+    (snap) => {
+      records = snap.docs
+        .map((item) => workoutFromDoc(item.id, item.data()))
+        .sort((a, b) => recordSortValue(b) - recordSortValue(a));
       scheduleRender();
     },
     () => scheduleRender()
   );
 
   cardioUnsubscribe = onSnapshot(
-    query(collection(currentServices.db, "users", nextTarget.uid, "cardio"), orderBy("createdAt", "desc")),
+    collection(currentServices.db, "users", nextTarget.uid, "cardio"),
     (snap) => {
-      cardio = snap.docs.map((item) => cardioFromDoc(item.id, item.data()));
+      cardio = snap.docs
+        .map((item) => cardioFromDoc(item.id, item.data()))
+        .sort((a, b) => recordSortValue(b) - recordSortValue(a));
       scheduleRender();
     },
     () => scheduleRender()
@@ -272,6 +327,12 @@ function attachAuth() {
     authUser = user;
     currentProfile = null;
     targetProfile = null;
+    targetRootGoal = 0;
+    targetRootGoalUpdatedAt = 0;
+    targetConfigGoal = 0;
+    targetConfigGoalUpdatedAt = 0;
+    cardioGoalDraft = "";
+    lastCardioGoalHtml = "";
     profileUnsubscribe?.();
     profileUnsubscribe = null;
     stopTargetSubscriptions();
@@ -1695,7 +1756,7 @@ function renderCardioGoalPanelHtml(done: number, goal: number) {
       ${canEdit ? `
         <form class="student-goal-form" data-student-form="cardio-goal">
           <label>Meta semanal do aluno, em minutos
-            <input type="number" min="0" step="5" data-student-input="cardio-goal" value="${escapeAttribute(cardioGoalDraft || String(goal))}" />
+            <input type="number" min="1" step="5" data-student-input="cardio-goal" value="${escapeAttribute(cardioGoalDraft || String(goal))}" />
           </label>
           <button class="student-goal-save" type="submit">✓ Salvar meta</button>
         </form>
@@ -1776,6 +1837,11 @@ function dateFromRecord(createdAt: number, dataHora: string) {
   return parsed;
 }
 
+function recordSortValue(record: WorkoutRecordState | CardioRecordState) {
+  if (Number.isFinite(record.createdAt) && record.createdAt > 0) return record.createdAt;
+  return parsePtBrDate(record.dataHora)?.getTime() ?? 0;
+}
+
 function parsePtBrDate(value: string) {
   const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:,?\s*(\d{2}):(\d{2}))?/);
   if (!match) return null;
@@ -1804,17 +1870,15 @@ async function saveCardioGoal(form: HTMLFormElement) {
   const currentServices = getServices();
   if (!currentServices || !target?.uid) return;
 
-  const value = Number((form.querySelector<HTMLInputElement>('[data-student-input="cardio-goal"]')?.value ?? "").trim());
-  if (!value || value < 0) {
+  const value = Number((form.querySelector<HTMLInputElement>('[data-student-input="cardio-goal"]')?.value ?? "").trim().replace(",", "."));
+  if (!Number.isFinite(value) || value <= 0) {
     window.alert("Informe uma meta válida em minutos.");
     return;
   }
 
-  await updateDoc(doc(currentServices.db, "users", target.uid), {
-    cardioMetaSemanalMin: value,
-    metaSemanalCardioMin: value
-  });
-  cardioGoalDraft = String(value);
+  const normalizedValue = Math.round(value);
+  await persistCardioGoal(currentServices, target.uid, normalizedValue, authUser?.uid);
+  cardioGoalDraft = String(normalizedValue);
   window.alert("Meta semanal de cardio salva.");
 }
 

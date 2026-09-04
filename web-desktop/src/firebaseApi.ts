@@ -47,6 +47,70 @@ export function formatDateTime(date: Date) {
   }).format(date);
 }
 
+/**
+ * Persists the cardio goal in both locations consumed by the Android and web
+ * clients. The batch keeps the two documents in sync when the Firestore rules
+ * allow both writes; the individual fallback preserves compatibility with
+ * deployments that only allow one of the legacy paths.
+ */
+export async function saveCardioGoal(
+  services: FirebaseServices,
+  targetUid: string,
+  goalMinutes: number,
+  updatedBy?: string | null
+) {
+  const value = Math.round(goalMinutes);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error("Informe uma meta semanal válida em minutos.");
+  }
+
+  const now = Date.now();
+  const rootRef = doc(services.db, "users", targetUid);
+  const configRef = doc(services.db, "users", targetUid, "cardio_meta", "current");
+  const rootPayload = {
+    cardioMetaSemanalMin: value,
+    metaSemanalCardioMin: value,
+    cardioGoalMin: value,
+    updatedAt: now
+  };
+  const configPayload = {
+    ...rootPayload,
+    ...(updatedBy ? { updatedBy } : {})
+  };
+
+  const batch = writeBatch(services.db);
+  batch.set(rootRef, rootPayload, { merge: true });
+  batch.set(configRef, configPayload, { merge: true });
+
+  try {
+    await batch.commit();
+    return value;
+  } catch (batchError) {
+    // Older Firestore rules in the wild may allow only one of the two paths.
+    // Keep the canonical write usable there while readers select the newest
+    // document by updatedAt.
+    const errors: unknown[] = [batchError];
+    let persisted = false;
+
+    try {
+      await updateDoc(rootRef, rootPayload);
+      persisted = true;
+    } catch (error) {
+      errors.push(error);
+    }
+
+    try {
+      await setDoc(configRef, configPayload, { merge: true });
+      persisted = true;
+    } catch (error) {
+      errors.push(error);
+    }
+
+    if (persisted) return value;
+    throw errors[errors.length - 1] ?? batchError;
+  }
+}
+
 export function parseNumber(value: string, fallback = 0) {
   const parsed = Number(value.replace(",", "."));
   return Number.isFinite(parsed) ? parsed : fallback;

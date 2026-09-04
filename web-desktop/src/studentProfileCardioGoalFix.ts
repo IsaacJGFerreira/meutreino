@@ -1,7 +1,8 @@
 export {};
 
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { doc, onSnapshot, setDoc, updateDoc, type Unsubscribe } from "firebase/firestore";
+import { doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
+import { saveCardioGoal as persistCardioGoal } from "./firebaseApi";
 import { initFirebase, readInitialConfig, type FirebaseServices } from "./firebase";
 
 const SELECTED_STUDENT_KEY = "meutreino.selectedStudent";
@@ -134,38 +135,14 @@ function syncGoalListener() {
   });
 }
 
-async function saveGoalInUserDoc(targetUid: string, value: number) {
-  const currentServices = getServices();
-  if (!currentServices) throw new Error("Firebase não inicializado.");
-
-  await updateDoc(doc(currentServices.db, "users", targetUid), {
-    cardioMetaSemanalMin: value,
-    metaSemanalCardioMin: value,
-    cardioGoalMin: value,
-    updatedAt: Date.now()
-  });
-}
-
-async function saveGoalInConfigDoc(targetUid: string, value: number) {
-  const ref = goalDocRef(targetUid);
-  if (!ref) throw new Error("Firebase não inicializado.");
-
-  await setDoc(ref, {
-    cardioMetaSemanalMin: value,
-    metaSemanalCardioMin: value,
-    cardioGoalMin: value,
-    updatedAt: Date.now(),
-    updatedBy: authUser?.uid ?? null
-  }, { merge: true });
-}
-
 async function saveCardioGoal(form: HTMLFormElement) {
   const targetUid = getTargetUidForCardioGoal();
+  const currentServices = getServices();
   const input = form.querySelector<HTMLInputElement>('[data-student-input="cardio-goal"]');
   const rawValue = input?.value.trim() ?? "";
   const value = Number(rawValue.replace(",", "."));
 
-  if (!getServices() || !targetUid) {
+  if (!currentServices || !targetUid) {
     window.alert("Selecione um aluno antes de salvar a meta de cardio.");
     return;
   }
@@ -178,11 +155,7 @@ async function saveCardioGoal(form: HTMLFormElement) {
   setSavingState(form, true);
 
   try {
-    try {
-      await saveGoalInUserDoc(targetUid, value);
-    } catch {
-      await saveGoalInConfigDoc(targetUid, value);
-    }
+    await persistCardioGoal(currentServices, targetUid, value, authUser?.uid);
 
     if (input) input.value = String(value);
     updateVisibleGoal(value);

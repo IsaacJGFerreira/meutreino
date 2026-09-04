@@ -1,8 +1,8 @@
 package com.example.meutreino
 
 import android.util.Log
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
@@ -26,6 +26,8 @@ object RegistroTreinoFirestoreRepository {
         val db = Firebase.firestore
 
         val docId = System.currentTimeMillis().toString()
+        val createdAt = TreinoRegistroUtils.timeOf(registro).takeIf { it > 0L }
+            ?: System.currentTimeMillis()
 
         val exerciciosMap = registro.exercicios.map { ex ->
             hashMapOf(
@@ -46,7 +48,7 @@ object RegistroTreinoFirestoreRepository {
             "nomeTreino" to registro.nomeTreino,
             "completo" to registro.completo,
             "duracaoSegundos" to registro.duracaoSegundos,
-            "createdAt" to System.currentTimeMillis(),
+            "createdAt" to createdAt,
             "exercicios" to exerciciosMap
         )
 
@@ -93,10 +95,16 @@ object RegistroTreinoFirestoreRepository {
         db.collection("users")
             .document(uidAlvo)
             .collection("treino_registros")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { snap ->
-                val lista = snap.documents.mapNotNull { it.data }
+                val lista = snap.documents
+                    .mapNotNull { document ->
+                        document.data?.toMutableMap()?.apply {
+                            val idLocal = this["idLocal"] as? String
+                            if (idLocal.isNullOrBlank()) this["idLocal"] = document.id
+                        }
+                    }
+                    .sortedByDescending { recordTime(it) }
                 onOk(lista)
             }
             .addOnFailureListener { e ->
@@ -132,6 +140,7 @@ object RegistroTreinoFirestoreRepository {
         val nomeTreino = (m["nomeTreino"] as? String) ?: return null
         val completo = (m["completo"] as? Boolean) ?: false
         val duracaoSegundos = (m["duracaoSegundos"] as? Number)?.toLong() ?: 0L
+        val createdAt = timestampOf(m["createdAt"])
 
         val exerciciosRaw = m["exercicios"] as? List<*> ?: emptyList<Any>()
         val exercicios = exerciciosRaw.mapNotNull { exAny ->
@@ -166,8 +175,25 @@ object RegistroTreinoFirestoreRepository {
             nomeTreino = nomeTreino,
             completo = completo,
             exercicios = exercicios,
-            duracaoSegundos = duracaoSegundos
+            duracaoSegundos = duracaoSegundos,
+            createdAt = createdAt
         )
 
+    }
+
+    private fun recordTime(record: Map<String, Any>): Long {
+        val createdAt = timestampOf(record["createdAt"])
+        if (createdAt > 0L) return createdAt
+        val dataHora = record["dataHora"] as? String ?: return 0L
+        return TreinoRegistroUtils.parseDataHora(dataHora)
+    }
+
+    private fun timestampOf(value: Any?): Long {
+        return when (value) {
+            is Number -> value.toLong()
+            is Timestamp -> value.toDate().time
+            is String -> value.toLongOrNull() ?: 0L
+            else -> 0L
+        }
     }
 }

@@ -728,23 +728,23 @@ class DesempenhoFragment : Fragment() {
         emptyBox.visibility = View.GONE
     }
 
-    private fun recordTime(record: TreinoRegistro): Long = parseDate(record.dataHora)?.time ?: 0L
+    private fun recordTime(record: TreinoRegistro): Long = TreinoRegistroUtils.timeOf(record)
 
     private fun parseDate(value: String): Date? {
-        val formats = listOf("dd/MM/yyyy HH:mm", "dd/MM/yyyy")
-        return formats.firstNotNullOfOrNull { pattern ->
-            runCatching {
-                SimpleDateFormat(pattern, Locale("pt", "BR")).apply { isLenient = false }.parse(value)
-            }.getOrNull()
-        }
+        return TreinoRegistroUtils.parseDataHora(value).takeIf { it > 0L }?.let(::Date)
+    }
+
+    private fun recordDate(record: TreinoRegistro): Date? {
+        val time = recordTime(record)
+        return if (time > 0L) Date(time) else parseDate(record.dataHora)
     }
 
     private fun shortDate(record: TreinoRegistro): String {
-        val date = parseDate(record.dataHora) ?: return record.dataHora.take(8)
+        val date = recordDate(record) ?: return record.dataHora.take(8)
         return SimpleDateFormat("dd/MM/yy", Locale("pt", "BR")).format(date)
     }
 
-    private fun recordDayKey(record: TreinoRegistro): String? = parseDate(record.dataHora)?.let(::dateKey)
+    private fun recordDayKey(record: TreinoRegistro): String? = recordDate(record)?.let(::dateKey)
 
     private fun dateKey(date: Date): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(date)
 

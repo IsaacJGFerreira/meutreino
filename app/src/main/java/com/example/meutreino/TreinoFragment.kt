@@ -85,10 +85,11 @@ class TreinoFragment : Fragment() {
                 return@TreinoDiaAdapter
             }
 
+            val createdAt = System.currentTimeMillis()
             val dataHora = java.text.SimpleDateFormat(
                 "dd/MM/yyyy HH:mm",
                 java.util.Locale.getDefault()
-            ).format(java.util.Date())
+            ).format(java.util.Date(createdAt))
 
             val registro = TreinoRegistro(
                 id = "${dataHora}_${treino.nome}",
@@ -96,7 +97,8 @@ class TreinoFragment : Fragment() {
                 nomeTreino = treino.nome,
                 completo = completo,
                 exercicios = montarExerciciosRegistro(treino, preenchimentoDoTreino),
-                duracaoSegundos = duracaoSegundos
+                duracaoSegundos = duracaoSegundos,
+                createdAt = createdAt
             )
 
             // ✅ aluno salva local + nuvem
@@ -201,8 +203,9 @@ class TreinoFragment : Fragment() {
     ): String {
         val registros = RegistroTreinoRepository.carregarTreinos(requireContext())
         val registroAnterior = registros
-            .asReversed()
-            .firstOrNull { it.nomeTreino.equals(treinoNome, ignoreCase = true) }
+            .asSequence()
+            .filter { it.nomeTreino.equals(treinoNome, ignoreCase = true) }
+            .maxByOrNull { TreinoRegistroUtils.timeOf(it) }
             ?: return "—"
 
         val serie = registroAnterior.exercicios

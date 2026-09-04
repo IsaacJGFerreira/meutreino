@@ -58,12 +58,13 @@ object RegistroTreinoRepository {
                     nomeTreino = obj.getString("nomeTreino"),
                     completo = obj.optBoolean("completo", true),
                     exercicios = exercicios,
-                    duracaoSegundos = obj.optLong("duracaoSegundos", 0L)
+                    duracaoSegundos = obj.optLong("duracaoSegundos", 0L),
+                    createdAt = obj.optLong("createdAt", 0L)
                 )
             )
         }
 
-        return lista
+        return lista.sortedByDescending { TreinoRegistroUtils.timeOf(it) }
     }
 
     fun contarRealizacoesExercicio(context: Context, nomeExercicio: String): Int {
@@ -83,7 +84,7 @@ object RegistroTreinoRepository {
             lista.add(treino)
         }
 
-        salvarLista(context, lista)
+        salvarLista(context, lista.sortedByDescending { TreinoRegistroUtils.timeOf(it) })
     }
 
     private fun salvarLista(context: Context, lista: List<TreinoRegistro>) {
@@ -96,6 +97,7 @@ object RegistroTreinoRepository {
             obj.put("nomeTreino", treino.nomeTreino)
             obj.put("completo", treino.completo)
             obj.put("duracaoSegundos", treino.duracaoSegundos)
+            obj.put("createdAt", TreinoRegistroUtils.timeOf(treino))
 
             val exerciciosArr = JSONArray()
             treino.exercicios.forEach { ex ->

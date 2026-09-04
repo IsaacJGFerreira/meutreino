@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, orderBy, query, type DocumentData } from "firebase/firestore";
+import { collection, doc, onSnapshot, type DocumentData } from "firebase/firestore";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { initFirebase, readInitialConfig, type FirebaseServices } from "./firebase";
 import type { ExerciseRecord, SeriesRecord, TrainerStudent, WorkoutRecord } from "./types";
@@ -147,11 +147,13 @@ function syncTargetAndRecords() {
   if (!currentServices) return;
 
   recordsUnsubscribe = onSnapshot(
-    query(collection(currentServices.db, "users", nextUid, "treino_registros"), orderBy("createdAt", "desc")),
+    collection(currentServices.db, "users", nextUid, "treino_registros"),
     (snap) => {
       loadingRecords = false;
       recordsError = "";
-      records = snap.docs.map((item) => workoutRecordFromDoc(item.id, item.data()));
+      records = snap.docs
+        .map((item) => workoutRecordFromDoc(item.id, item.data()))
+        .sort((a, b) => recordSortValue(b) - recordSortValue(a));
       saveCachedRecords(nextUid, records);
       reconcileSelections();
       scheduleRender();
@@ -237,7 +239,9 @@ function loadCachedRecords(uid: string) {
 
   try {
     const parsed = JSON.parse(raw) as WorkoutRecord[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.sort((a, b) => recordSortValue(b) - recordSortValue(a))
+      : [];
   } catch {
     return [];
   }
@@ -1418,9 +1422,8 @@ function recordDayKey(record: WorkoutRecord) {
 }
 
 function recordDate(record: WorkoutRecord) {
-  const parsed = parsePtBrDate(record.dataHora);
-  if (parsed) return parsed;
-  return record.createdAt ? new Date(record.createdAt) : null;
+  if (Number.isFinite(record.createdAt) && record.createdAt > 0) return new Date(record.createdAt);
+  return parsePtBrDate(record.dataHora);
 }
 
 function shortDayLabel(record: WorkoutRecord) {
@@ -1435,7 +1438,7 @@ function recordSortValue(record: WorkoutRecord) {
 }
 
 function parsePtBrDate(value: string) {
-  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:,?\s+(\d{2}):(\d{2}))?/);
   if (!match) return null;
   const [, day, month, year, hour = "0", minute = "0"] = match;
   const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute));
