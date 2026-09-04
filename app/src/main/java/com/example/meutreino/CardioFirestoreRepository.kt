@@ -26,7 +26,7 @@ object CardioFirestoreRepository {
                     val id = doc.getString("id") ?: doc.id
                     val dataHora = doc.getString("dataHora") ?: return@mapNotNull null
                     val atividade = doc.getString("atividade") ?: return@mapNotNull null
-                    val tempoMin = (doc.getLong("tempoMin") ?: 0L).toInt()
+                    val tempoMin = readMinutes(doc.get("tempoMin"))
                     val ritmo = doc.getString("ritmo") ?: "—"
                     val createdAt = doc.getLong("createdAt") ?: 0L
 
@@ -71,7 +71,7 @@ object CardioFirestoreRepository {
                         id = id,
                         dataHora = dataHora,
                         atividade = atividade,
-                        tempoMin = (doc.getLong("tempoMin") ?: 0L).toInt(),
+                        tempoMin = readMinutes(doc.get("tempoMin")),
                         ritmo = doc.getString("ritmo") ?: "—",
                         createdAt = doc.getLong("createdAt") ?: 0L
                     )
@@ -139,5 +139,15 @@ object CardioFirestoreRepository {
             SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR"))
                 .parse(registro.dataHora)?.time ?: 0L
         }.getOrDefault(0L)
+    }
+
+    private fun readMinutes(value: Any?): Int {
+        return when (value) {
+            is Number -> value.toDouble().takeIf {
+                it.isFinite() && it % 1.0 == 0.0 && it >= CardioMinutes.MIN && it <= Int.MAX_VALUE
+            }?.toInt() ?: 0
+            is String -> CardioMinutes.parse(value) ?: 0
+            else -> 0
+        }
     }
 }

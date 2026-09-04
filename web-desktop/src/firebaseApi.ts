@@ -14,6 +14,9 @@ import type { ExercisePlan, ProgressRecord, WorkoutPlan } from "./types";
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+export const MIN_CARDIO_MINUTES = 1;
+export const MAX_CARDIO_MINUTES = 2_147_483_647;
+
 export function safeDocId(name: string) {
   return (
     name
@@ -47,6 +50,18 @@ export function formatDateTime(date: Date) {
   }).format(date);
 }
 
+export function parsePositiveWholeMinutes(value: unknown): number | null {
+  const parsed = typeof value === "number"
+    ? value
+    : Number(String(value ?? "").trim().replace(",", "."));
+
+  if (!Number.isSafeInteger(parsed) || parsed < MIN_CARDIO_MINUTES || parsed > MAX_CARDIO_MINUTES) {
+    return null;
+  }
+
+  return parsed;
+}
+
 /**
  * Persists the cardio goal in both locations consumed by the Android and web
  * clients. The batch keeps the two documents in sync when the Firestore rules
@@ -59,8 +74,8 @@ export async function saveCardioGoal(
   goalMinutes: number,
   updatedBy?: string | null
 ) {
-  const value = Math.round(goalMinutes);
-  if (!Number.isFinite(value) || value <= 0) {
+  const value = parsePositiveWholeMinutes(goalMinutes);
+  if (value === null) {
     throw new Error("Informe uma meta semanal válida em minutos.");
   }
 

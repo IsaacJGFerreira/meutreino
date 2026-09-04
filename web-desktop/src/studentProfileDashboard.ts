@@ -2,7 +2,7 @@ export {};
 
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { collection, doc, onSnapshot, orderBy, query, updateDoc, type DocumentData } from "firebase/firestore";
-import { saveCardioGoal as persistCardioGoal } from "./firebaseApi";
+import { parsePositiveWholeMinutes, saveCardioGoal as persistCardioGoal } from "./firebaseApi";
 import { initFirebase, readInitialConfig, type FirebaseServices } from "./firebase";
 
 const STYLE_ID = "meutreino-student-profile-dashboard";
@@ -1756,7 +1756,7 @@ function renderCardioGoalPanelHtml(done: number, goal: number) {
       ${canEdit ? `
         <form class="student-goal-form" data-student-form="cardio-goal">
           <label>Meta semanal do aluno, em minutos
-            <input type="number" min="1" step="5" data-student-input="cardio-goal" value="${escapeAttribute(cardioGoalDraft || String(goal))}" />
+            <input type="number" min="1" step="1" inputmode="numeric" data-student-input="cardio-goal" value="${escapeAttribute(cardioGoalDraft || String(goal))}" />
           </label>
           <button class="student-goal-save" type="submit">✓ Salvar meta</button>
         </form>
@@ -1870,15 +1870,14 @@ async function saveCardioGoal(form: HTMLFormElement) {
   const currentServices = getServices();
   if (!currentServices || !target?.uid) return;
 
-  const value = Number((form.querySelector<HTMLInputElement>('[data-student-input="cardio-goal"]')?.value ?? "").trim().replace(",", "."));
-  if (!Number.isFinite(value) || value <= 0) {
+  const value = parsePositiveWholeMinutes(form.querySelector<HTMLInputElement>('[data-student-input="cardio-goal"]')?.value ?? "");
+  if (value === null) {
     window.alert("Informe uma meta válida em minutos.");
     return;
   }
 
-  const normalizedValue = Math.round(value);
-  await persistCardioGoal(currentServices, target.uid, normalizedValue, authUser?.uid);
-  cardioGoalDraft = String(normalizedValue);
+  await persistCardioGoal(currentServices, target.uid, value, authUser?.uid);
+  cardioGoalDraft = String(value);
   window.alert("Meta semanal de cardio salva.");
 }
 
@@ -1918,6 +1917,13 @@ function handleInput(event: Event) {
   cardioGoalDraft = input.value;
 }
 
+function handleWheel(event: WheelEvent) {
+  const input = event.target as HTMLInputElement | null;
+  if (!input?.matches('input[type="number"][data-student-input="cardio-goal"]')) return;
+  event.preventDefault();
+  input.blur();
+}
+
 function handleClick(event: MouseEvent) {
   const targetElement = event.target as Element | null;
   const actionElement = targetElement?.closest<HTMLElement>('[data-student-action]');
@@ -1953,6 +1959,7 @@ function bootStudentProfileDashboard() {
     document.addEventListener("submit", handleSubmit, true);
     document.addEventListener("input", handleInput, true);
     document.addEventListener("click", handleClick, true);
+    document.addEventListener("wheel", handleWheel, { capture: true, passive: false });
     window.addEventListener("storage", () => {
       syncTargetSubscriptions();
       scheduleRender();

@@ -2,7 +2,7 @@ export {};
 
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
-import { saveCardioGoal as persistCardioGoal } from "./firebaseApi";
+import { parsePositiveWholeMinutes, saveCardioGoal as persistCardioGoal } from "./firebaseApi";
 import { initFirebase, readInitialConfig, type FirebaseServices } from "./firebase";
 
 const SELECTED_STUDENT_KEY = "meutreino.selectedStudent";
@@ -140,14 +140,14 @@ async function saveCardioGoal(form: HTMLFormElement) {
   const currentServices = getServices();
   const input = form.querySelector<HTMLInputElement>('[data-student-input="cardio-goal"]');
   const rawValue = input?.value.trim() ?? "";
-  const value = Number(rawValue.replace(",", "."));
+  const value = parsePositiveWholeMinutes(rawValue);
 
   if (!currentServices || !targetUid) {
     window.alert("Selecione um aluno antes de salvar a meta de cardio.");
     return;
   }
 
-  if (!Number.isFinite(value) || value <= 0) {
+  if (value === null) {
     window.alert("Informe uma meta semanal válida em minutos.");
     return;
   }
